@@ -62,9 +62,9 @@ function catalogSubmissionUrl(form: HTMLFormElement): string {
     "### Year", clean("year", 4),
     "### Maker", clean("maker", 160),
     "### Identifier", clean("identifier", 100),
-    "### Photo", "If you want to share a photo, attach it here on GitHub. Photos and private notes saved in Shelfie are not sent automatically.",
+    "### Photo", "If you want to share a photo, attach it here on GitHub. Photos and private notes saved in Archiv are not sent automatically.",
   ].join("\n\n");
-  const url = new URL("https://github.com/JHoward02/collector-scan/issues/new");
+  const url = new URL("https://github.com/JHoward02/archiv-app/issues/new");
   url.searchParams.set("title", `[Catalog submission] ${title}`);
   url.searchParams.set("body", body);
   return url.toString();
@@ -75,12 +75,12 @@ function openManual(): void {
   const query = (document.querySelector<HTMLInputElement>("#cs-search-input")?.value || "").trim();
   const overlay = document.createElement("div");
   overlay.id = "shelfie-manual-modal";
-  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;display:flex;align-items:flex-end;justify-content:center;padding:16px";
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(5,21,33,.78);z-index:9999;display:flex;align-items:flex-end;justify-content:center;padding:16px";
   const panel = document.createElement("form");
-  panel.style.cssText = "background:#fff;color:#111;width:min(560px,100%);max-height:90vh;overflow:auto;border-radius:18px;padding:20px;display:grid;gap:12px";
+  panel.style.cssText = "background:#fffdf8;color:#08243b;width:min(560px,100%);max-height:90vh;overflow:auto;border:1px solid #d9cebf;border-radius:18px;padding:20px;display:grid;gap:12px;box-shadow:0 24px 60px rgba(8,36,59,.25)";
   panel.innerHTML = `
-    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><h3 style="margin:0">Add it to Shelfie</h3><button type="button" data-close aria-label="Close" style="font-size:24px;border:0;background:none">×</button></div>
-    <p style="margin:0;color:#555">Save privately to this device, or propose the item for Shelfie's shared catalog. Catalog proposals open on GitHub, require a GitHub account, and appear in search after review.</p>
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><h3 style="margin:0;font-family:Georgia,serif">Add it to Archiv</h3><button type="button" data-close aria-label="Close" style="font-size:24px;border:0;background:none;color:#08243b">×</button></div>
+    <p style="margin:0;color:#6f6a62">Save privately to this device, or propose the item for Archiv's shared catalog. Catalog proposals open on GitHub, require a GitHub account, and appear in search after review.</p>
     <label>Title / name<input required name="title" value="${query.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!))}" class="cs-input" style="width:100%;margin-top:5px"></label>
     <label>Type<select name="category" class="cs-select" style="width:100%;margin-top:5px">
       <option value="comic">Comic</option><option value="tcg">TCG</option><option value="sports-card">Sports card</option><option value="book">Book</option><option value="video-game">Video game</option><option value="figure">Figure</option><option value="toy">Toy</option><option value="coin">Coin</option><option value="vinyl">Vinyl</option><option value="sneaker">Sneaker</option><option value="other">Other</option>
@@ -91,8 +91,8 @@ function openManual(): void {
     <label>Photo <span style="color:#777">(optional)</span><input name="photo" type="file" accept="image/*" capture="environment" style="display:block;margin-top:6px"></label>
     <label>Notes <span style="color:#777">(optional)</span><textarea name="notes" rows="3" class="cs-textarea" style="width:100%;margin-top:5px"></textarea></label>
     <button class="cs-button cs-button--block" type="submit">Save to my collection</button>
-    <button class="cs-button cs-button--block" type="button" data-catalog>Submit to Shelfie catalog on GitHub</button>
-    <p style="margin:0;color:#555;font-size:13px">Only the name, type, line, year, maker, and identifier are prefilled on GitHub. Review the public proposal there before submitting. Attach a photo there if you want to share one.</p>`;
+    <button class="cs-button cs-button--block" type="button" data-catalog>Submit to Archiv catalog on GitHub</button>
+    <p style="margin:0;color:#6f6a62;font-size:13px">Only the name, type, line, year, maker, and identifier are prefilled on GitHub. Review the public proposal there before submitting. Attach a photo there if you want to share one.</p>`;
   (panel.elements.namedItem("category") as HTMLSelectElement).value = selectedCategory();
   panel.querySelector("[data-close]")?.addEventListener("click", () => overlay.remove());
   panel.querySelector("[data-catalog]")?.addEventListener("click", () => {
@@ -141,7 +141,7 @@ function installButton(): void {
   button.type = "button";
   button.className = "cs-button cs-button--block";
   button.style.marginTop = "14px";
-  button.textContent = list.textContent?.includes("No matches") ? "+ Add it to Shelfie" : "Can't find yours? Add it manually";
+  button.textContent = list.textContent?.includes("No matches") ? "+ Add it to Archiv" : "Can't find yours? Add it manually";
   button.addEventListener("click", openManual);
   list.insertAdjacentElement("afterend", button);
 }
