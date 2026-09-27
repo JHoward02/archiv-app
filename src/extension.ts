@@ -30,8 +30,8 @@ function enhanceLogoHome(container: HTMLElement, goHome: () => void): void {
     logo.replaceChildren();
     image = document.createElement("img");
     image.className = "cs-title__logo";
-    image.src = `${import.meta.env.BASE_URL}LogoV3.png?v=logo-real-1`;
-    image.alt = "Shelfie";
+    image.src = `${import.meta.env.BASE_URL}logo4?v=archiv-logo-1`;
+    image.alt = "Archiv";
     image.decoding = "async";
     image.draggable = false;
     logo.append(image);
@@ -41,7 +41,7 @@ function enhanceLogoHome(container: HTMLElement, goHome: () => void): void {
   logo.dataset.shelfieHome = "true";
   logo.setAttribute("role", "link");
   logo.setAttribute("tabindex", "0");
-  logo.setAttribute("aria-label", "Shelfie home");
+  logo.setAttribute("aria-label", "Archiv home");
   logo.addEventListener("click", goHome);
   logo.addEventListener("keydown", (event) => {
     if (event.key === "Enter" || event.key === " ") {
