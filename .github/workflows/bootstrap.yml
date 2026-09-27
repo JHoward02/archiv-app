@@ -30,10 +30,14 @@ jobs:
         run: |
           set -euo pipefail
           find . -mindepth 1 -maxdepth 1 ! -name '.git' ! -name '_shelfie_source' -exec rm -rf {} +
-          cp -a _shelfie_source/. .
+          rsync -a --exclude='.git' _shelfie_source/ ./
           rm -rf _shelfie_source
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "Bootstrap ARCHIV from repaired Shelfie baseline 78f9eb7"
+          if git diff --cached --quiet; then
+            echo "Baseline already matches; nothing to commit."
+          else
+            git commit -m "Bootstrap ARCHIV from repaired Shelfie baseline 78f9eb7"
+          fi
           git push origin HEAD:main
