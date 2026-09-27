@@ -29,8 +29,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          find . -mindepth 1 -maxdepth 1 ! -name '.git' ! -name '_shelfie_source' -exec rm -rf {} +
-          rsync -a --exclude='.git' _shelfie_source/ ./
+          find . -mindepth 1 -maxdepth 1 ! -name '.git' ! -name '.github' ! -name '_shelfie_source' -exec rm -rf {} +
+          mkdir -p .github/workflows
+          find .github -mindepth 1 -maxdepth 1 ! -name 'workflows' -exec rm -rf {} +
+          find .github/workflows -mindepth 1 -maxdepth 1 ! -name 'bootstrap.yml' -exec rm -rf {} +
+          rsync -a --exclude='.git' --exclude='.github/workflows/' _shelfie_source/ ./
           rm -rf _shelfie_source
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
