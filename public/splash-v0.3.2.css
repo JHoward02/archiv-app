@@ -9,7 +9,9 @@ html.shelfie-splash-active body {
   z-index: 99999;
   display: grid;
   place-items: center;
-  background: #000;
+  background:
+    radial-gradient(circle at 50% 32%, rgba(245,154,35,.18), transparent 34%),
+    linear-gradient(180deg, #071b2c 0%, #08243b 58%, #051521 100%);
   opacity: 1;
   transition: opacity 360ms ease;
 }
@@ -19,16 +21,49 @@ html.shelfie-splash-active body {
   pointer-events: none;
 }
 
+.shelfie-splash__frame {
+  width: min(88vw, 920px);
+  display: grid;
+  justify-items: center;
+  gap: 22px;
+  animation: archivFloat 1.2s ease-out both;
+}
+
 .shelfie-splash__animation {
   display: block;
-  width: min(100vw, 1280px);
-  height: min(100vh, 720px);
+  width: 100%;
+  max-height: 48vh;
   object-fit: contain;
-  background: #000;
+  filter: drop-shadow(0 18px 30px rgba(0,0,0,.28));
+}
+
+.shelfie-splash__tagline {
+  margin: 0;
+  color: #fff6e7;
+  font: 600 clamp(12px,1.5vw,18px)/1.2 Inter,ui-sans-serif,system-ui,sans-serif;
+  letter-spacing: .34em;
+  text-align: center;
+  opacity: 0;
+  animation: archivTagline .8s ease .45s forwards;
+}
+
+@keyframes archivFloat {
+  from { opacity: 0; transform: translateY(14px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes archivTagline {
+  to { opacity: .95; }
+}
+
+@media (max-width: 640px) {
+  .shelfie-splash__frame { width: 92vw; gap: 14px; }
+  .shelfie-splash__animation { max-height: 34vh; }
+  .shelfie-splash__tagline { letter-spacing: .2em; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .shelfie-splash {
-    transition: none;
-  }
+  .shelfie-splash { transition: none; }
+  .shelfie-splash__frame,
+  .shelfie-splash__tagline { animation: none; opacity: 1; }
 }
