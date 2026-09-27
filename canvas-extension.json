@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "name": "collector-scan",
-  "display_name": "Collector Scan",
+  "display_name": "Archiv",
   "version": "0.1.0",
-  "description": "Look up comics, sports cards, books, and collectibles on the web and keep a fast, offline-first collection on your phone.",
+  "description": "Catalog, organize, and enjoy books, cards, comics, games, figures, vinyl, sneakers, coins, and other collectibles.",
   "entrypoint": "extension.js",
   "contributes": {
     "pages": [
       {
         "id": "collection",
-        "title": "Collector Scan",
+        "title": "Archiv",
         "path": "/collection",
-        "nav_label": "Collector Scan",
+        "nav_label": "Archiv",
         "description": "Search, match, and track your collection."
       }
     ]
