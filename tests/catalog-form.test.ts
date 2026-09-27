@@ -17,9 +17,9 @@ it("prefills a public catalog proposal without leaking private notes or local im
   form.querySelector<HTMLButtonElement>("[data-catalog]")!.click();
   expect(open).toHaveBeenCalledOnce();
   const url = new URL(open.mock.calls[0][0]!);
-  expect(url.origin + url.pathname).toBe("https://github.com/JHoward02/collector-scan/issues/new");
+  expect(url.origin + url.pathname).toBe("https://github.com/JHoward02/archiv-app/issues/new");
   expect(url.searchParams.get("title")).toContain("Batman figure");
   expect(url.searchParams.get("body")).toContain("### Category\n\nfigure");
   expect(url.searchParams.get("body")).not.toContain("My private note");
-  expect(parseSubmission({ number: 42, html_url: "https://github.com/JHoward02/collector-scan/issues/42", body: url.searchParams.get("body") })).toMatchObject({ title: "Batman figure", category: "figure" });
+  expect(parseSubmission({ number: 42, html_url: "https://github.com/JHoward02/archiv-app/issues/42", body: url.searchParams.get("body") })).toMatchObject({ title: "Batman figure", category: "figure" });
 });
