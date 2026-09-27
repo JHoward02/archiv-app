@@ -1,0 +1,39 @@
+name: Bootstrap ARCHIV from Shelfie
+
+on:
+  push:
+    paths:
+      - '.github/workflows/bootstrap.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout ARCHIV repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout repaired Shelfie baseline
+        uses: actions/checkout@v4
+        with:
+          repository: JHoward02/collector-scan
+          ref: 78f9eb75392321d2b35557eb92071d928aa97f3b
+          path: _shelfie_source
+
+      - name: Replace repo contents with baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          find . -mindepth 1 -maxdepth 1 ! -name '.git' ! -name '_shelfie_source' -exec rm -rf {} +
+          cp -a _shelfie_source/. .
+          rm -rf _shelfie_source
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Bootstrap ARCHIV from repaired Shelfie baseline 78f9eb7"
+          git push origin HEAD:main
