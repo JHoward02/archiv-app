@@ -671,9 +671,26 @@ describe("page mount", () => {
     expect(getSearchSelection().category).toBe("book");
     unmount();
     await double.open("collection", { container, path: "search" });
-    await vi.waitFor(() => expect([...container.querySelectorAll<HTMLButtonElement>("button")].find((button) =>
+    await vi.waitFor(() => expect(container.querySelector(".cs-shelf-context")?.textContent).toContain("Adding to Books"));
+    expect(container.textContent).not.toContain("Choose a type");
+    container.querySelector<HTMLButtonElement>(".cs-shelf-context button")!.click();
+    expect(container.textContent).toContain("Choose a type");
+    expect([...container.querySelectorAll<HTMLButtonElement>("button")].find((button) =>
       button.textContent === "Books" && button.getAttribute("aria-pressed") === "true",
-    )).toBeDefined());
+    )).toBeDefined();
+  });
+
+  it("skips the duplicate type picker but keeps figure subtype choices", async () => {
+    const double = createHostDouble();
+    activate(double.host);
+    const container = mountContainer();
+    const unmount = await double.open("collection", { container, path: "collection" });
+    container.querySelector<HTMLButtonElement>(".cs-shelf--figure")!.click();
+    unmount();
+    await double.open("collection", { container, path: "search" });
+    await vi.waitFor(() => expect(container.textContent).toContain("Choose a figure type"));
+    expect(container.textContent).not.toContain("Choose a type");
+    expect(container.querySelector(".cs-shelf-context")?.textContent).toContain("Adding to Figures");
   });
 
   it("totals purchase price when no estimated value is recorded", async () => {
