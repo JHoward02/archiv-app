@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "name": "collector-scan",
-  "display_name": "Archiv",
+  "display_name": "Archív",
   "version": "0.1.0",
   "description": "Catalog, organize, and enjoy books, cards, comics, games, figures, vinyl, sneakers, coins, and other collectibles.",
   "entrypoint": "extension.js",
@@ -9,9 +9,9 @@
     "pages": [
       {
         "id": "collection",
-        "title": "Archiv",
+        "title": "Archív",
         "path": "/collection",
-        "nav_label": "Archiv",
+        "nav_label": "Archív",
         "description": "Search, match, and track your collection."
       }
     ]

@@ -29,7 +29,7 @@ export const brandStyles = `
 .cs-subtitle{display:none !important}
 .cs-tabs{align-self:flex-end;width:auto;display:flex !important;background:#fffdf8 !important;border:1px solid #d9cebf !important;border-radius:999px !important;padding:4px !important;margin-top:-62px;z-index:2;margin-right:160px;box-shadow:0 12px 34px -27px rgba(8,36,59,.45)}
 .cs-tab{border-radius:999px !important;min-height:38px !important;color:#665f57 !important;padding:8px 16px !important;font-weight:700 !important}.cs-tab[aria-selected="true"]{background:#08243b !important;color:#fffaf0 !important}
-.cs-search{gap:14px !important;padding-top:48px}.cs-search::before{content:"Add to your Archiv";display:block;font-family:Georgia,"Times New Roman",serif;font-size:clamp(34px,5vw,56px);font-weight:600;letter-spacing:-.035em;line-height:1.02;max-width:720px;color:#08243b}.cs-search::after{content:"Catalog the things you love. Search your collectibles, save the right match, and keep your collection in one beautiful place.";display:block;order:-1;color:#6f6a62;font-size:16px;line-height:1.55;max-width:720px;margin-top:-5px}
+.cs-search{gap:14px !important;padding-top:48px}.cs-search::before{content:"Add to your Archív";display:block;font-family:Georgia,"Times New Roman",serif;font-size:clamp(34px,5vw,56px);font-weight:600;letter-spacing:-.035em;line-height:1.02;max-width:720px;color:#08243b}.cs-search::after{content:"Catalog the things you love. Search your collectibles, save the right match, and keep your collection in one beautiful place.";display:block;order:-1;color:#6f6a62;font-size:16px;line-height:1.55;max-width:720px;margin-top:-5px}
 .cs-search__row{background:#fffdf8 !important;border:1px solid #bcae9d !important;border-radius:18px !important;padding:6px !important;box-shadow:0 20px 50px -35px rgba(45,31,19,.5) !important}.cs-search__row:focus-within{border-color:#08243b !important;box-shadow:0 0 0 3px rgba(245,154,35,.22),0 20px 50px -35px rgba(45,31,19,.5) !important}
 .cs-search__row .cs-input{border:0 !important;background:transparent !important;min-height:54px !important;font-size:16px;padding-left:16px !important;color:#08243b !important}.cs-search__row .cs-input:focus{outline:0 !important}.cs-search__row .cs-button{background:#f59a23 !important;color:#08243b !important;border-radius:12px !important;min-width:112px;font-weight:800 !important;border:1px solid #dc8418 !important}
 .cs-button{background:#08243b !important;color:#fffaf0 !important;border-radius:11px !important;border-color:#08243b !important;font-weight:750 !important}.cs-button--ghost{background:#fffdf8 !important;color:#08243b !important;border-color:#bcae9d !important}
@@ -80,7 +80,7 @@ export const brandStyles = `
 .cs-toolbar{padding:17px;border:1px solid #ded4c8;border-radius:16px;background:#fffdf8}
 .cs-footer{max-width:1100px !important}
 .cs-search:not(.cs-collection){padding-top:5px}
-.cs-search:not(.cs-collection)::before{content:"Add to your Archiv";display:block;font:500 clamp(32px,5vw,51px)/1.08 Georgia,"Times New Roman",serif;letter-spacing:-.04em}
+.cs-search:not(.cs-collection)::before{content:"Add to your Archív";display:block;font:500 clamp(32px,5vw,51px)/1.08 Georgia,"Times New Roman",serif;letter-spacing:-.04em}
 .cs-search:not(.cs-collection)::after{content:none;display:none}
 @media(max-width:800px){.cs-shelf-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:640px){

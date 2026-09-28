@@ -31,7 +31,7 @@ function enhanceLogoHome(container: HTMLElement, goHome: () => void): void {
     lockup.setAttribute("class", "cs-title__logo");
     lockup.setAttribute("viewBox", "0 0 2172 780");
     lockup.setAttribute("role", "img");
-    lockup.setAttribute("aria-label", "Archiv. Your collection lives here.");
+    lockup.setAttribute("aria-label", "Archív. Your collection lives here.");
     const artwork = document.createElementNS(namespace, "image");
     artwork.setAttribute("href", `${import.meta.env.BASE_URL}logo4?v=archiv-logo-1`);
     artwork.setAttribute("x", "0");
@@ -55,7 +55,7 @@ function enhanceLogoHome(container: HTMLElement, goHome: () => void): void {
   logo.dataset.shelfieHome = "true";
   logo.setAttribute("role", "link");
   logo.setAttribute("tabindex", "0");
-  logo.setAttribute("aria-label", "Archiv home");
+  logo.setAttribute("aria-label", "Archív home");
   logo.addEventListener("click", goHome);
   logo.addEventListener("keydown", (event) => {
     if (event.key === "Enter" || event.key === " ") {

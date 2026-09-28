@@ -223,7 +223,7 @@ export class CollectorApp {
   private renderHeader(showTabs: boolean): HTMLElement {
     return el("header", { class: "cs-header" }, [
       el("div", { class: "cs-header__row" }, [
-        el("h2", { class: "cs-title", text: "Archiv" }),
+        el("h2", { class: "cs-title", text: "Archív" }),
         showTabs ? this.renderTabs() : null,
       ]),
     ]);
