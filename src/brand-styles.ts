@@ -72,6 +72,7 @@ export const brandStyles = `
 .cs-shelf__info{display:flex;flex-direction:column;gap:2px;padding:11px 13px 13px}
 .cs-shelf__info strong{font-size:14px;line-height:1.25}
 .cs-shelf__info span{color:#716960;font-size:12px}
+.cs-shelf-context{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#08243b;font-size:14px;font-weight:700;padding:4px 3px}.cs-shelf-context button{appearance:none;border:0;background:transparent;color:#294b63;text-decoration:underline;text-underline-offset:3px;font:inherit;cursor:pointer;padding:7px}.cs-shelf-context button:focus-visible{outline:2px solid #08243b;border-radius:4px}
 .cs-category-page{gap:18px}.cs-category-page>.cs-button--ghost{align-self:flex-start}
 .cs-category-page__hero{display:grid;grid-template-columns:minmax(180px,36%) 1fr;align-items:center;gap:28px;overflow:hidden;min-height:220px;border:1px solid #ded4c8;border-radius:18px;background:#fffdf8}
 .cs-category-page__hero img{width:100%;height:220px;object-fit:cover}.cs-category-page__heading{padding:20px 24px 20px 0}.cs-category-page__heading .cs-collection__lead{margin-top:12px}

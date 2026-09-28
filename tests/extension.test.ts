@@ -363,7 +363,7 @@ describe("page mount", () => {
     await vi.waitFor(() => expect(container.textContent).toContain("Save to collection"));
 
     container.querySelector<HTMLButtonElement>(".cs-button--block")!.click();
-    await double.open("collection", { container, path: "collection" });
+    await double.open("collection", { container, path: "collection/category/book" });
 
     await vi.waitFor(() => expect(container.textContent).toContain("My collection"));
     expect(container.textContent).toContain("Watchmen");
@@ -401,7 +401,8 @@ describe("page mount", () => {
     const containerB = mountContainer();
     await second.open("collection", { container: containerB, path: "collection" });
 
-    expect(containerB.textContent).toContain("Nothing tracked yet");
+    expect(containerB.querySelector(".cs-shelf-grid")).not.toBeNull();
+    expect(containerB.textContent).not.toContain("Nothing tracked yet");
     expect(Object.keys(localStorage).sort()).toEqual([stored("backend-a")]);
   });
 
@@ -675,12 +676,44 @@ describe("page mount", () => {
     expect(container.querySelector(".cs-shelf-grid")).toBeNull();
     expect(container.querySelector('[role="tab"][aria-selected="true"]')?.textContent).toBe("My collection");
     expect(container.querySelector("#cs-search-input")).toBeNull();
+    expect(container.textContent).toContain("Groups");
     container.querySelector<HTMLButtonElement>(".cs-category-page > .cs-button--ghost")!.click();
     expect(double.navigate).toHaveBeenLastCalledWith("/extensions/collector-scan/collection/collection");
     leaveCategory();
     await double.open("collection", { container, path: "collection" });
     expect(container.querySelector(".cs-shelf-grid")).not.toBeNull();
-    expect(container.textContent).toContain("Nothing tracked yet");
+    expect(container.textContent).not.toContain("Nothing tracked yet");
+    expect(container.querySelector(".cs-section__title")).toBeNull();
+  });
+
+  it("carries the shelf type into Find an item without another type picker", async () => {
+    const double = createHostDouble();
+    activate(double.host);
+    const container = mountContainer();
+    const leaveCategory = await double.open("collection", { container, path: "collection/category/figure" });
+    activeRoot(container).querySelector<HTMLButtonElement>(".cs-category-page > .cs-button--block")!.click();
+    expect(double.navigate).toHaveBeenLastCalledWith("/extensions/collector-scan/collection");
+    leaveCategory();
+    await double.open("collection", { container, path: "" });
+    await vi.waitFor(() => expect(activeRoot(container).textContent).toContain("Adding to Figures"));
+    expect(activeRoot(container).textContent).not.toContain("Choose a type");
+    expect(activeRoot(container).textContent).toContain("Choose a figure type");
+  });
+
+  it("keeps the header tabs on the shelf overview and category pages", async () => {
+    const double = createHostDouble();
+    activate(double.host);
+    const container = mountContainer();
+    const leaveCollection = await double.open("collection", { container, path: "collection" });
+    expect(activeRoot(container).querySelectorAll(".cs-header__row [role='tab']")).toHaveLength(2);
+    leaveCollection();
+    await double.open("collection", { container, path: "collection/category/figure" });
+    const root = activeRoot(container);
+    expect(root.querySelectorAll(".cs-header__row [role='tab']")).toHaveLength(2);
+    expect(root.querySelector(".cs-header__row [aria-selected='true']")?.textContent).toBe("My collection");
+    [...root.querySelectorAll<HTMLButtonElement>(".cs-header__row [role='tab']")]
+      .find((button) => button.textContent === "Add an item")!.click();
+    expect(double.navigate).toHaveBeenLastCalledWith("/extensions/collector-scan/collection");
   });
 
   it("totals purchase price when no estimated value is recorded", async () => {
@@ -699,7 +732,7 @@ describe("page mount", () => {
     const price = container.querySelector<HTMLInputElement>("#cs-add-price")!;
     price.value = "24.50";
     container.querySelector<HTMLButtonElement>(".cs-button--block")!.click();
-    await double.open("collection", { container, path: "collection" });
+    await double.open("collection", { container, path: "collection/category/book" });
 
     // "1 item · $0.00 est." would read as worthless; the paid total is the honest number.
     await vi.waitFor(() => expect(container.textContent).toContain("1 item"));
@@ -725,8 +758,9 @@ async function saveFirstMatch(
   });
   await vi.waitFor(() => expect(container.textContent).toContain("Save to collection"));
   configure?.(activeRoot(container));
+  const category = activeRoot(container).querySelector<HTMLSelectElement>("#cs-add-category")!.value;
   activeRoot(container).querySelector<HTMLButtonElement>(".cs-button--block")!.click();
-  await double.open("collection", { container, path: "collection" });
+  await double.open("collection", { container, path: `collection/category/${category}` });
   await vi.waitFor(() => expect(container.textContent).toContain("My collection"));
 }
 
@@ -802,9 +836,7 @@ describe("collection types", () => {
 
     const saved = JSON.parse(localStorage.getItem("openhands:apps:collector-scan:local-test:collection:v1")!);
     expect(saved.items[0].category).toBe("video-game");
-    const filter = activeRoot(container).querySelector<HTMLSelectElement>("#cs-collection-category")!;
-    filter.value = "video-game";
-    filter.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(activeRoot(container).querySelector(".cs-category-page__heading h1")?.textContent).toBe("Video games");
     expect(activeRoot(container).textContent).toContain("Watchmen");
 
     await double.open("collection", { container, path: `item/${saved.items[0].id}` });
@@ -862,13 +894,13 @@ describe("collection groups", () => {
     expect(activeRoot(container).textContent).toContain("2 entries");
   });
 
-  it("creates a group from the collection view before any item exists", async () => {
+  it("creates a group from a type page before any item exists", async () => {
     const double = createHostDouble();
     activate(double.host);
     const container = mountContainer();
-    await double.open("collection", { container, path: "collection" });
+    await double.open("collection", { container, path: "collection/category/book" });
 
-    expect(activeRoot(container).textContent).toContain("Nothing tracked yet");
+    expect(activeRoot(container).textContent).toContain("No books yet");
 
     clickChip(activeRoot(container), "+ New group");
     const root = activeRoot(container);
@@ -881,14 +913,14 @@ describe("collection groups", () => {
     const after = activeRoot(container);
     expect(after.textContent).toContain("Sonic the Hedgehog Comics from Archie");
     // Still empty, but the group now exists.
-    expect(after.textContent).toContain("Nothing tracked yet");
+    expect(after.textContent).toContain("No books yet");
   });
 
   it("lets an empty group be managed and deleted", async () => {
     const double = createHostDouble();
     activate(double.host);
     const container = mountContainer();
-    await double.open("collection", { container, path: "collection" });
+    await double.open("collection", { container, path: "collection/category/book" });
 
     clickChip(activeRoot(container), "+ New group");
     let root = activeRoot(container);
@@ -916,10 +948,10 @@ describe("collection groups", () => {
     [...root.querySelectorAll<HTMLButtonElement>(".cs-button--danger")]
       .find((button) => button.textContent?.includes("Delete group"))!
       .click();
-    await double.open("collection", { container, path: "collection" });
+    await double.open("collection", { container, path: "collection/category/book" });
 
     root = activeRoot(container);
-    expect(root.textContent).toContain("Nothing tracked yet");
+    expect(root.textContent).toContain("No books yet");
     expect(root.textContent).not.toContain("Sonic the Hedgehog Comics from Archie (");
   });
 
@@ -962,7 +994,7 @@ describe("collection groups", () => {
     [...activeRoot(container).querySelectorAll<HTMLButtonElement>(".cs-button--danger")]
       .find((button) => button.textContent?.includes("Delete group"))!
       .click();
-    await double.open("collection", { container, path: "collection" });
+    await double.open("collection", { container, path: "collection/category/book" });
 
     // The item survives; only its membership is cleared. The toast names the
     // deleted group, so check the chips and card rather than the whole view.
@@ -992,7 +1024,7 @@ describe("collection groups", () => {
     const double = createHostDouble();
     activate(double.host);
     const container = mountContainer();
-    await double.open("collection", { container, path: "collection" });
+    await double.open("collection", { container, path: "collection/category/comic" });
 
     // The pre-existing item still loads, and is treated as ungrouped.
     const root = activeRoot(container);
@@ -1014,7 +1046,7 @@ describe("collection groups", () => {
     const double = createHostDouble();
     activate(double.host);
     const container = mountContainer();
-    await double.open("collection", { container, path: "collection" });
+    await double.open("collection", { container, path: "collection/category/comic" });
 
     // The item is still listed rather than hidden behind a missing group.
     const root = activeRoot(container);
@@ -1025,9 +1057,9 @@ describe("collection groups", () => {
 });
 
 describe("group item picker", () => {
-  /** Creates a group from the collection view's inline form. */
+  /** Creates a group from the Books page's inline form. */
   async function createGroupFromCollection(container: HTMLElement, name: string): Promise<void> {
-    await double0.open("collection", { container, path: "collection" });
+    await double0.open("collection", { container, path: "collection/category/book" });
     clickChip(activeRoot(container), "+ New group");
     const root = activeRoot(container);
     root.querySelector<HTMLInputElement>("#cs-new-group-name")!.value = name;
@@ -1068,7 +1100,7 @@ describe("group item picker", () => {
     // An empty collection has no candidates, so an empty picker would be a dead end.
     const routed = double0.navigate.mock.calls.map((call) => String(call[0]));
     expect(routed.some((path) => path.endsWith("/items"))).toBe(false);
-    expect(activeRoot(container).textContent).toContain("Nothing tracked yet");
+    expect(activeRoot(container).textContent).toContain("No books yet");
   });
 
   it("adds and removes an item by toggling it in the picker", async () => {

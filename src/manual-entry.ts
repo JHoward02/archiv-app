@@ -93,6 +93,8 @@ function openManual(): void {
     <button class="cs-button cs-button--block" type="submit">Save to my collection</button>
     <button class="cs-button cs-button--block" type="button" data-catalog>Submit to Archiv catalog on GitHub</button>
     <p style="margin:0;color:#6f6a62;font-size:13px">Only the name, type, line, year, maker, and identifier are prefilled on GitHub. Review the public proposal there before submitting. Attach a photo there if you want to share one.</p>`;
+  const pageCategory = location.hash.match(/^#\/collection\/category\/(comic|tcg|sports-card|book|video-game|figure|toy|coin|vinyl|sneaker|other)$/)?.[1];
+  if (pageCategory) panel.querySelector<HTMLSelectElement>('select[name="category"]')!.value = pageCategory;
   (panel.elements.namedItem("category") as HTMLSelectElement).value = selectedCategory();
   panel.querySelector("[data-close]")?.addEventListener("click", () => overlay.remove());
   panel.querySelector("[data-catalog]")?.addEventListener("click", () => {
@@ -126,7 +128,7 @@ function openManual(): void {
       notes: String(fd.get("notes") || "").trim(), favorite: false, groupId: null,
     });
     overlay.remove();
-    location.hash = "#/collection";
+    location.hash = `#/collection/category/${category}`;
     location.reload();
   });
   overlay.append(panel);

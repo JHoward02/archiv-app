@@ -3,7 +3,7 @@ import type { CanvasExtensionHost } from "./host.ts";
 import { confidenceLabel, type ScoredCandidate } from "./match.ts";
 import { searchAll } from "./providers/index.ts";
 import { parseQuery } from "./query.ts";
-import { manualOnlySelection } from "./search-selection.ts";
+import { manualOnlySelection, selectSearchCategory } from "./search-selection.ts";
 import type { AppSession, SortKey, Tab } from "./session.ts";
 import { CollectionStore, itemFromCandidate, makeId } from "./store.ts";
 import { formatDate, normalizeText, tokenize } from "./text.ts";
@@ -615,7 +615,7 @@ export class CollectorApp {
             this.persist();
             this.session.activeTab = "collection";
             this.session.flash = `Added “${item.title}” to your collection.`;
-            this.go("collection");
+            this.go(`collection/category/${item.category}`);
             this.render();
             this.armFlash();
           },
@@ -914,6 +914,7 @@ export class CollectorApp {
   private groupCounts(): Map<string, number> {
     const counts = new Map<string, number>();
     for (const item of this.items) {
+      if (this.resolveView().view === "category" && item.category !== this.session.collectionFilter) continue;
       if (!item.groupId) continue;
       counts.set(item.groupId, (counts.get(item.groupId) ?? 0) + 1);
     }
@@ -923,7 +924,7 @@ export class CollectorApp {
   private renderGroupChips(): HTMLElement {
     const row = el("div", { class: "cs-chips cs-chips--scroll" });
     const counts = this.groupCounts();
-    const ungrouped = this.items.filter((item) => !item.groupId).length;
+    const ungrouped = this.items.filter((item) => !item.groupId && (this.resolveView().view !== "category" || item.category === this.session.collectionFilter)).length;
 
     const chip = (label: string, value: string, count: number | null): HTMLElement =>
       el("button", {
@@ -1115,119 +1116,11 @@ export class CollectorApp {
       this.renderCategoryShelves(),
     );
 
-    if (this.items.length === 0) {
-      const selected = this.session.collectionFilter;
-      wrap.append(
-        this.stateBlock(
-          selected === "all" ? "Nothing tracked yet" : `No ${CATEGORY_FILTER_LABELS[selected].toLowerCase()} yet`,
-          selected === "all" ? "Search for your first collectible or add it manually. Your collection stays on this device." : `Items you add to ${CATEGORY_FILTER_LABELS[selected]} will show up here.`,
-        ),
-        el("button", {
-          class: "cs-button cs-button--block",
-          text: "Find an item",
-          attrs: { type: "button" },
-          on: {
-            click: () => {
-              this.session.activeTab = "search";
-              this.go("");
-              this.render();
-            },
-          },
-        }),
-      );
-      wrap.append(el("button", { class: "cs-button cs-button--ghost cs-button--block", text: "Add it manually", attrs: { type: "button" }, on: { click: () => document.dispatchEvent(new Event("shelfie:manual-entry")) } }));
-      // Groups can be set up before the first item arrives, so the empty state
-      // still offers the chip row and create form.
-      wrap.append(
-        el("div", { class: "cs-section" }, [
-          el("h3", { class: "cs-section__title", text: "Groups" }),
-          this.renderGroupChips(),
-          this.renderActiveGroupActions(),
-        ]),
-      );
-      append(wrap, this.renderGroupCreateForm());
-      return wrap;
-    }
-
-    const search = el("input", {
-      class: "cs-input",
-      attrs: {
-        id: "cs-collection-search",
-        type: "search",
-        value: this.session.collectionQuery,
-        placeholder: "Filter my collection",
-        autocomplete: "off",
-        autocapitalize: "off",
-        spellcheck: "false",
-      },
-    });
-    search.addEventListener("input", () => {
-      this.session.collectionQuery = search.value;
-      if (this.listHost) this.fillCollection(this.listHost);
-    });
-
-    const categorySelect = el("select", { class: "cs-select", attrs: { id: "cs-collection-category" } }, [
-      el("option", { text: "Any type", attrs: { value: "all", selected: this.session.collectionFilter === "all" } }),
-      ...CATEGORIES.map((category) =>
-        el("option", {
-          text: CATEGORY_LABELS[category],
-          attrs: { value: category, selected: this.session.collectionFilter === category },
-        }),
-      ),
-    ]);
-    categorySelect.addEventListener("change", () => {
-      this.session.collectionFilter = categorySelect.value as CategoryFilter;
-      if (this.listHost) this.fillCollection(this.listHost);
-    });
-
-    const sortSelect = el("select", { class: "cs-select", attrs: { id: "cs-collection-sort" } }, [
-      ...(Object.keys(SORT_LABELS) as SortKey[]).map((key) =>
-        el("option", { text: SORT_LABELS[key], attrs: { value: key, selected: this.session.collectionSort === key } }),
-      ),
-    ]);
-    sortSelect.addEventListener("change", () => {
-      this.session.collectionSort = sortSelect.value as SortKey;
-      if (this.listHost) this.fillCollection(this.listHost);
-    });
-
-    wrap.append(
-      el("div", { class: "cs-toolbar" }, [
-        this.field("Search", search),
-        this.field("Type", categorySelect),
-        this.field("Sort", sortSelect),
-        el("button", {
-          class: "cs-chip",
-          text: "★ Favourites",
-          attrs: { type: "button", "aria-pressed": String(this.session.favoritesOnly) },
-          on: {
-            click: () => {
-              this.session.favoritesOnly = !this.session.favoritesOnly;
-              this.render();
-            },
-          },
-        }),
-      ]),
-    );
-
-    wrap.append(
-      el("div", { class: "cs-section" }, [
-        el("h3", { class: "cs-section__title", text: "Groups" }),
-        this.renderGroupChips(),
-        this.renderActiveGroupActions(),
-      ]),
-    );
-    append(wrap, this.renderGroupCreateForm());
-
-    const host = el("div", { attrs: { id: "cs-list" } });
-    this.listHost = host;
-    this.fillCollection(host);
-    wrap.append(host);
     return wrap;
   }
 
   private renderCategoryView(category: Category): HTMLElement {
     this.session.collectionFilter = category;
-    this.session.collectionGroupFilter = "all";
     const label = CATEGORY_FILTER_LABELS[category];
     const entries = this.items.filter((item) => item.category === category);
     const count = entries.reduce((sum, item) => sum + item.quantity, 0);
@@ -1247,35 +1140,44 @@ export class CollectorApp {
     if (!entries.length) {
       wrap.append(
         this.stateBlock(`No ${label.toLowerCase()} yet`, `Items you add to ${label} will show up here.`),
-        el("button", { class: "cs-button cs-button--block", text: "Find an item", attrs: { type: "button" }, on: { click: () => {
-          this.session.activeTab = "search";
-          this.go("");
-        } } }),
-        el("button", { class: "cs-button cs-button--ghost cs-button--block", text: "Add it manually", attrs: { type: "button" }, on: { click: () => document.dispatchEvent(new Event("shelfie:manual-entry")) } }),
       );
-      return wrap;
+    } else {
+      const search = el("input", { class: "cs-input", attrs: { id: "cs-collection-search", type: "search", value: this.session.collectionQuery, placeholder: `Filter ${label.toLowerCase()}`, autocomplete: "off" } });
+      search.addEventListener("input", () => {
+        this.session.collectionQuery = search.value;
+        if (this.listHost) this.fillCollection(this.listHost);
+      });
+      const sortSelect = el("select", { class: "cs-select", attrs: { id: "cs-collection-sort" } },
+        (Object.keys(SORT_LABELS) as SortKey[]).map((key) => el("option", { text: SORT_LABELS[key], attrs: { value: key, selected: this.session.collectionSort === key } })),
+      );
+      sortSelect.addEventListener("change", () => {
+        this.session.collectionSort = sortSelect.value as SortKey;
+        if (this.listHost) this.fillCollection(this.listHost);
+      });
+      wrap.append(el("div", { class: "cs-toolbar" }, [
+        this.field("Search", search),
+        this.field("Sort", sortSelect),
+        el("button", { class: "cs-chip", text: "★ Favourites", attrs: { type: "button", "aria-pressed": String(this.session.favoritesOnly) }, on: { click: () => {
+          this.session.favoritesOnly = !this.session.favoritesOnly;
+          this.render();
+        } } }),
+      ]));
     }
-
-    const search = el("input", { class: "cs-input", attrs: { id: "cs-collection-search", type: "search", value: this.session.collectionQuery, placeholder: `Filter ${label.toLowerCase()}`, autocomplete: "off" } });
-    search.addEventListener("input", () => {
-      this.session.collectionQuery = search.value;
-      if (this.listHost) this.fillCollection(this.listHost);
-    });
-    const sortSelect = el("select", { class: "cs-select", attrs: { id: "cs-collection-sort" } },
-      (Object.keys(SORT_LABELS) as SortKey[]).map((key) => el("option", { text: SORT_LABELS[key], attrs: { value: key, selected: this.session.collectionSort === key } })),
-    );
-    sortSelect.addEventListener("change", () => {
-      this.session.collectionSort = sortSelect.value as SortKey;
-      if (this.listHost) this.fillCollection(this.listHost);
-    });
-    wrap.append(el("div", { class: "cs-toolbar" }, [
-      this.field("Search", search),
-      this.field("Sort", sortSelect),
-      el("button", { class: "cs-chip", text: "★ Favourites", attrs: { type: "button", "aria-pressed": String(this.session.favoritesOnly) }, on: { click: () => {
-        this.session.favoritesOnly = !this.session.favoritesOnly;
-        this.render();
+    wrap.append(
+      el("button", { class: "cs-button cs-button--block", text: "Find an item", attrs: { type: "button" }, on: { click: () => {
+        selectSearchCategory(category);
+        this.session.activeTab = "search";
+        this.go("");
       } } }),
+      el("button", { class: "cs-button cs-button--ghost cs-button--block", text: "Add it manually", attrs: { type: "button" }, on: { click: () => document.dispatchEvent(new Event("shelfie:manual-entry")) } }),
+    );
+    wrap.append(el("div", { class: "cs-section" }, [
+      el("h3", { class: "cs-section__title", text: "Groups" }),
+      this.renderGroupChips(),
+      this.renderActiveGroupActions(),
     ]));
+    append(wrap, this.renderGroupCreateForm());
+    if (!entries.length) return wrap;
     const host = el("div", { attrs: { id: "cs-list" } });
     this.listHost = host;
     this.fillCollection(host);
@@ -1296,6 +1198,7 @@ export class CollectorApp {
         on: { click: () => {
           this.session.collectionQuery = "";
           this.session.favoritesOnly = false;
+          this.session.collectionGroupFilter = "all";
           this.go(`collection/category/${category}`);
         } },
       }, [
