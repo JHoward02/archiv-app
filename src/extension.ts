@@ -22,19 +22,33 @@ function enhanceLogoHome(container: HTMLElement, goHome: () => void): void {
   const logo = container.querySelector<HTMLElement>(".cs-title");
   if (!logo) return;
 
-  // Render the brand art as a real image inside the existing title element.
-  // The click target is the title wrapper; the image itself never intercepts
-  // pointer events, so navigation styling cannot cover or clip the artwork.
-  let image = logo.querySelector<HTMLImageElement>(".cs-title__logo");
-  if (!image) {
+  // Keep the original logo artwork and the tagline in one scalable lockup.
+  // The title remains the single click target for the entire logo.
+  if (!logo.querySelector(".cs-title__logo")) {
     logo.replaceChildren();
-    image = document.createElement("img");
-    image.className = "cs-title__logo";
-    image.src = `${import.meta.env.BASE_URL}logo4?v=archiv-logo-1`;
-    image.alt = "Archiv";
-    image.decoding = "async";
-    image.draggable = false;
-    logo.append(image);
+    const namespace = "http://www.w3.org/2000/svg";
+    const lockup = document.createElementNS(namespace, "svg");
+    lockup.setAttribute("class", "cs-title__logo");
+    lockup.setAttribute("viewBox", "0 0 2172 780");
+    lockup.setAttribute("role", "img");
+    lockup.setAttribute("aria-label", "Archiv. Your collection lives here.");
+    const artwork = document.createElementNS(namespace, "image");
+    artwork.setAttribute("href", `${import.meta.env.BASE_URL}logo4?v=archiv-logo-1`);
+    artwork.setAttribute("x", "0");
+    artwork.setAttribute("y", "0");
+    artwork.setAttribute("width", "2172");
+    artwork.setAttribute("height", "724");
+    const tagline = document.createElementNS(namespace, "text");
+    tagline.setAttribute("x", "120");
+    tagline.setAttribute("y", "750");
+    tagline.setAttribute("fill", "#a26226");
+    tagline.setAttribute("font-family", "Arial,Helvetica,sans-serif");
+    tagline.setAttribute("font-size", "82");
+    tagline.setAttribute("font-weight", "700");
+    tagline.setAttribute("letter-spacing", "26");
+    tagline.textContent = "YOUR COLLECTION LIVES HERE";
+    lockup.append(artwork, tagline);
+    logo.append(lockup);
   }
 
   if (logo.dataset.shelfieHome === "true") return;

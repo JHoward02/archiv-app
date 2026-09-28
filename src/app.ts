@@ -226,10 +226,6 @@ export class CollectorApp {
         el("h2", { class: "cs-title", text: "Archiv" }),
         showTabs ? this.renderTabs() : null,
       ]),
-      el("p", {
-        class: "cs-subtitle",
-        text: "Your collection lives here.",
-      }),
     ]);
   }
 
@@ -1107,10 +1103,7 @@ export class CollectorApp {
     const wrap = el("div", { class: "cs-collection" });
     wrap.append(
       el("div", { class: "cs-collection__intro" }, [
-        el("div", {}, [
-          el("p", { class: "cs-eyebrow", text: "YOUR COLLECTION LIVES HERE" }),
-          el("h1", { class: "cs-collection__title", text: "Keep the good stuff close." }),
-        ]),
+        el("h1", { class: "cs-collection__title", text: "Keep the good stuff close." }),
         el("p", { class: "cs-collection__lead", text: "The books, cards, figures, and finds you’d never part with, all in one place." }),
       ]),
       this.renderCategoryShelves(),
