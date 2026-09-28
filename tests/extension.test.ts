@@ -641,6 +641,7 @@ describe("page mount", () => {
     expect(container.querySelector<HTMLImageElement>('.cs-shelf--video-game img')?.getAttribute('src')).toBe('./shelves/video-games.jpg');
     expect(container.querySelector<HTMLImageElement>('.cs-shelf--toy img')?.getAttribute('src')).toBe('./shelves/toys.jpg');
     expect(container.querySelector<HTMLImageElement>('.cs-shelf--sneaker img')?.getAttribute('src')).toBe('./shelves/sneakers.jpg');
+    expect(container.querySelector<HTMLImageElement>('.cs-shelf--other img')?.getAttribute('src')).toBe('./shelves/other.jpg');
     expect(container.querySelector('button[aria-label="Add photo for Books"]')).toBeNull();
     container.querySelector<HTMLButtonElement>('.cs-shelf--book')!.click();
     expect(container.querySelector<HTMLSelectElement>("#cs-collection-category")?.value).toBe("book");
