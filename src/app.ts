@@ -34,6 +34,9 @@ const NEW_GROUP = "__new_group__";
 const STATIC_SHELF_IMAGES: Partial<Record<Category, string>> = {
   book: "./shelves/books.jpg",
   comic: "./shelves/comics.jpg",
+  tcg: "./shelves/tcg.jpeg",
+  figure: "./shelves/figures.jpg",
+  "sports-card": "./shelves/sports-cards.jpg",
 };
 
 const SUGGESTIONS = ["Amazing Spider-Man #300", "1952 Topps Mickey Mantle", "Watchmen", "Action Comics #1"];
