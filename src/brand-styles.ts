@@ -54,7 +54,12 @@ export const brandStyles = `
 .cs-shelves__heading h2{font:500 24px/1.1 Georgia,"Times New Roman",serif;letter-spacing:-.025em;margin:0}
 .cs-shelves__heading p{color:#736c64;font-size:13px;margin:0}
 .cs-shelf-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
-.cs-shelf{appearance:none;padding:0;text-align:left;border:1px solid #ded4c8;border-radius:16px;overflow:hidden;background:#fffdf8;color:#08243b;cursor:pointer;box-shadow:0 10px 25px -20px #4a3422;min-width:0;transition:transform .2s,box-shadow .2s,border-color .2s}
+.cs-shelf-frame{position:relative;min-width:0}
+.cs-shelf{appearance:none;display:block;width:100%;padding:0;text-align:left;border:1px solid #ded4c8;border-radius:16px;overflow:hidden;background:#fffdf8;color:#08243b;cursor:pointer;box-shadow:0 10px 25px -20px #4a3422;min-width:0;transition:transform .2s,box-shadow .2s,border-color .2s}
+.cs-shelf__input{display:none}
+.cs-shelf__edit,.cs-shelf__remove{position:absolute;z-index:2;top:9px;right:9px;appearance:none;border:1px solid rgba(255,255,255,.6);border-radius:100px;background:rgba(7,24,35,.86);color:#fff;padding:6px 10px;font:600 11px/1.2 system-ui,sans-serif;cursor:pointer;box-shadow:0 2px 9px #0005}
+.cs-shelf__remove{top:44px;background:rgba(255,250,242,.95);color:#08243b;border-color:#08243b}
+.cs-shelf__edit:hover,.cs-shelf__edit:focus-visible,.cs-shelf__remove:hover,.cs-shelf__remove:focus-visible{outline:2px solid #f9af4b;outline-offset:2px}
 .cs-shelf:hover{transform:translateY(-3px);box-shadow:0 15px 29px -20px #4a3422}
 .cs-shelf--selected{border-color:#08243b;box-shadow:0 0 0 2px #08243b}
 .cs-shelf__picture{height:150px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;background:linear-gradient(145deg,#172c32,#3f4938 54%,#7c5835)}

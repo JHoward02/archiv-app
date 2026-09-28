@@ -28,6 +28,7 @@ type ViewName = "search" | "collection" | "candidate" | "item" | "group" | "grou
 const UNGROUPED = "ungrouped";
 /** Sentinel option value meaning "create a group from the adjacent name field". */
 const NEW_GROUP = "__new_group__";
+const CATEGORY_COVERS_KEY = "archiv:category-covers:v1";
 
 const SUGGESTIONS = ["Amazing Spider-Man #300", "1952 Topps Mickey Mantle", "Watchmen", "Action Comics #1"];
 
@@ -42,6 +43,7 @@ export class CollectorApp {
   private readonly store: CollectionStore;
   private items: CollectionItem[] = [];
   private groups: CollectionGroup[] = [];
+  private categoryCovers: Partial<Record<Category, string>> = {};
   private root: HTMLElement | null = null;
   private listHost: HTMLElement | null = null;
   private searchAbort: AbortController | null = null;
@@ -58,6 +60,16 @@ export class CollectorApp {
     const snapshot = this.store.load();
     this.items = snapshot.items;
     this.groups = snapshot.groups;
+    try {
+      const saved = JSON.parse(localStorage.getItem(CATEGORY_COVERS_KEY) || "{}");
+      if (saved && typeof saved === "object" && !Array.isArray(saved)) {
+        for (const category of CATEGORIES) {
+          if (typeof saved[category] === "string" && /^data:image\/jpeg;base64,/.test(saved[category])) {
+            this.categoryCovers[category] = saved[category];
+          }
+        }
+      }
+    } catch { /* Storage can be disabled or contain invalid data. */ }
     if (snapshot.warning) this.session.warnings.push(snapshot.warning);
     if (!this.store.available) {
       this.session.warnings.push("Local storage is unavailable, so the collection will not persist.");
@@ -1218,9 +1230,19 @@ export class CollectorApp {
     for (const category of CATEGORIES) {
       const entries = this.items.filter((item) => item.category === category);
       const count = entries.reduce((sum, item) => sum + item.quantity, 0);
-      const cover = entries.map((item) => safeUrl(item.imageUrl) ||
+      const cover = this.categoryCovers[category] || entries.map((item) => safeUrl(item.imageUrl) ||
         (item.imageUrl?.startsWith("data:image/jpeg;base64,") ? item.imageUrl : null)).find(Boolean);
       const label = CATEGORY_FILTER_LABELS[category];
+      const upload = el("input", {
+        class: "cs-shelf__input",
+        attrs: { type: "file", accept: "image/*", "aria-label": `Choose a photo for ${label}` },
+        on: { change: (event) => {
+          const input = event.currentTarget as HTMLInputElement;
+          const file = input.files?.[0];
+          if (file) void this.saveCategoryCover(category, file);
+          input.value = "";
+        } },
+      });
       const card = el("button", {
         class: `cs-shelf cs-shelf--${category}${this.session.collectionFilter === category ? " cs-shelf--selected" : ""}`,
         attrs: { type: "button", "aria-label": `${label}, ${count} ${count === 1 ? "item" : "items"}`, "aria-pressed": String(this.session.collectionFilter === category) },
@@ -1246,15 +1268,71 @@ export class CollectorApp {
           el("span", { text: `${count} ${count === 1 ? "item" : "items"}` }),
         ]),
       ]);
-      grid.append(card);
+      grid.append(el("div", { class: "cs-shelf-frame" }, [
+        card,
+        el("button", {
+          class: "cs-shelf__edit",
+          text: this.categoryCovers[category] ? "Change photo" : "Add photo",
+          attrs: { type: "button", "aria-label": `${this.categoryCovers[category] ? "Change" : "Add"} photo for ${label}` },
+          on: { click: () => upload.click() },
+        }),
+        this.categoryCovers[category] ? el("button", {
+          class: "cs-shelf__remove",
+          text: "Remove photo",
+          attrs: { type: "button", "aria-label": `Remove photo for ${label}` },
+          on: { click: () => {
+            const next = { ...this.categoryCovers };
+            delete next[category];
+            try {
+              localStorage.setItem(CATEGORY_COVERS_KEY, JSON.stringify(next));
+              this.categoryCovers = next;
+              this.render();
+            } catch { this.showCoverMessage("Could not remove the photo. Check browser storage settings."); }
+          } },
+        }) : null,
+        upload,
+      ]));
     }
     return el("section", { class: "cs-shelves" }, [
       el("div", { class: "cs-shelves__heading" }, [
         el("h2", { text: "Explore your shelves" }),
-        el("p", { text: this.items.length ? "Select a shelf to see its items" : "Pick a shelf to find something to add" }),
+        el("p", { text: "Choose a shelf or add your own photo. Photos stay on this device." }),
       ]),
       grid,
     ]);
+  }
+
+  private showCoverMessage(message: string): void {
+    this.session.flash = message;
+    this.render();
+    this.armFlash();
+  }
+
+  private async saveCategoryCover(category: Category, file: File): Promise<void> {
+    if (!file.type.startsWith("image/")) {
+      this.showCoverMessage("Choose an image file for your shelf.");
+      return;
+    }
+    try {
+      const bitmap = await createImageBitmap(file);
+      try {
+        const canvas = document.createElement("canvas");
+        const scale = Math.min(1, 960 / bitmap.width, 640 / bitmap.height);
+        canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+        canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+        const context = canvas.getContext("2d");
+        if (!context) throw new Error("Canvas unavailable");
+        context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        const next = { ...this.categoryCovers, [category]: canvas.toDataURL("image/jpeg", 0.78) };
+        localStorage.setItem(CATEGORY_COVERS_KEY, JSON.stringify(next));
+        this.categoryCovers = next;
+        this.showCoverMessage(`${CATEGORY_FILTER_LABELS[category]} photo saved.`);
+      } finally {
+        bitmap.close();
+      }
+    } catch {
+      this.showCoverMessage("Could not save that photo. Try a smaller JPEG or PNG image.");
+    }
   }
 
   private fillCollection(host: HTMLElement): void {
