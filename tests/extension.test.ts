@@ -3,7 +3,7 @@ import { activate } from "../src/extension.ts";
 import { confidenceLabel } from "../src/match.ts";
 import { thumbnail } from "../src/dom.ts";
 import { parseQuery } from "../src/query.ts";
-import { clearSearchSelection } from "../src/search-selection.ts";
+import { clearSearchSelection, getSearchSelection } from "../src/search-selection.ts";
 import { wikipediaProvider } from "../src/providers/wikipedia.ts";
 import { styles } from "../src/styles.ts";
 import { createHostDouble, jsonResponse } from "./host-double.ts";
@@ -660,6 +660,20 @@ describe("page mount", () => {
     )!;
     favourites.click();
     expect(container.textContent).toContain("No items match");
+  });
+
+  it("carries the shelf type into Add an item when the collection is empty", async () => {
+    const double = createHostDouble();
+    activate(double.host);
+    const container = mountContainer();
+    const unmount = await double.open("collection", { container, path: "collection" });
+    container.querySelector<HTMLButtonElement>(".cs-shelf--book")!.click();
+    expect(getSearchSelection().category).toBe("book");
+    unmount();
+    await double.open("collection", { container, path: "search" });
+    await vi.waitFor(() => expect([...container.querySelectorAll<HTMLButtonElement>("button")].find((button) =>
+      button.textContent === "Books" && button.getAttribute("aria-pressed") === "true",
+    )).toBeDefined());
   });
 
   it("totals purchase price when no estimated value is recorded", async () => {

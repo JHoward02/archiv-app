@@ -3,7 +3,7 @@ import type { CanvasExtensionHost } from "./host.ts";
 import { confidenceLabel, type ScoredCandidate } from "./match.ts";
 import { searchAll } from "./providers/index.ts";
 import { parseQuery } from "./query.ts";
-import { manualOnlySelection } from "./search-selection.ts";
+import { manualOnlySelection, selectSearchCategory } from "./search-selection.ts";
 import type { AppSession, SortKey, Tab } from "./session.ts";
 import { CollectionStore, itemFromCandidate, makeId } from "./store.ts";
 import { formatDate, normalizeText, tokenize } from "./text.ts";
@@ -1241,6 +1241,7 @@ export class CollectorApp {
         attrs: { type: "button", "aria-label": `${label}, ${count} ${count === 1 ? "item" : "items"}`, "aria-pressed": String(this.session.collectionFilter === category) },
         on: { click: () => {
           if (!this.items.length) {
+            selectSearchCategory(category);
             this.session.categoryFilter = category;
             this.session.activeTab = "search";
             this.go("");
