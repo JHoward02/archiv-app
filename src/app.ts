@@ -1108,10 +1108,10 @@ export class CollectorApp {
     wrap.append(
       el("div", { class: "cs-collection__intro" }, [
         el("div", {}, [
-          el("p", { class: "cs-eyebrow", text: "THE THINGS YOU LOVE" }),
-          el("h1", { class: "cs-collection__title", text: "My collection" }),
+          el("p", { class: "cs-eyebrow", text: "YOUR COLLECTION LIVES HERE" }),
+          el("h1", { class: "cs-collection__title", text: "Keep the good stuff close." }),
         ]),
-        el("p", { class: "cs-collection__lead", text: this.items.length ? "Browse your shelves, revisit your finds, and keep every story together." : "Start with the things you love. Your shelves will fill up as you add them." }),
+        el("p", { class: "cs-collection__lead", text: "The books, cards, figures, and finds you’d never part with, all in one place." }),
       ]),
       this.renderCategoryShelves(),
     );
