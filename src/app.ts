@@ -31,7 +31,10 @@ const NEW_GROUP = "__new_group__";
 
 // Curated brand photos live in public/shelves/. Add a category path here when
 // its approved image is supplied; shelf art never comes from a user's items.
-const STATIC_SHELF_IMAGES: Partial<Record<Category, string>> = {};
+const STATIC_SHELF_IMAGES: Partial<Record<Category, string>> = {
+  book: "./shelves/books.jpg",
+  comic: "./shelves/comics.jpg",
+};
 
 const SUGGESTIONS = ["Amazing Spider-Man #300", "1952 Topps Mickey Mantle", "Watchmen", "Action Comics #1"];
 

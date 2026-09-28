@@ -631,7 +631,8 @@ describe("page mount", () => {
     await vi.waitFor(() => expect(container.textContent).toContain("Watchmen"));
 
     expect(container.querySelector<HTMLButtonElement>('.cs-shelf--book')?.getAttribute('aria-label')).toBe('Books, 1 item');
-    expect(container.querySelector('.cs-shelf--book img')).toBeNull();
+    expect(container.querySelector<HTMLImageElement>('.cs-shelf--book img')?.getAttribute('src')).toBe('./shelves/books.jpg');
+    expect(container.querySelector<HTMLImageElement>('.cs-shelf--comic img')?.getAttribute('src')).toBe('./shelves/comics.jpg');
     expect(container.querySelector('button[aria-label="Add photo for Books"]')).toBeNull();
     container.querySelector<HTMLButtonElement>('.cs-shelf--book')!.click();
     expect(container.querySelector<HTMLSelectElement>("#cs-collection-category")?.value).toBe("book");
