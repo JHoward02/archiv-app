@@ -148,11 +148,9 @@ export class CollectorApp {
     if (view === "collection") this.session.activeTab = "collection";
     if (view === "search") this.session.activeTab = "search";
 
-    clear(root);
-    root.append(this.renderHeader());
-
     const isDetail = view === "candidate" || view === "item" || view === "group" || view === "group-items";
-    if (!isDetail) root.append(this.renderTabs());
+    clear(root);
+    root.append(this.renderHeader(!isDetail));
 
     switch (view) {
       case "search":
@@ -215,10 +213,11 @@ export class CollectorApp {
     return { text: value == null ? "" : ` · ${money(value)}${suffix}`, count };
   }
 
-  private renderHeader(): HTMLElement {
+  private renderHeader(showTabs: boolean): HTMLElement {
     return el("header", { class: "cs-header" }, [
       el("div", { class: "cs-header__row" }, [
         el("h2", { class: "cs-title", text: "Archiv" }),
+        showTabs ? this.renderTabs() : null,
       ]),
       el("p", {
         class: "cs-subtitle",
