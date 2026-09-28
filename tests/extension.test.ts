@@ -691,6 +691,9 @@ describe("page mount", () => {
     await vi.waitFor(() => expect(container.textContent).toContain("Choose a figure type"));
     expect(container.textContent).not.toContain("Choose a type");
     expect(container.querySelector(".cs-shelf-context")?.textContent).toContain("Adding to Figures");
+    const search = container.querySelector(".cs-search__row")!;
+    const subtype = container.querySelector("[data-shelfie-figure-selection]")!;
+    expect(subtype.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("totals purchase price when no estimated value is recorded", async () => {

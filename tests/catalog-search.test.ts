@@ -12,6 +12,7 @@ it("shows an approved community item as a searchable Shelfie catalog result", as
   enhanceSearchSelection(root);
   [...root.querySelectorAll<HTMLButtonElement>("button")].find(b => b.textContent === "Figures")!.click();
   [...root.querySelectorAll<HTMLButtonElement>("button")].find(b => b.textContent === "McFarlane")!.click();
+  expect(root.querySelector("[data-shelfie-figure-selection]")!.compareDocumentPosition(root.querySelector("form")!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify([{
     id: "issue-42", title: "Batman McFarlane figure", category: "figure", year: 2024,
     line: "mcfarlane", maker: "McFarlane Toys", identifier: "12345", imageUrl: null,
