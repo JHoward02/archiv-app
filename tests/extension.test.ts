@@ -631,6 +631,8 @@ describe("page mount", () => {
     await vi.waitFor(() => expect(container.textContent).toContain("Watchmen"));
 
     expect(container.querySelector<HTMLButtonElement>('.cs-shelf--book')?.getAttribute('aria-label')).toBe('Books, 1 item');
+    expect(container.querySelector('.cs-shelf--book img')).toBeNull();
+    expect(container.querySelector('button[aria-label="Add photo for Books"]')).toBeNull();
     container.querySelector<HTMLButtonElement>('.cs-shelf--book')!.click();
     expect(container.querySelector<HTMLSelectElement>("#cs-collection-category")?.value).toBe("book");
 
@@ -648,33 +650,6 @@ describe("page mount", () => {
     )!;
     favourites.click();
     expect(container.textContent).toContain("No items match");
-  });
-
-  it("uploads, keeps, and removes a category photo", async () => {
-    const bitmap = { width: 1600, height: 1000, close: vi.fn() };
-    vi.stubGlobal("createImageBitmap", vi.fn().mockResolvedValue(bitmap));
-    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({ drawImage: vi.fn() } as unknown as CanvasRenderingContext2D);
-    vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockReturnValue("data:image/jpeg;base64,dGVzdA==");
-    const double = createHostDouble();
-    activate(double.host);
-    const container = mountContainer();
-    const unmount = await double.open("collection", { container, path: "collection" });
-
-    const input = container.querySelector<HTMLInputElement>('.cs-shelf--book + .cs-shelf__edit ~ .cs-shelf__input')!;
-    Object.defineProperty(input, "files", { configurable: true, value: [new File(["photo"], "cover.png", { type: "image/png" })] });
-    input.dispatchEvent(new Event("change", { bubbles: true }));
-    await vi.waitFor(() => expect(container.querySelector<HTMLImageElement>(".cs-shelf--book img")?.src).toBe("data:image/jpeg;base64,dGVzdA=="));
-    expect(JSON.parse(localStorage.getItem("archiv:category-covers:v1") || "{}").book).toBe("data:image/jpeg;base64,dGVzdA==");
-    expect(bitmap.close).toHaveBeenCalled();
-
-    unmount();
-    await double.open("collection", { container, path: "collection" });
-    expect(container.querySelector<HTMLImageElement>(".cs-shelf--book img")?.src).toBe("data:image/jpeg;base64,dGVzdA==");
-    container.querySelector<HTMLButtonElement>('.cs-shelf-frame:has(.cs-shelf--book) .cs-shelf__remove')!.click();
-    expect(JSON.parse(localStorage.getItem("archiv:category-covers:v1") || "{}").book).toBeUndefined();
-    expect(container.querySelector(".cs-shelf--book img")).toBeNull();
-    vi.unstubAllGlobals();
-    vi.restoreAllMocks();
   });
 
   it("totals purchase price when no estimated value is recorded", async () => {
