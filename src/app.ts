@@ -250,7 +250,7 @@ export class CollectorApp {
       });
 
     return el("div", { class: "cs-tabs", attrs: { role: "tablist", "aria-label": "Sections" } }, [
-      tab("collection", "My collection"),
+      tab("collection", "Your Archív"),
       tab("search", "Add an item"),
     ]);
   }

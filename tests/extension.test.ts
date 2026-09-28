@@ -365,7 +365,7 @@ describe("page mount", () => {
     container.querySelector<HTMLButtonElement>(".cs-button--block")!.click();
     await double.open("collection", { container, path: "collection/category/book" });
 
-    await vi.waitFor(() => expect(container.textContent).toContain("My collection"));
+    await vi.waitFor(() => expect(container.textContent).toContain("Your Archív"));
     expect(container.textContent).toContain("Watchmen");
     expect(container.querySelector("#cs-collection-search")).toBeTruthy();
 
@@ -550,7 +550,7 @@ describe("page mount", () => {
 
     const nested = mountContainer();
     await double.open("collection", { container: nested, path: "collection" });
-    expect(nested.textContent).toContain("My collection");
+    expect(nested.textContent).toContain("Your Archív");
 
     const unknown = mountContainer();
     await double.open("collection", { container: unknown, path: "does/not/exist" });
@@ -674,7 +674,7 @@ describe("page mount", () => {
     expect(container.querySelector(".cs-category-page__heading h1")?.textContent).toBe("Books");
     expect(container.textContent).toContain("No books yet");
     expect(container.querySelector(".cs-shelf-grid")).toBeNull();
-    expect(container.querySelector('[role="tab"][aria-selected="true"]')?.textContent).toBe("My collection");
+    expect(container.querySelector('[role="tab"][aria-selected="true"]')?.textContent).toBe("Your Archív");
     expect(container.querySelector("#cs-search-input")).toBeNull();
     expect(container.textContent).toContain("Groups");
     container.querySelector<HTMLButtonElement>(".cs-category-page > .cs-button--ghost")!.click();
@@ -710,7 +710,7 @@ describe("page mount", () => {
     await double.open("collection", { container, path: "collection/category/figure" });
     const root = activeRoot(container);
     expect(root.querySelectorAll(".cs-header__row [role='tab']")).toHaveLength(2);
-    expect(root.querySelector(".cs-header__row [aria-selected='true']")?.textContent).toBe("My collection");
+    expect(root.querySelector(".cs-header__row [aria-selected='true']")?.textContent).toBe("Your Archív");
     [...root.querySelectorAll<HTMLButtonElement>(".cs-header__row [role='tab']")]
       .find((button) => button.textContent === "Add an item")!.click();
     expect(double.navigate).toHaveBeenLastCalledWith("/extensions/collector-scan/collection");
@@ -761,7 +761,7 @@ async function saveFirstMatch(
   const category = activeRoot(container).querySelector<HTMLSelectElement>("#cs-add-category")!.value;
   activeRoot(container).querySelector<HTMLButtonElement>(".cs-button--block")!.click();
   await double.open("collection", { container, path: `collection/category/${category}` });
-  await vi.waitFor(() => expect(container.textContent).toContain("My collection"));
+  await vi.waitFor(() => expect(container.textContent).toContain("Your Archív"));
 }
 
 /**
