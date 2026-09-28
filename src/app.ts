@@ -1215,7 +1215,7 @@ export class CollectorApp {
     }
     return el("section", { class: "cs-shelves" }, [
       el("div", { class: "cs-shelves__heading" }, [
-        el("h2", { text: "Explore your shelves" }),
+        el("h2", { text: "Explore your Archívs" }),
         el("p", { text: "Select a shelf to see its items" }),
       ]),
       grid,
