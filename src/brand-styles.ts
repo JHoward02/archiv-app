@@ -114,15 +114,15 @@ export const brandStyles = `
 .cs-header__row .cs-title,.cs-header__row .cs-title[data-shelfie-home="true"]{height:94px !important;display:flex !important;flex-direction:column !important;justify-content:flex-end !important}
 .cs-header__row .cs-title__logo{height:auto !important;aspect-ratio:2172/780;object-position:left bottom !important;flex:none !important}
 .cs-header__row .cs-tabs{position:static !important;inset:auto !important;display:flex !important;grid-template-columns:none !important;align-self:flex-end !important;flex:0 0 auto;width:auto !important;gap:4px !important;margin:0 0 -1px 64px !important;padding:0 !important;border:0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important;z-index:auto !important}
-.cs-header__row .cs-tab{flex:none !important;min-height:42px !important;padding:8px 14px !important;border:1px solid transparent !important;border-radius:12px 12px 0 0 !important;background:#e5ded5 !important;color:#5e5953 !important;font-size:13px !important;white-space:nowrap}
+.cs-header__row .cs-tab{flex:none !important;min-width:150px !important;min-height:42px !important;padding:8px 22px !important;border:1px solid transparent !important;border-radius:12px 12px 0 0 !important;background:#e5ded5 !important;color:#5e5953 !important;font-size:13px !important;white-space:nowrap}
 .cs-header__row .cs-tab[aria-selected="true"]{border-color:#ded4c8 !important;border-bottom:0 !important;background:#f5f0e9 !important;color:#08243b !important}
 @media(max-width:640px){
  .cs-app{padding-bottom:28px !important}
  .cs-header__row{gap:4px !important}
  .cs-header__row .cs-title,.cs-header__row .cs-title[data-shelfie-home="true"]{height:74px !important}
  .cs-title,.cs-title[data-shelfie-home="true"]{flex:0 1 clamp(92px,33vw,136px) !important;width:clamp(92px,33vw,136px) !important;max-width:136px !important}
- .cs-header__row .cs-tabs{margin-left:clamp(18px,5vw,34px) !important;gap:1px !important}
- .cs-header__row .cs-tab{min-height:40px !important;padding:7px 5px !important;font-size:11px !important}
+ .cs-header__row .cs-tabs{flex:1 1 auto !important;min-width:0;margin-left:clamp(18px,5vw,34px) !important;gap:1px !important}
+ .cs-header__row .cs-tab{flex:1 1 0 !important;min-width:0 !important;min-height:40px !important;padding:7px 5px !important;font-size:11px !important}
 }
 @media(max-width:360px){
  .cs-title,.cs-title[data-shelfie-home="true"]{flex-basis:92px !important;width:92px !important;max-width:92px !important}
