@@ -197,7 +197,7 @@ export class CollectorApp {
   }
 
   /**
-   * Totals the collection for the header and list captions. Prefer recorded
+   * Totals the collection for list captions. Prefer recorded
    * estimated values, but fall back to what was actually paid: a collection
    * where the user only logged purchase prices should not read as "$0.00".
    */
@@ -216,20 +216,9 @@ export class CollectorApp {
   }
 
   private renderHeader(): HTMLElement {
-    const { text, count } = this.collectionTotal(this.items);
-    const summary =
-      count === 0 ? "Your collection is empty" : `${count} ${count === 1 ? "item" : "items"}${text}`;
-
     return el("header", { class: "cs-header" }, [
       el("div", { class: "cs-header__row" }, [
         el("h2", { class: "cs-title", text: "Archiv" }),
-        el("span", { class: "cs-count", text: summary }),
-        el("button", {
-          class: "cs-header__add",
-          text: "+",
-          attrs: { type: "button", "aria-label": "Add an item" },
-          on: { click: () => { this.session.activeTab = "search"; this.go(""); this.render(); } },
-        }),
       ]),
       el("p", {
         class: "cs-subtitle",

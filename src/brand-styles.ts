@@ -26,7 +26,7 @@ export const brandStyles = `
 .cs-title,.cs-title[data-shelfie-home="true"]{display:block !important;flex:1 1 520px !important;font-size:0 !important;height:106px !important;margin:0 !important;max-width:520px !important;min-width:0 !important;overflow:visible !important;padding:0 !important;width:100% !important}
 .cs-title[data-shelfie-home="true"]{cursor:pointer;border-radius:12px}.cs-title[data-shelfie-home="true"]:focus-visible{outline:3px solid #f59a23;outline-offset:6px}.cs-title::before,.cs-title::after{content:none !important;display:none !important}
 .cs-title__logo{display:block !important;width:100% !important;height:100% !important;object-fit:contain !important;object-position:left center !important;pointer-events:none !important;user-select:none !important;-webkit-user-drag:none !important;filter:drop-shadow(0 5px 10px rgba(8,36,59,.08))}
-.cs-subtitle{display:none !important}.cs-count{background:#08243b !important;border:0 !important;border-radius:999px !important;color:#fffaf0 !important;font-weight:700;padding:9px 13px !important}
+.cs-subtitle{display:none !important}
 .cs-tabs{align-self:flex-end;width:auto;display:flex !important;background:#fffdf8 !important;border:1px solid #d9cebf !important;border-radius:999px !important;padding:4px !important;margin-top:-62px;z-index:2;margin-right:160px;box-shadow:0 12px 34px -27px rgba(8,36,59,.45)}
 .cs-tab{border-radius:999px !important;min-height:38px !important;color:#665f57 !important;padding:8px 16px !important;font-weight:700 !important}.cs-tab[aria-selected="true"]{background:#08243b !important;color:#fffaf0 !important}
 .cs-search{gap:14px !important;padding-top:48px}.cs-search::before{content:"Add to your Archiv";display:block;font-family:Georgia,"Times New Roman",serif;font-size:clamp(34px,5vw,56px);font-weight:600;letter-spacing:-.035em;line-height:1.02;max-width:720px;color:#08243b}.cs-search::after{content:"Catalog the things you love. Search your collectibles, save the right match, and keep your collection in one beautiful place.";display:block;order:-1;color:#6f6a62;font-size:16px;line-height:1.55;max-width:720px;margin-top:-5px}
@@ -42,8 +42,6 @@ export const brandStyles = `
 .cs-header{border-bottom:1px solid #ded4c8;padding:0 0 12px !important}
 .cs-header__row{min-height:76px !important;gap:16px !important;flex-direction:row !important;align-items:center !important}
 .cs-title,.cs-title[data-shelfie-home="true"]{flex:0 1 245px !important;width:245px !important;max-width:245px !important;height:76px !important}
-.cs-count{margin-left:auto !important;background:transparent !important;color:#625f5a !important;padding:8px 0 !important;font-size:13px !important;white-space:normal !important;text-align:right}
-.cs-header__add{flex:none;width:46px;height:46px;border:0;border-radius:50%;background:#08243b;color:white;font:400 28px/1 system-ui;cursor:pointer}
 .cs-tabs{align-self:flex-start !important;margin:0 !important;background:#eae3da !important;border:0 !important;box-shadow:none !important}
 .cs-collection{display:flex;flex-direction:column;gap:25px;min-width:0}
 .cs-collection__intro{display:flex;align-items:end;justify-content:space-between;gap:25px}
@@ -88,8 +86,6 @@ export const brandStyles = `
  .cs-header__row{min-height:62px !important;flex-direction:row !important;align-items:center !important;gap:8px !important}
  .cs-title,.cs-title[data-shelfie-home="true"]{flex:0 1 156px !important;width:156px !important;max-width:156px !important;height:59px !important}
  .cs-title__logo{object-position:left center !important}
- .cs-count{font-size:11px !important;line-height:1.2 !important;align-self:center !important}
- .cs-header__add{width:38px;height:38px;font-size:25px}
  .cs-tabs{position:fixed;bottom:0;left:0;right:0;z-index:30;display:grid !important;grid-template-columns:1fr 1fr;gap:8px !important;margin:0 !important;padding:9px 16px calc(9px + env(safe-area-inset-bottom)) !important;border-top:1px solid #d9cfc2 !important;border-radius:0 !important;background:#fffdf8 !important;box-shadow:0 -4px 20px rgba(8,36,59,.08) !important}
  .cs-tab{min-height:45px !important;border-radius:9px !important}
  .cs-collection{gap:21px}
@@ -107,6 +103,6 @@ export const brandStyles = `
  .cs-search__row .cs-input{border:0 !important;min-width:0 !important;background:transparent !important}
  .cs-search__row .cs-button{width:auto !important;min-width:83px !important;min-height:48px !important}
 }
-@media(max-width:360px){.cs-title,.cs-title[data-shelfie-home="true"]{width:130px !important;max-width:130px !important;flex-basis:130px !important}.cs-count{font-size:10px !important}}
+@media(max-width:360px){.cs-title,.cs-title[data-shelfie-home="true"]{width:130px !important;max-width:130px !important;flex-basis:130px !important}}
 @media(prefers-reduced-motion:reduce){.cs-shelf{transition:none}.cs-shelf:hover{transform:none}}
 `;

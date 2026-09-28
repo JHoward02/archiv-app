@@ -253,6 +253,8 @@ describe("page mount", () => {
 
     expect(container.querySelector(".cs-app")).toBeTruthy();
     expect(container.querySelector(".cs-title")).toBeTruthy();
+    expect(container.querySelector(".cs-count, .cs-header__add")).toBeNull();
+    expect(container.querySelector('[role="tab"][aria-selected="true"]')?.textContent).toBe("Add an item");
     expect(container.querySelector("#cs-search-input")).toBeTruthy();
     expect(container.textContent).toContain("Amazing Spider-Man #300");
     expect(container.querySelectorAll("main")).toHaveLength(0);
