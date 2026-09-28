@@ -37,6 +37,7 @@ const STATIC_SHELF_IMAGES: Partial<Record<Category, string>> = {
   tcg: "./shelves/tcg.jpeg",
   figure: "./shelves/figures.jpg",
   "sports-card": "./shelves/sports-cards.jpg",
+  vinyl: "./shelves/vinyl.jpg",
 };
 
 const SUGGESTIONS = ["Amazing Spider-Man #300", "1952 Topps Mickey Mantle", "Watchmen", "Action Comics #1"];
