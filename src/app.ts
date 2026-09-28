@@ -3,7 +3,7 @@ import type { CanvasExtensionHost } from "./host.ts";
 import { confidenceLabel, type ScoredCandidate } from "./match.ts";
 import { searchAll } from "./providers/index.ts";
 import { parseQuery } from "./query.ts";
-import { manualOnlySelection, selectSearchCategory } from "./search-selection.ts";
+import { manualOnlySelection } from "./search-selection.ts";
 import type { AppSession, SortKey, Tab } from "./session.ts";
 import { CollectionStore, itemFromCandidate, makeId } from "./store.ts";
 import { formatDate, normalizeText, tokenize } from "./text.ts";
@@ -1110,10 +1110,11 @@ export class CollectorApp {
     );
 
     if (this.items.length === 0) {
+      const selected = this.session.collectionFilter;
       wrap.append(
         this.stateBlock(
-          "Nothing tracked yet",
-          "Search for your first collectible or add it manually. Your collection stays on this device.",
+          selected === "all" ? "Nothing tracked yet" : `No ${CATEGORY_FILTER_LABELS[selected].toLowerCase()} yet`,
+          selected === "all" ? "Search for your first collectible or add it manually. Your collection stays on this device." : `Items you add to ${CATEGORY_FILTER_LABELS[selected]} will show up here.`,
         ),
         el("button", {
           class: "cs-button cs-button--block",
@@ -1229,17 +1230,9 @@ export class CollectorApp {
         class: `cs-shelf cs-shelf--${category}${this.session.collectionFilter === category ? " cs-shelf--selected" : ""}`,
         attrs: { type: "button", "aria-label": `${label}, ${count} ${count === 1 ? "item" : "items"}`, "aria-pressed": String(this.session.collectionFilter === category) },
         on: { click: () => {
-          if (!this.items.length) {
-            selectSearchCategory(category);
-            this.session.categoryFilter = category;
-            this.session.activeTab = "search";
-            this.go("");
-            this.render();
-            return;
-          }
           this.session.collectionFilter = this.session.collectionFilter === category ? "all" : category;
           this.render();
-          document.querySelector("#cs-list")?.scrollIntoView?.({ block: "start", behavior: "smooth" });
+          this.root?.querySelector("#cs-list, .cs-state")?.scrollIntoView?.({ block: "start", behavior: "smooth" });
         } },
       }, [
         el("span", { class: "cs-shelf__picture" }, [
@@ -1256,7 +1249,7 @@ export class CollectorApp {
     return el("section", { class: "cs-shelves" }, [
       el("div", { class: "cs-shelves__heading" }, [
         el("h2", { text: "Explore your shelves" }),
-        el("p", { text: this.items.length ? "Select a shelf to see its items" : "Pick a shelf to find something to add" }),
+        el("p", { text: "Select a shelf to see its items" }),
       ]),
       grid,
     ]);
@@ -1266,7 +1259,11 @@ export class CollectorApp {
     clear(host);
     const items = this.filteredItems();
     if (!items.length) {
-      host.append(this.stateBlock("No items match", "Clear the filter or search for something else."));
+      const selected = this.session.collectionFilter;
+      const isEmptyShelf = selected !== "all" && !this.session.collectionQuery.trim() && !this.session.favoritesOnly && !this.items.some((item) => item.category === selected);
+      host.append(isEmptyShelf
+        ? this.stateBlock(`No ${CATEGORY_FILTER_LABELS[selected].toLowerCase()} yet`, "This shelf will fill up as you add items.")
+        : this.stateBlock("No items match", "Clear the filter or search for something else."));
       return;
     }
 

@@ -3,7 +3,7 @@ import { activate } from "../src/extension.ts";
 import { confidenceLabel } from "../src/match.ts";
 import { thumbnail } from "../src/dom.ts";
 import { parseQuery } from "../src/query.ts";
-import { clearSearchSelection, getSearchSelection } from "../src/search-selection.ts";
+import { clearSearchSelection } from "../src/search-selection.ts";
 import { wikipediaProvider } from "../src/providers/wikipedia.ts";
 import { styles } from "../src/styles.ts";
 import { createHostDouble, jsonResponse } from "./host-double.ts";
@@ -651,7 +651,7 @@ describe("page mount", () => {
     const filter = container.querySelector<HTMLSelectElement>("#cs-collection-category")!;
     filter.value = "sports-card";
     filter.dispatchEvent(new Event("change", { bubbles: true }));
-    expect(container.textContent).toContain("No items match");
+    expect(container.textContent).toContain("No sports cards yet");
 
     filter.value = "book";
     filter.dispatchEvent(new Event("change", { bubbles: true }));
@@ -664,38 +664,20 @@ describe("page mount", () => {
     expect(container.textContent).toContain("No items match");
   });
 
-  it("carries the shelf type into Add an item when the collection is empty", async () => {
+  it("opens an empty category shelf within My collection", async () => {
     const double = createHostDouble();
     activate(double.host);
     const container = mountContainer();
-    const unmount = await double.open("collection", { container, path: "collection" });
+    await double.open("collection", { container, path: "collection" });
     container.querySelector<HTMLButtonElement>(".cs-shelf--book")!.click();
-    expect(getSearchSelection().category).toBe("book");
-    unmount();
-    await double.open("collection", { container, path: "search" });
-    await vi.waitFor(() => expect(container.querySelector(".cs-shelf-context")?.textContent).toContain("Adding to Books"));
-    expect(container.textContent).not.toContain("Choose a type");
-    container.querySelector<HTMLButtonElement>(".cs-shelf-context button")!.click();
-    expect(container.textContent).toContain("Choose a type");
-    expect([...container.querySelectorAll<HTMLButtonElement>("button")].find((button) =>
-      button.textContent === "Books" && button.getAttribute("aria-pressed") === "true",
-    )).toBeDefined();
-  });
-
-  it("skips the duplicate type picker but keeps figure subtype choices", async () => {
-    const double = createHostDouble();
-    activate(double.host);
-    const container = mountContainer();
-    const unmount = await double.open("collection", { container, path: "collection" });
-    container.querySelector<HTMLButtonElement>(".cs-shelf--figure")!.click();
-    unmount();
-    await double.open("collection", { container, path: "search" });
-    await vi.waitFor(() => expect(container.textContent).toContain("Choose a figure type"));
-    expect(container.textContent).not.toContain("Choose a type");
-    expect(container.querySelector(".cs-shelf-context")?.textContent).toContain("Adding to Figures");
-    const search = container.querySelector(".cs-search__row")!;
-    const subtype = container.querySelector("[data-shelfie-figure-selection]")!;
-    expect(subtype.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(container.querySelector(".cs-shelf--book")?.getAttribute("aria-pressed")).toBe("true");
+    expect(container.textContent).toContain("No books yet");
+    expect(container.querySelector('[role="tab"][aria-selected="true"]')?.textContent).toBe("My collection");
+    expect(container.querySelector("#cs-search-input")).toBeNull();
+    expect(double.navigate).not.toHaveBeenCalled();
+    container.querySelector<HTMLButtonElement>(".cs-shelf--book")!.click();
+    expect(container.querySelector(".cs-shelf--book")?.getAttribute("aria-pressed")).toBe("false");
+    expect(container.textContent).toContain("Nothing tracked yet");
   });
 
   it("totals purchase price when no estimated value is recorded", async () => {
