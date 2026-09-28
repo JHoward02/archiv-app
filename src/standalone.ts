@@ -34,7 +34,7 @@ function dismissSplash(): void {
 
 function routePath(): string {
   const hash = location.hash.replace(/^#\/?/, "");
-  return hash || "";
+  return hash || "collection";
 }
 
 function mountFooter(): void {
@@ -53,7 +53,7 @@ async function render(): Promise<void> {
       const marker = "/collection";
       const index = path.indexOf(marker);
       const relative = index >= 0 ? path.slice(index + marker.length).replace(/^\//, "") : "";
-      location.hash = relative ? `#/${relative}` : "#/";
+      location.hash = relative ? `#/${relative}` : "#/search";
     },
   });
   mountFooter();
@@ -76,7 +76,7 @@ const host: CanvasExtensionHost = {
     const marker = "/collection";
     const index = path.indexOf(marker);
     const relative = index >= 0 ? path.slice(index + marker.length).replace(/^\//, "") : "";
-    location.hash = relative ? `#/${relative}` : "#/";
+    location.hash = relative ? `#/${relative}` : "#/search";
   },
   agentServer: {
     async request<T>(): Promise<T> {

@@ -129,6 +129,8 @@ export class CollectorApp {
       active instanceof HTMLInputElement && focusedId ? active.selectionStart : null;
 
     const { view, param } = this.resolveView();
+    if (view === "collection") this.session.activeTab = "collection";
+    if (view === "search") this.session.activeTab = "search";
 
     clear(root);
     root.append(this.renderHeader());
@@ -204,12 +206,18 @@ export class CollectorApp {
 
     return el("header", { class: "cs-header" }, [
       el("div", { class: "cs-header__row" }, [
-        el("h2", { class: "cs-title", text: "Collector Scan" }),
+        el("h2", { class: "cs-title", text: "Archiv" }),
         el("span", { class: "cs-count", text: summary }),
+        el("button", {
+          class: "cs-header__add",
+          text: "+",
+          attrs: { type: "button", "aria-label": "Add an item" },
+          on: { click: () => { this.session.activeTab = "search"; this.go(""); this.render(); } },
+        }),
       ]),
       el("p", {
         class: "cs-subtitle",
-        text: "Search a comic, card, or book, pick the right match, and track it.",
+        text: "Your collection lives here.",
       }),
     ]);
   }
@@ -231,8 +239,8 @@ export class CollectorApp {
       });
 
     return el("div", { class: "cs-tabs", attrs: { role: "tablist", "aria-label": "Sections" } }, [
-      tab("search", "Find an item"),
       tab("collection", "My collection"),
+      tab("search", "Add an item"),
     ]);
   }
 
@@ -1084,13 +1092,23 @@ export class CollectorApp {
   }
 
   private renderCollectionView(): HTMLElement {
-    const wrap = el("div", { class: "cs-search" });
+    const wrap = el("div", { class: "cs-collection" });
+    wrap.append(
+      el("div", { class: "cs-collection__intro" }, [
+        el("div", {}, [
+          el("p", { class: "cs-eyebrow", text: "THE THINGS YOU LOVE" }),
+          el("h1", { class: "cs-collection__title", text: "My collection" }),
+        ]),
+        el("p", { class: "cs-collection__lead", text: this.items.length ? "Browse your shelves, revisit your finds, and keep every story together." : "Start with the things you love. Your shelves will fill up as you add them." }),
+      ]),
+      this.renderCategoryShelves(),
+    );
 
     if (this.items.length === 0) {
       wrap.append(
         this.stateBlock(
           "Nothing tracked yet",
-          "Find an item on the Find tab and save it here. Everything stays on this device.",
+          "Search for your first collectible or add it manually. Your collection stays on this device.",
         ),
         el("button", {
           class: "cs-button cs-button--block",
@@ -1105,6 +1123,7 @@ export class CollectorApp {
           },
         }),
       );
+      wrap.append(el("button", { class: "cs-button cs-button--ghost cs-button--block", text: "Add it manually", attrs: { type: "button" }, on: { click: () => document.dispatchEvent(new Event("shelfie:manual-entry")) } }));
       // Groups can be set up before the first item arrives, so the empty state
       // still offers the chip row and create form.
       wrap.append(
@@ -1192,6 +1211,50 @@ export class CollectorApp {
     this.fillCollection(host);
     wrap.append(host);
     return wrap;
+  }
+
+  private renderCategoryShelves(): HTMLElement {
+    const grid = el("div", { class: "cs-shelf-grid", attrs: { "aria-label": "Collection categories" } });
+    for (const category of CATEGORIES) {
+      const entries = this.items.filter((item) => item.category === category);
+      const count = entries.reduce((sum, item) => sum + item.quantity, 0);
+      const cover = entries.map((item) => safeUrl(item.imageUrl) ||
+        (item.imageUrl?.startsWith("data:image/jpeg;base64,") ? item.imageUrl : null)).find(Boolean);
+      const label = CATEGORY_FILTER_LABELS[category];
+      const card = el("button", {
+        class: `cs-shelf cs-shelf--${category}${this.session.collectionFilter === category ? " cs-shelf--selected" : ""}`,
+        attrs: { type: "button", "aria-label": `${label}, ${count} ${count === 1 ? "item" : "items"}`, "aria-pressed": String(this.session.collectionFilter === category) },
+        on: { click: () => {
+          if (!this.items.length) {
+            this.session.categoryFilter = category;
+            this.session.activeTab = "search";
+            this.go("");
+            this.render();
+            return;
+          }
+          this.session.collectionFilter = this.session.collectionFilter === category ? "all" : category;
+          this.render();
+          document.querySelector("#cs-list")?.scrollIntoView?.({ block: "start", behavior: "smooth" });
+        } },
+      }, [
+        el("span", { class: "cs-shelf__picture" }, [
+          el("span", { class: "cs-shelf__monogram", text: CATEGORY_GLYPHS[category], attrs: { "aria-hidden": "true" } }),
+          cover ? el("img", { attrs: { src: cover, alt: "", loading: "lazy", decoding: "async", referrerpolicy: "no-referrer" }, on: { error: (event) => (event.currentTarget as HTMLImageElement).remove() } }) : null,
+        ]),
+        el("span", { class: "cs-shelf__info" }, [
+          el("strong", { text: label }),
+          el("span", { text: `${count} ${count === 1 ? "item" : "items"}` }),
+        ]),
+      ]);
+      grid.append(card);
+    }
+    return el("section", { class: "cs-shelves" }, [
+      el("div", { class: "cs-shelves__heading" }, [
+        el("h2", { text: "Explore your shelves" }),
+        el("p", { text: this.items.length ? "Select a shelf to see its items" : "Pick a shelf to find something to add" }),
+      ]),
+      grid,
+    ]);
   }
 
   private fillCollection(host: HTMLElement): void {

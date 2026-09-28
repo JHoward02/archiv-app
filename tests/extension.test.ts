@@ -630,6 +630,10 @@ describe("page mount", () => {
     await double.open("collection", { container, path: "collection" });
     await vi.waitFor(() => expect(container.textContent).toContain("Watchmen"));
 
+    expect(container.querySelector<HTMLButtonElement>('.cs-shelf--book')?.getAttribute('aria-label')).toBe('Books, 1 item');
+    container.querySelector<HTMLButtonElement>('.cs-shelf--book')!.click();
+    expect(container.querySelector<HTMLSelectElement>("#cs-collection-category")?.value).toBe("book");
+
     const filter = container.querySelector<HTMLSelectElement>("#cs-collection-category")!;
     filter.value = "sports-card";
     filter.dispatchEvent(new Event("change", { bubbles: true }));

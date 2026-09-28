@@ -61,8 +61,8 @@ export function activate(host: CanvasExtensionHost): () => void {
     const app = new CollectorApp(host, session, context.navigate, context.path);
     const unmount = app.mount(context.container);
     const goHome = (): void => {
-      session.activeTab = "search";
-      context.navigate(`/extensions/${encodeURIComponent(host.extension.name)}/collection`);
+      session.activeTab = "collection";
+      context.navigate(`/extensions/${encodeURIComponent(host.extension.name)}/collection/collection`);
     };
     const enhance = (): void => {
       enhanceSearchSelection(context.container);
