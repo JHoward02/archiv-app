@@ -10,6 +10,7 @@ const appRoot: HTMLElement = root;
 
 let mountPage: CanvasExtensionPageMount | null = null;
 let cleanup: void | (() => void);
+let mountedRoute: string | null = null;
 
 function dismissSplash(): void {
   const splash = document.querySelector<HTMLElement>("#shelfie-splash");
@@ -44,11 +45,13 @@ function mountFooter(): void {
 
 async function render(): Promise<void> {
   if (!mountPage) return;
+  const route = routePath();
+  const changedRoute = mountedRoute !== null && route !== mountedRoute;
   if (typeof cleanup === "function") cleanup();
   appRoot.replaceChildren();
   cleanup = await mountPage({
     container: appRoot,
-    path: routePath(),
+    path: route,
     navigate(path: string) {
       const marker = "/collection";
       const index = path.indexOf(marker);
@@ -56,6 +59,8 @@ async function render(): Promise<void> {
       location.hash = relative ? `#/${relative}` : "#/search";
     },
   });
+  mountedRoute = route;
+  if (changedRoute) window.scrollTo(0, 0);
   mountFooter();
 }
 

@@ -629,7 +629,7 @@ describe("page mount", () => {
     await double.open("collection", { container, path: `candidate/${encodeURIComponent("openlibrary:/works/OL123W")}` });
     await vi.waitFor(() => expect(container.textContent).toContain("Save to collection"));
     container.querySelector<HTMLButtonElement>(".cs-button--block")!.click();
-    await double.open("collection", { container, path: "collection" });
+    const leaveCollection = await double.open("collection", { container, path: "collection" });
     await vi.waitFor(() => expect(container.textContent).toContain("Watchmen"));
 
     expect(container.querySelector<HTMLButtonElement>('.cs-shelf--book')?.getAttribute('aria-label')).toBe('Books, 1 item');
@@ -646,15 +646,12 @@ describe("page mount", () => {
     expect(container.querySelector<HTMLImageElement>('.cs-shelf--other img')?.getAttribute('src')).toBe('./shelves/other.jpg');
     expect(container.querySelector('button[aria-label="Add photo for Books"]')).toBeNull();
     container.querySelector<HTMLButtonElement>('.cs-shelf--book')!.click();
-    expect(container.querySelector<HTMLSelectElement>("#cs-collection-category")?.value).toBe("book");
-
-    const filter = container.querySelector<HTMLSelectElement>("#cs-collection-category")!;
-    filter.value = "sports-card";
-    filter.dispatchEvent(new Event("change", { bubbles: true }));
-    expect(container.textContent).toContain("No sports cards yet");
-
-    filter.value = "book";
-    filter.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(double.navigate).toHaveBeenCalledWith("/extensions/collector-scan/collection/collection/category/book");
+    leaveCollection();
+    await double.open("collection", { container, path: "collection/category/book" });
+    expect(container.querySelector(".cs-category-page__heading h1")?.textContent).toBe("Books");
+    expect(container.querySelector(".cs-shelf-grid")).toBeNull();
+    expect(container.querySelector("#cs-collection-category")).toBeNull();
     expect(container.textContent).toContain("Watchmen");
 
     const favourites = [...container.querySelectorAll<HTMLButtonElement>(".cs-chip")].find((button) =>
@@ -664,19 +661,25 @@ describe("page mount", () => {
     expect(container.textContent).toContain("No items match");
   });
 
-  it("opens an empty category shelf within My collection", async () => {
+  it("opens an empty category on its own route and returns to all shelves", async () => {
     const double = createHostDouble();
     activate(double.host);
     const container = mountContainer();
-    await double.open("collection", { container, path: "collection" });
+    const leaveCollection = await double.open("collection", { container, path: "collection" });
     container.querySelector<HTMLButtonElement>(".cs-shelf--book")!.click();
-    expect(container.querySelector(".cs-shelf--book")?.getAttribute("aria-pressed")).toBe("true");
+    expect(double.navigate).toHaveBeenCalledWith("/extensions/collector-scan/collection/collection/category/book");
+    leaveCollection();
+    const leaveCategory = await double.open("collection", { container, path: "collection/category/book" });
+    expect(container.querySelector(".cs-category-page__heading h1")?.textContent).toBe("Books");
     expect(container.textContent).toContain("No books yet");
+    expect(container.querySelector(".cs-shelf-grid")).toBeNull();
     expect(container.querySelector('[role="tab"][aria-selected="true"]')?.textContent).toBe("My collection");
     expect(container.querySelector("#cs-search-input")).toBeNull();
-    expect(double.navigate).not.toHaveBeenCalled();
-    container.querySelector<HTMLButtonElement>(".cs-shelf--book")!.click();
-    expect(container.querySelector(".cs-shelf--book")?.getAttribute("aria-pressed")).toBe("false");
+    container.querySelector<HTMLButtonElement>(".cs-category-page > .cs-button--ghost")!.click();
+    expect(double.navigate).toHaveBeenLastCalledWith("/extensions/collector-scan/collection/collection");
+    leaveCategory();
+    await double.open("collection", { container, path: "collection" });
+    expect(container.querySelector(".cs-shelf-grid")).not.toBeNull();
     expect(container.textContent).toContain("Nothing tracked yet");
   });
 

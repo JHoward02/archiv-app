@@ -72,6 +72,9 @@ export const brandStyles = `
 .cs-shelf__info{display:flex;flex-direction:column;gap:2px;padding:11px 13px 13px}
 .cs-shelf__info strong{font-size:14px;line-height:1.25}
 .cs-shelf__info span{color:#716960;font-size:12px}
+.cs-category-page{gap:18px}.cs-category-page>.cs-button--ghost{align-self:flex-start}
+.cs-category-page__hero{display:grid;grid-template-columns:minmax(180px,36%) 1fr;align-items:center;gap:28px;overflow:hidden;min-height:220px;border:1px solid #ded4c8;border-radius:18px;background:#fffdf8}
+.cs-category-page__hero img{width:100%;height:220px;object-fit:cover}.cs-category-page__heading{padding:20px 24px 20px 0}.cs-category-page__heading .cs-collection__lead{margin-top:12px}
 .cs-collection>.cs-section{padding:16px}
 .cs-toolbar{padding:17px;border:1px solid #ded4c8;border-radius:16px;background:#fffdf8}
 .cs-footer{max-width:1100px !important}
@@ -97,6 +100,7 @@ export const brandStyles = `
  .cs-shelf__picture{height:116px}
  .cs-shelf__monogram{font-size:25px}
  .cs-shelf__info{padding:9px 10px 10px}
+ .cs-category-page__hero{grid-template-columns:1fr;gap:0}.cs-category-page__hero img{height:170px}.cs-category-page__heading{padding:20px}.cs-category-page__heading .cs-collection__title{font-size:39px}
  .cs-toolbar{padding:12px}
  .cs-search__row{flex-direction:row !important;border:1px solid #bcae9d !important;background:#fffdf8 !important;padding:5px !important;box-shadow:none !important}
  .cs-search__row .cs-input{border:0 !important;min-width:0 !important;background:transparent !important}

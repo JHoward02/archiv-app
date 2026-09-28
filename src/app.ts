@@ -23,7 +23,7 @@ import {
 
 const PAGE_ROOT = "/collection";
 
-type ViewName = "search" | "collection" | "candidate" | "item" | "group" | "group-items" | "unknown";
+type ViewName = "search" | "collection" | "category" | "candidate" | "item" | "group" | "group-items" | "unknown";
 
 const UNGROUPED = "ungrouped";
 /** Sentinel option value meaning "create a group from the adjacent name field". */
@@ -116,6 +116,9 @@ export class CollectorApp {
     const [head, ...rest] = segments;
     const param = rest.join("/");
     if (head === "collection" && rest.length === 0) return { view: "collection", param: "" };
+    if (head === "collection" && rest[0] === "category" && rest.length === 2 && CATEGORIES.includes(rest[1] as Category)) {
+      return { view: "category", param: rest[1] };
+    }
     // Paths are relative to the page root, so a group link arrives as
     // "group/<id>" rather than "collection/group/<id>". Accept both. The
     // trailing "items" segment selects the picker, so it is matched first —
@@ -145,7 +148,7 @@ export class CollectorApp {
       active instanceof HTMLInputElement && focusedId ? active.selectionStart : null;
 
     const { view, param } = this.resolveView();
-    if (view === "collection") this.session.activeTab = "collection";
+    if (view === "collection" || view === "category") this.session.activeTab = "collection";
     if (view === "search") this.session.activeTab = "search";
 
     const isDetail = view === "candidate" || view === "item" || view === "group" || view === "group-items";
@@ -157,7 +160,11 @@ export class CollectorApp {
         root.append(this.renderSearchView());
         break;
       case "collection":
+        this.session.collectionFilter = "all";
         root.append(this.renderCollectionView());
+        break;
+      case "category":
+        root.append(this.renderCategoryView(param as Category));
         break;
       case "group":
         root.append(this.renderGroupView(decodeURIComponent(param)));
@@ -234,7 +241,7 @@ export class CollectorApp {
         attrs: { type: "button", role: "tab", "aria-selected": String(this.session.activeTab === id) },
         on: {
           click: () => {
-            if (this.session.activeTab === id) return;
+            if (this.session.activeTab === id && !(id === "collection" && this.resolveView().view === "category")) return;
             this.session.activeTab = id;
             this.go(id === "search" ? "" : "collection");
             this.render();
@@ -1218,6 +1225,64 @@ export class CollectorApp {
     return wrap;
   }
 
+  private renderCategoryView(category: Category): HTMLElement {
+    this.session.collectionFilter = category;
+    this.session.collectionGroupFilter = "all";
+    const label = CATEGORY_FILTER_LABELS[category];
+    const entries = this.items.filter((item) => item.category === category);
+    const count = entries.reduce((sum, item) => sum + item.quantity, 0);
+    const cover = STATIC_SHELF_IMAGES[category];
+    const wrap = el("div", { class: "cs-collection cs-category-page" }, [
+      this.backTo("All shelves", "collection", "collection"),
+      el("div", { class: "cs-category-page__hero" }, [
+        cover ? el("img", { attrs: { src: cover, alt: "", decoding: "async" } }) : null,
+        el("div", { class: "cs-category-page__heading" }, [
+          el("p", { class: "cs-eyebrow", text: "MY COLLECTION" }),
+          el("h1", { class: "cs-collection__title", text: label }),
+          el("p", { class: "cs-collection__lead", text: `${count} ${count === 1 ? "item" : "items"} in this shelf` }),
+        ]),
+      ]),
+    ]);
+
+    if (!entries.length) {
+      wrap.append(
+        this.stateBlock(`No ${label.toLowerCase()} yet`, `Items you add to ${label} will show up here.`),
+        el("button", { class: "cs-button cs-button--block", text: "Find an item", attrs: { type: "button" }, on: { click: () => {
+          this.session.activeTab = "search";
+          this.go("");
+        } } }),
+        el("button", { class: "cs-button cs-button--ghost cs-button--block", text: "Add it manually", attrs: { type: "button" }, on: { click: () => document.dispatchEvent(new Event("shelfie:manual-entry")) } }),
+      );
+      return wrap;
+    }
+
+    const search = el("input", { class: "cs-input", attrs: { id: "cs-collection-search", type: "search", value: this.session.collectionQuery, placeholder: `Filter ${label.toLowerCase()}`, autocomplete: "off" } });
+    search.addEventListener("input", () => {
+      this.session.collectionQuery = search.value;
+      if (this.listHost) this.fillCollection(this.listHost);
+    });
+    const sortSelect = el("select", { class: "cs-select", attrs: { id: "cs-collection-sort" } },
+      (Object.keys(SORT_LABELS) as SortKey[]).map((key) => el("option", { text: SORT_LABELS[key], attrs: { value: key, selected: this.session.collectionSort === key } })),
+    );
+    sortSelect.addEventListener("change", () => {
+      this.session.collectionSort = sortSelect.value as SortKey;
+      if (this.listHost) this.fillCollection(this.listHost);
+    });
+    wrap.append(el("div", { class: "cs-toolbar" }, [
+      this.field("Search", search),
+      this.field("Sort", sortSelect),
+      el("button", { class: "cs-chip", text: "★ Favourites", attrs: { type: "button", "aria-pressed": String(this.session.favoritesOnly) }, on: { click: () => {
+        this.session.favoritesOnly = !this.session.favoritesOnly;
+        this.render();
+      } } }),
+    ]));
+    const host = el("div", { attrs: { id: "cs-list" } });
+    this.listHost = host;
+    this.fillCollection(host);
+    wrap.append(host);
+    return wrap;
+  }
+
   private renderCategoryShelves(): HTMLElement {
     const grid = el("div", { class: "cs-shelf-grid", attrs: { "aria-label": "Collection categories" } });
     for (const category of CATEGORIES) {
@@ -1226,12 +1291,12 @@ export class CollectorApp {
       const cover = STATIC_SHELF_IMAGES[category];
       const label = CATEGORY_FILTER_LABELS[category];
       const card = el("button", {
-        class: `cs-shelf cs-shelf--${category}${this.session.collectionFilter === category ? " cs-shelf--selected" : ""}`,
-        attrs: { type: "button", "aria-label": `${label}, ${count} ${count === 1 ? "item" : "items"}`, "aria-pressed": String(this.session.collectionFilter === category) },
+        class: `cs-shelf cs-shelf--${category}`,
+        attrs: { type: "button", "aria-label": `${label}, ${count} ${count === 1 ? "item" : "items"}` },
         on: { click: () => {
-          this.session.collectionFilter = this.session.collectionFilter === category ? "all" : category;
-          this.render();
-          this.root?.querySelector("#cs-list, .cs-state")?.scrollIntoView?.({ block: "start", behavior: "smooth" });
+          this.session.collectionQuery = "";
+          this.session.favoritesOnly = false;
+          this.go(`collection/category/${category}`);
         } },
       }, [
         el("span", { class: "cs-shelf__picture" }, [
