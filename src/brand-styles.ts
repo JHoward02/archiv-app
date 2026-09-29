@@ -1,6 +1,13 @@
 export const BRAND_STYLE_MARKER = "archiv-brand-v1";
 
 export const brandStyles = `
+.cs-header{position:relative !important}
+.cs-profile-button{position:absolute;right:0;top:8px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid #d9cebf;border-radius:999px;background:#fffdf8;color:#08243b;padding:8px 12px;font:700 12px Inter,system-ui,sans-serif;cursor:pointer}
+.cs-profile-button:focus-visible{outline:3px solid #f59a23}
+.cs-profile-panel{position:absolute;right:0;top:48px;z-index:40;width:min(300px,90vw);padding:18px;border:1px solid #d9cebf;border-radius:14px;background:#fffdf8;box-shadow:0 16px 40px #08243b33;display:grid;gap:10px}
+.cs-profile-panel p{margin:0}.cs-profile-panel small{color:#6f6a62}.cs-profile-panel button{min-height:40px}
+.cs-profile-welcome{padding:clamp(30px,8vw,80px) 18px;max-width:620px;margin:0 auto;text-align:center;display:grid;justify-items:center;gap:18px}
+.cs-profile-welcome p{margin:0;color:#6f6a62;line-height:1.55}.cs-profile-welcome .cs-button{min-height:48px;padding:10px 22px}
 .cs-app {
   --cs-bg:#f4efe6 !important;
   --cs-bg-tint:#fffaf3 !important;

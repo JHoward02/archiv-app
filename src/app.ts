@@ -6,6 +6,7 @@ import { parseQuery } from "./query.ts";
 import { manualOnlySelection, selectSearchCategory } from "./search-selection.ts";
 import type { AppSession, SortKey, Tab } from "./session.ts";
 import { CollectionStore, itemFromCandidate, makeId } from "./store.ts";
+import { profileState, profilesConfigured, saveProfile, signInProfile, signOutProfile, subscribeProfile } from "./profiles.ts";
 import { formatDate, normalizeText, tokenize } from "./text.ts";
 import {
   CATEGORY_GLYPHS,
@@ -63,6 +64,7 @@ export class CollectorApp {
   private searchAbort: AbortController | null = null;
   private flashTimer: ReturnType<typeof setTimeout> | null = null;
   private disposed = false;
+  private unsubscribeProfile: (() => void) | null = null;
 
   constructor(
     private readonly host: CanvasExtensionHost,
@@ -71,11 +73,13 @@ export class CollectorApp {
     private readonly path: string,
   ) {
     this.store = new CollectionStore(host.extension.name, host.backend.id);
-    const snapshot = this.store.load();
-    this.items = snapshot.items;
-    this.groups = snapshot.groups;
-    if (snapshot.warning) this.session.warnings.push(snapshot.warning);
-    if (!this.store.available) {
+    if (host.backend.id !== "standalone") {
+      const snapshot = this.store.load();
+      this.items = snapshot.items;
+      this.groups = snapshot.groups;
+      if (snapshot.warning) this.session.warnings.push(snapshot.warning);
+    }
+    if (host.backend.id !== "standalone" && !this.store.available) {
       this.session.warnings.push("Local storage is unavailable, so the collection will not persist.");
     }
   }
@@ -85,11 +89,20 @@ export class CollectorApp {
     const root = el("div", { class: "cs-app" });
     container.append(root);
     this.root = root;
+    if (this.host.backend.id === "standalone") {
+      this.unsubscribeProfile = subscribeProfile((state) => {
+        if (this.disposed) return;
+        this.items = state.items;
+        this.groups = state.groups;
+        this.render();
+      });
+    }
     this.render();
     if (this.session.flash) this.armFlash();
 
     return () => {
       this.disposed = true;
+      this.unsubscribeProfile?.();
       this.searchAbort?.abort(new Error("unmounted"));
       this.searchAbort = null;
       if (this.flashTimer) clearTimeout(this.flashTimer);
@@ -153,7 +166,21 @@ export class CollectorApp {
 
     const isDetail = view === "candidate" || view === "item" || view === "group" || view === "group-items";
     clear(root);
-    root.append(this.renderHeader(!isDetail));
+    root.append(this.renderHeader(!isDetail && (this.host.backend.id !== "standalone" || Boolean(profileState.user))));
+
+    if (this.host.backend.id === "standalone" && !profileState.user) {
+      root.append(el("section", { class: "cs-profile-welcome" }, [
+        el("p", { class: "cs-eyebrow", text: "YOUR COLLECTION LIVES HERE" }),
+        el("h1", { class: "cs-collection__title", text: "Make it yours." }),
+        el("p", { text: profilesConfigured ? "Sign in with Google to keep your shelves together on every device." : "Cloud profiles need Firebase configuration before this preview can accept sign-ins." }),
+        el("button", { class: "cs-button", text: "Continue with Google", attrs: { type: "button", disabled: !profilesConfigured || !profileState.ready }, on: { click: () => void signInProfile().catch((error) => { this.session.warnings.push(error instanceof Error ? error.message : "Sign-in failed."); this.render(); }) } }),
+      ]));
+      return;
+    }
+    if (this.host.backend.id === "standalone" && !profileState.ready) {
+      root.append(this.stateBlock(profileState.error ? "Could not load your Archív" : "Opening your Archív", profileState.error ?? "Your shelves are syncing from your account.", profileState.error ? "error" : "loading"));
+      return;
+    }
 
     switch (view) {
       case "search":
@@ -225,8 +252,40 @@ export class CollectorApp {
       el("div", { class: "cs-header__row" }, [
         el("h2", { class: "cs-title", text: "Archív" }),
         showTabs ? this.renderTabs() : null,
+        this.host.backend.id === "standalone" && profileState.user ? this.renderProfileControl() : null,
       ]),
     ]);
+  }
+
+  private renderProfileControl(): HTMLElement {
+    const user = profileState.user;
+    const button = el("button", {
+      class: "cs-profile-button",
+      text: user ? (user.displayName || user.email || "Profile") : "Sign in",
+      attrs: { type: "button", "aria-label": user ? "Open your profile" : "Sign in with Google" },
+      on: { click: () => {
+        if (user) this.showProfilePanel();
+        else void signInProfile().catch((error) => {
+          this.session.warnings.push(error instanceof Error ? error.message : "Sign-in failed.");
+          this.render();
+        });
+      } },
+    });
+    if (!profilesConfigured) button.setAttribute("title", "Cloud profiles are awaiting configuration");
+    return button;
+  }
+
+  private showProfilePanel(): void {
+    const user = profileState.user;
+    if (!user) return;
+    const panel = el("div", { class: "cs-profile-panel", attrs: { role: "dialog", "aria-label": "Your profile" } }, [
+      el("p", { text: user.displayName || "Your profile" }),
+      el("small", { text: user.email || "Signed in with Google" }),
+      el("p", { text: profileState.error || "Your shelves sync to your Archív account." }),
+      el("button", { class: "cs-button cs-button--ghost", text: "Sign out", attrs: { type: "button" }, on: { click: () => void signOutProfile().finally(() => panel.remove()) } }),
+      el("button", { class: "cs-button cs-button--ghost", text: "Close", attrs: { type: "button" }, on: { click: () => panel.remove() } }),
+    ]);
+    this.root?.append(panel);
   }
 
   private renderTabs(): HTMLElement {
@@ -1652,6 +1711,13 @@ export class CollectorApp {
   }
 
   private persist(): void {
+    if (this.host.backend.id === "standalone") {
+      void saveProfile(this.items, this.groups).catch((error) => {
+        this.session.warnings.push(error instanceof Error ? error.message : "Could not sync your Archív.");
+        this.render();
+      });
+      return;
+    }
     const warning = this.store.save(this.items, this.groups);
     if (warning && !this.session.warnings.includes(warning)) this.session.warnings.push(warning);
   }
