@@ -28,6 +28,9 @@ let unsubscribeItems: Unsubscribe | null = null;
 let unsubscribeGroups: Unsubscribe | null = null;
 let generation = 0;
 let writeQueue = Promise.resolve();
+let pendingSaves = 0;
+let confirmedItems: CollectionItem[] = [];
+let confirmedGroups: CollectionGroup[] = [];
 
 function announce(): void { for (const listener of listeners) listener(profileState); }
 export function subscribeProfile(listener: (state: ProfileState) => void): () => void {
@@ -47,7 +50,7 @@ async function fitPhoto(item: CollectionItem): Promise<CollectionItem> {
   canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
   canvas.getContext("2d")?.drawImage(image, 0, 0, canvas.width, canvas.height);
   const imageUrl = canvas.toDataURL("image/jpeg", 0.65);
-  if (imageUrl.length > 900_000) throw new Error(`The photo for ${item.title} is too large to sync. Your device copy remains safe.`);
+  if (imageUrl.length > 900_000) throw new Error(`The photo for ${item.title} is too large to sync. Please use a smaller photo.`);
   return { ...item, imageUrl };
 }
 
@@ -57,6 +60,7 @@ if (auth && db) onAuthStateChanged(auth, async (user) => {
   unsubscribeItems = unsubscribeGroups = null;
   profileState.user = user;
   profileState.items = []; profileState.groups = [];
+  confirmedItems = []; confirmedGroups = [];
   profileState.ready = !user; profileState.loading = Boolean(user); profileState.error = null;
   announce();
   if (!user) return;
@@ -69,14 +73,16 @@ if (auth && db) onAuthStateChanged(auth, async (user) => {
     };
     unsubscribeItems = onSnapshot(collection(db, "users", user.uid, "items"), (snapshot) => {
       if (current !== generation) return;
-      profileState.items = snapshot.docs.map((entry) => entry.data() as CollectionItem);
+      confirmedItems = snapshot.docs.map((entry) => entry.data() as CollectionItem);
+      if (!pendingSaves) profileState.items = confirmedItems;
       itemsReady = true; loaded();
-    }, (error) => { profileState.error = error.message; profileState.loading = false; announce(); });
+    }, (error) => { if (current !== generation) return; profileState.error = error.message; profileState.ready = false; profileState.loading = false; announce(); });
     unsubscribeGroups = onSnapshot(collection(db, "users", user.uid, "groups"), (snapshot) => {
       if (current !== generation) return;
-      profileState.groups = snapshot.docs.map((entry) => entry.data() as CollectionGroup);
+      confirmedGroups = snapshot.docs.map((entry) => entry.data() as CollectionGroup);
+      if (!pendingSaves) profileState.groups = confirmedGroups;
       groupsReady = true; loaded();
-    }, (error) => { profileState.error = error.message; profileState.loading = false; announce(); });
+    }, (error) => { if (current !== generation) return; profileState.error = error.message; profileState.ready = false; profileState.loading = false; announce(); });
   } catch (error) {
     if (current !== generation) return;
     profileState.error = error instanceof Error ? error.message : "Could not load your Archív.";
@@ -96,15 +102,20 @@ export async function signInProfile(): Promise<void> {
     throw error;
   }
 }
-export async function signOutProfile(): Promise<void> { if (auth) await signOut(auth); }
+export async function signOutProfile(): Promise<void> {
+  await writeQueue;
+  if (auth) await signOut(auth);
+}
 
 export function saveProfile(items: CollectionItem[], groups: CollectionGroup[]): Promise<void> {
   const user = profileState.user;
   if (!db || !user || !profileState.ready) return Promise.reject(new Error("Sign in and wait for your Archív to load before saving."));
   const uid = user.uid;
+  const accountGeneration = generation;
   const priorItems = new Map(profileState.items.map((item) => [item.id, item]));
   const priorGroups = new Map(profileState.groups.map((group) => [group.id, group]));
   profileState.items = items; profileState.groups = groups;
+  pendingSaves++;
   const task = async () => {
     if (auth?.currentUser?.uid !== uid) throw new Error("Your account changed before the save completed.");
     const changes: { type: "items" | "groups"; id: string; value?: CollectionItem | CollectionGroup }[] = [];
@@ -122,7 +133,14 @@ export function saveProfile(items: CollectionItem[], groups: CollectionGroup[]):
       await batch.commit();
     }
   };
-  const result = writeQueue.then(task);
+  const result = writeQueue.then(task).finally(() => {
+    pendingSaves--;
+    if (!pendingSaves && accountGeneration === generation) {
+      profileState.items = confirmedItems;
+      profileState.groups = confirmedGroups;
+      announce();
+    }
+  });
   writeQueue = result.catch(() => undefined);
   return result;
 }

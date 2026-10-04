@@ -167,6 +167,7 @@ export class CollectorApp {
     const isDetail = view === "candidate" || view === "item" || view === "group" || view === "group-items";
     clear(root);
     root.append(this.renderHeader(!isDetail && (this.host.backend.id !== "standalone" || Boolean(profileState.user))));
+    if (this.host.backend.id === "standalone" && this.session.warnings.length) append(root, this.renderWarnings());
 
     if (this.host.backend.id === "standalone" && !profileState.user) {
       root.append(el("section", { class: "cs-profile-welcome" }, [
