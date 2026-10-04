@@ -1,6 +1,7 @@
+import type { Backup } from "./restore.ts";
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, deleteUser, reauthenticateWithPopup, type User } from "firebase/auth";
-import { collection, doc, getFirestore, onSnapshot, writeBatch, getDocsFromServer, getDocFromServer, setDoc, query, limit, type Unsubscribe } from "firebase/firestore";
+import { collection, doc, getFirestore, onSnapshot, writeBatch, runTransaction, getDocsFromServer, getDocFromServer, setDoc, query, limit, type Unsubscribe } from "firebase/firestore";
 import type { CollectionGroup, CollectionItem } from "./types.ts";
 
 export interface ProfileState {
@@ -31,6 +32,7 @@ let generation = 0;
 let writeQueue = Promise.resolve();
 let pendingSaves = 0;
 export let deletingAccount = false;
+export let restoringAccount = false;
 let confirmedItems: CollectionItem[] = [];
 let confirmedGroups: CollectionGroup[] = [];
 
@@ -117,6 +119,7 @@ export async function signOutProfile(): Promise<void> {
 
 export function saveProfile(items: CollectionItem[], groups: CollectionGroup[]): Promise<void> {
   const user = profileState.user;
+  if (restoringAccount) return Promise.reject(new Error("Wait for your restore to finish before saving."));
   if (deletingAccount || profileState.deletionPending) return Promise.reject(new Error("Account deletion has started. Finish deleting your account from Your profile."));
   if (!db || !user || !profileState.ready) return Promise.reject(new Error("Sign in and wait for your Archív to load before saving."));
   const uid = user.uid;
@@ -200,4 +203,46 @@ export async function exportProfile(): Promise<{ items: CollectionItem[]; groups
   ]);
   if (auth?.currentUser?.uid !== user.uid || accountGeneration !== generation || deletingAccount || profileState.deletionPending) throw new Error("Your account changed. Please try again.");
   return { items: items.docs.map((record) => record.data() as CollectionItem), groups: groups.docs.map((record) => record.data() as CollectionGroup) };
+}
+
+export async function restoreProfile(backup: Backup, expectedUid: string): Promise<{ addedItems: number; addedGroups: number; skipped: number }> {
+  const user = auth?.currentUser;
+  if (!user || !db || !profileState.ready || deletingAccount || restoringAccount || profileState.deletionPending) throw new Error("Sign in and wait for your Archív to load before restoring.");
+  if (user.uid !== expectedUid) throw new Error("Your account changed. Review the backup again.");
+  const current = generation;
+  restoringAccount = true;
+  const totals = { addedItems: 0, addedGroups: 0, skipped: 0 };
+  try {
+    await writeQueue;
+    const records = [...backup.groups.map(value => ({section:"groups",value})), ...backup.items.map(value => ({section:"items",value}))];
+    for (let offset = 0; offset < records.length;) {
+      let bytes = 0;
+      const chunk: typeof records = [];
+      while (offset < records.length && chunk.length < 20) {
+        const size = new TextEncoder().encode(JSON.stringify(records[offset].value)).length;
+        if (chunk.length && bytes + size > 4 * 1024 * 1024) break;
+        bytes += size; chunk.push(records[offset++]);
+      }
+      const result = await runTransaction(db, async transaction => {
+        if (auth?.currentUser?.uid !== user.uid || generation !== current) throw new Error("Your account changed. Restore stopped.");
+        const marker = await transaction.get(doc(db!, "users", user.uid, "account", "deletion"));
+        if (marker.exists()) throw new Error("Account deletion has started. Restore stopped.");
+        const refs = chunk.map(entry => doc(db!, "users", user.uid, entry.section, entry.value.id));
+        const existing = await Promise.all(refs.map(ref => transaction.get(ref)));
+        if (auth?.currentUser?.uid !== user.uid || generation !== current) throw new Error("Your account changed. Restore stopped.");
+        const counts = { addedItems: 0, addedGroups: 0, skipped: 0 };
+        chunk.forEach((entry,index) => {
+          if (existing[index].exists()) { counts.skipped++; return; }
+          transaction.set(refs[index], entry.value);
+          if (entry.section === "items") counts.addedItems++; else counts.addedGroups++;
+        });
+        return counts;
+      });
+      totals.addedItems += result.addedItems; totals.addedGroups += result.addedGroups; totals.skipped += result.skipped;
+    }
+    return totals;
+  } finally {
+    restoringAccount = false;
+    if (!auth?.currentUser) announce();
+  }
 }
