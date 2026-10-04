@@ -6,7 +6,7 @@ const fake = vi.hoisted(() => ({
   authChanged: null as null | ((user: { uid: string } | null) => void),
   subscriptions: [] as { path: string; next: (snapshot: unknown) => void; error: (error: Error) => void; active: boolean }[],
   records: new Map<string, unknown>(),
-  fail: false, reauthFail: false, deleteFail: false, deleted: false,
+  transactionCount: 0, failTransaction: 0, fail: false, reauthFail: false, deleteFail: false, deleted: false,
 }));
 vi.mock("firebase/app", () => ({ initializeApp: () => ({}), getApps: () => [] }));
 vi.mock("firebase/auth", () => ({
@@ -38,6 +38,14 @@ vi.mock("firebase/firestore", () => ({
     next({ docs: [...fake.records].filter(([key]) => key.startsWith(path + "/")).map(([, value]) => ({ data: () => value })) });
     return () => { sub.active = false; };
   },
+  runTransaction: async (_db: unknown, action: (transaction: unknown) => Promise<unknown>) => {
+    fake.transactionCount++;
+    if (fake.failTransaction === fake.transactionCount) throw new Error("Transaction failed");
+    const changes: [string,unknown][] = [];
+    const result = await action({get: async (path:string) => ({exists: () => fake.records.has(path)}),set: (path:string,value:unknown) => changes.push([path,value])});
+    changes.forEach(([path,value]) => fake.records.set(path,value));
+    return result;
+  },
   writeBatch: () => {
     const changes: [string, unknown][] = [];
     return {
@@ -57,7 +65,7 @@ vi.mock("firebase/firestore", () => ({
 beforeEach(() => {
   vi.resetModules();
   for (const name of ["API_KEY", "AUTH_DOMAIN", "PROJECT_ID", "APP_ID"]) vi.stubEnv(`VITE_FIREBASE_${name}`, "test");
-  fake.auth.currentUser = null; fake.authChanged = null; fake.subscriptions = []; fake.records.clear(); fake.fail = false; fake.reauthFail = false; fake.deleteFail = false; fake.deleted = false;
+  fake.auth.currentUser = null; fake.authChanged = null; fake.subscriptions = []; fake.records.clear(); fake.fail = false; fake.reauthFail = false; fake.deleteFail = false; fake.deleted = false; fake.transactionCount = 0; fake.failTransaction = 0;
   localStorage.clear();
 });
 afterEach(() => vi.unstubAllEnvs());
@@ -150,4 +158,27 @@ it("rejects export if a server read fails rather than returning an incomplete ba
 it("rejects export after sign-out", async () => {
   const profile = await signedIn(); await profile.signOutProfile();
   await expect(profile.exportProfile()).rejects.toThrow("Sign in");
+});
+
+it("restores missing records and preserves newer existing records", async () => {
+  const profile = await signedIn();
+  fake.records.set("users/account-a/items/item-1", {...item,notes:"Newer notes"});
+  const result = await profile.restoreProfile({items:[item,{...item,id:"item-2"}],groups:[],exportedAt:"2026-10-04"}, "account-a");
+  expect(result).toEqual({addedItems:1,addedGroups:0,skipped:1});
+  expect(fake.records.get("users/account-a/items/item-1")).toMatchObject({notes:"Newer notes"});
+});
+it("can retry a partially completed restore without duplicate records", async () => {
+  const profile = await signedIn(); const backup={items:Array.from({length:45},(_,i)=>({...item,id:`item-${i}`})),groups:[],exportedAt:"2026-10-04"};
+  fake.failTransaction=2; await expect(profile.restoreProfile(backup,"account-a")).rejects.toThrow("Transaction failed");
+  expect(fake.records.size).toBe(20);
+  fake.failTransaction=0;
+  expect(await profile.restoreProfile(backup,"account-a")).toEqual({addedItems:25,addedGroups:0,skipped:20});
+  expect(fake.records.size).toBe(45);
+});
+it("rejects a restore if the reviewed account changed or is marked for deletion", async () => {
+  const profile=await signedIn(); const backup={items:[item],groups:[],exportedAt:"2026-10-04"};
+  await expect(profile.restoreProfile(backup,"account-b")).rejects.toThrow("account changed");
+  fake.records.set("users/account-a/account/deletion",{deleting:true});
+  await expect(profile.restoreProfile(backup,"account-a")).rejects.toThrow("deletion has started");
+  expect(fake.records.has("users/account-a/items/item-1")).toBe(false);
 });

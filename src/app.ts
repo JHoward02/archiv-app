@@ -1,3 +1,4 @@
+import { parseBackup, MAX_BACKUP_BYTES } from "./restore.ts";
 import { collectionExport, downloadExport } from "./export.ts";
 import { append, clear, el, money, parseMoney, safeUrl, thumbnail, type Child } from "./dom.ts";
 import type { CanvasExtensionHost } from "./host.ts";
@@ -7,7 +8,7 @@ import { parseQuery } from "./query.ts";
 import { manualOnlySelection, selectSearchCategory } from "./search-selection.ts";
 import type { AppSession, SortKey, Tab } from "./session.ts";
 import { CollectionStore, itemFromCandidate, makeId } from "./store.ts";
-import { exportProfile, deleteProfile, deletingAccount, profileState, profilesConfigured, saveProfile, signInProfile, signOutProfile, subscribeProfile } from "./profiles.ts";
+import { restoreProfile, restoringAccount, exportProfile, deleteProfile, deletingAccount, profileState, profilesConfigured, saveProfile, signInProfile, signOutProfile, subscribeProfile } from "./profiles.ts";
 import { formatDate, normalizeText, tokenize } from "./text.ts";
 import {
   CATEGORY_GLYPHS,
@@ -93,9 +94,9 @@ export class CollectorApp {
     if (this.host.backend.id === "standalone") {
       this.unsubscribeProfile = subscribeProfile((state) => {
         if (this.disposed) return;
-        if (deletingAccount) return;
         this.items = state.items;
         this.groups = state.groups;
+        if (deletingAccount || restoringAccount) return;
         this.render();
       });
     }
@@ -333,6 +334,35 @@ export class CollectorApp {
         } } }),
         el("small", { text: "Download your items, groups, notes, and uploaded photos in one JSON file. Catalog images remain links." }),
       ]),
+      el("button", { class: "cs-button cs-button--ghost", text: "Restore your Archív", attrs: { type: "button", disabled: profileState.deletionPending }, on: { click: () => {
+        const fileInput = el("input", { attrs: { type: "file", accept: ".json,application/json", "aria-label": "Choose an Archív backup" } });
+        fileInput.addEventListener("change", () => {
+          const file = fileInput.files?.[0]; fileInput.remove(); if (!file) return;
+          if (file.size > MAX_BACKUP_BYTES) { status.textContent = "Choose a backup smaller than 100 MB."; status.classList.add("cs-profile-status--error"); return; }
+          void file.text().then(json => {
+            const backup = parseBackup(json);
+            clear(panel);
+            const summary = el("p", { text: `${backup.items.length} items and ${backup.groups.length} groups from ${new Date(backup.exportedAt).toLocaleDateString()}.`, attrs: { role: "status" } });
+            const confirm = el("button", { class: "cs-button", text: "Restore missing records", attrs: { type: "button" }, on: { click: () => {
+              busy = true; confirm.disabled = true; cancel.disabled = true; confirm.textContent = "Restoring…";
+              void restoreProfile(backup, user.uid).then(result => {
+                busy = false; summary.textContent = `Restored ${result.addedItems} items and ${result.addedGroups} groups. Skipped ${result.skipped} existing records.`;
+                confirm.remove(); cancel.disabled = false; cancel.textContent = "Done";
+              }).catch(() => {
+                busy = false; confirm.disabled = false; cancel.disabled = false; confirm.textContent = "Retry restore";
+                summary.textContent = "Restore did not finish. Check your connection and retry. Any records already restored will be skipped safely.";
+                summary.classList.add("cs-profile-status--error");
+              });
+            } } });
+            const cancel = el("button", { class: "cs-button cs-button--ghost", text: "Cancel", attrs: { type: "button" }, on: { click: () => { close(); this.render(); } } });
+            panel.append(el("h2", { text: "Restore your Archív", attrs: { id: "cs-profile-title" } }), summary,
+              el("p", { text: "This adds missing records to the account shown below. Matching IDs are skipped, preserving your current items and groups. Uploaded photos are included." }),
+              el("strong", { text: user.email || user.displayName || "Your account" }), confirm, cancel);
+            confirm.focus();
+          }).catch((error) => { status.textContent = error instanceof Error ? error.message : "Could not read this backup."; status.classList.add("cs-profile-status--error"); });
+        });
+        fileInput.hidden = true; panel.append(fileInput); fileInput.click();
+      } } }),
       signOut,
       el("button", { class: "cs-profile-delete", text: profileState.deletionPending ? "Finish deleting account" : "Delete account", attrs: { type: "button" }, on: { click: () => {
         clear(panel);
