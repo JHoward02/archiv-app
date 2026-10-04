@@ -6,7 +6,7 @@ import { parseQuery } from "./query.ts";
 import { manualOnlySelection, selectSearchCategory } from "./search-selection.ts";
 import type { AppSession, SortKey, Tab } from "./session.ts";
 import { CollectionStore, itemFromCandidate, makeId } from "./store.ts";
-import { profileState, profilesConfigured, saveProfile, signInProfile, signOutProfile, subscribeProfile } from "./profiles.ts";
+import { deleteProfile, deletingAccount, profileState, profilesConfigured, saveProfile, signInProfile, signOutProfile, subscribeProfile } from "./profiles.ts";
 import { formatDate, normalizeText, tokenize } from "./text.ts";
 import {
   CATEGORY_GLYPHS,
@@ -92,6 +92,7 @@ export class CollectorApp {
     if (this.host.backend.id === "standalone") {
       this.unsubscribeProfile = subscribeProfile((state) => {
         if (this.disposed) return;
+        if (deletingAccount) return;
         this.items = state.items;
         this.groups = state.groups;
         this.render();
@@ -176,6 +177,10 @@ export class CollectorApp {
         el("p", { text: profilesConfigured ? "Sign in with Google to keep your shelves together on every device." : "Cloud profiles need Firebase configuration before this preview can accept sign-ins." }),
         el("button", { class: "cs-button", text: "Continue with Google", attrs: { type: "button", disabled: !profilesConfigured || !profileState.ready }, on: { click: () => void signInProfile().catch((error) => { this.session.warnings.push(error instanceof Error ? error.message : "Sign-in failed."); this.render(); }) } }),
       ]));
+      return;
+    }
+    if (this.host.backend.id === "standalone" && profileState.deletionPending) {
+      root.append(this.stateBlock("Finish deleting your account", "Deletion started but did not finish. Open Your profile to retry. Adding and changing items is disabled.", "error"));
       return;
     }
     if (this.host.backend.id === "standalone" && !profileState.ready) {
@@ -277,7 +282,8 @@ export class CollectorApp {
     const user = profileState.user;
     if (!user || this.root?.querySelector(".cs-profile-panel")) return;
     const panel = el("dialog", { class: "cs-profile-panel", attrs: { "aria-labelledby": "cs-profile-title" } });
-    const close = (): void => { panel.close(); panel.remove(); trigger.focus(); };
+    let busy = false;
+    const close = (): void => { if (busy) return; panel.close(); panel.remove(); if (profileState.deletionPending) this.render(); else trigger.focus(); };
     const signOut = el("button", {
       class: "cs-button cs-profile-signout", text: "Sign out", attrs: { type: "button" },
       on: { click: () => {
@@ -311,6 +317,31 @@ export class CollectorApp {
       ]),
       status,
       signOut,
+      el("button", { class: "cs-profile-delete", text: profileState.deletionPending ? "Finish deleting account" : "Delete account", attrs: { type: "button" }, on: { click: () => {
+        clear(panel);
+        const confirmation = el("input", { class: "cs-input", attrs: { id: "cs-delete-confirm", autocomplete: "off", placeholder: "DELETE" } });
+        const message = el("p", { text: "Permanently delete your Archív account, all items, groups, notes, and uploaded photos. This cannot be undone. Your Google account will remain intact.", attrs: { role: "status" } });
+        const remove = el("button", { class: "cs-button cs-profile-delete-confirm", text: "Delete my Archív account", attrs: { type: "button", disabled: true }, on: { click: () => {
+          if (confirmation.value !== "DELETE" || busy) return;
+          busy = true; remove.disabled = true; cancel.disabled = true; confirmation.disabled = true;
+          remove.textContent = "Deleting…";
+          message.textContent = "Confirm your Google account in the popup. Keep this page open while deletion finishes.";
+          void deleteProfile().then(() => { busy = false; close(); }).catch((error) => {
+            busy = false; cancel.disabled = false; confirmation.disabled = false; remove.disabled = false; remove.textContent = "Retry deletion";
+            message.textContent = profileState.deletionPending
+              ? "Deletion did not finish. Your account is locked for changes. Retry to remove the remaining records and finish deleting your account."
+              : "No deletion started. Allow the Google popup, confirm the same account, and try again. If this continues, contact us.";
+            message.classList.add("cs-profile-status--error");
+            if (error instanceof Error) console.error("Account deletion failed", error);
+          });
+        } } });
+        const cancel = el("button", { class: "cs-button cs-button--ghost", text: "Cancel", attrs: { type: "button" }, on: { click: close } });
+        confirmation.addEventListener("input", () => { remove.disabled = confirmation.value !== "DELETE"; });
+        panel.append(el("h2", { text: "Delete your account?", attrs: { id: "cs-profile-title" } }), message,
+          el("p", { text: "You will confirm your identity with Google before deletion starts. Once it starts, it cannot be cancelled." }),
+          el("label", { text: "Type DELETE to confirm", attrs: { for: "cs-delete-confirm" } }), confirmation, remove, cancel);
+        confirmation.focus();
+      } } }),
     );
     panel.addEventListener("cancel", (event) => { event.preventDefault(); close(); });
     panel.addEventListener("click", (event) => { if (event.target === panel) { const bounds = panel.getBoundingClientRect(); if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) close(); } });

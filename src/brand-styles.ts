@@ -15,7 +15,7 @@ export const brandStyles = `
 .cs-profile-close{display:grid;place-items:center;width:40px;height:40px;min-height:40px;border:1px solid #d9cebf;border-radius:50%;background:transparent;color:#08243b;font-size:24px;cursor:pointer}
 .cs-profile-identity{display:flex;align-items:center;gap:14px;min-width:0}.cs-profile-identity>div{min-width:0}.cs-profile-identity strong{font-size:16px}.cs-profile-email{overflow-wrap:anywhere;color:#6f6a62}
 .cs-profile-status{padding:14px;border-radius:12px;background:#edf1e9;color:#465a47}.cs-profile-status--error{background:#fae8e1;color:#a84631}
-.cs-profile-signout{width:100%;min-height:46px}
+.cs-profile-delete{appearance:none;border:0;background:transparent;color:#a84631;text-decoration:underline;text-underline-offset:3px;font:inherit;cursor:pointer;min-height:40px}.cs-profile-delete-confirm{background:#a84631 !important;color:#fffdf8 !important}.cs-profile-panel>h2{font:500 28px/1.2 Georgia,serif;margin:0}.cs-profile-panel .cs-input{width:100%;box-sizing:border-box}.cs-profile-signout{width:100%;min-height:46px}
 @media(max-width:640px){.cs-profile-button{min-height:32px;padding:2px 8px 2px 2px;font-size:10px}.cs-profile-avatar{width:24px;height:24px;font-size:10px}.cs-profile-avatar--large{width:48px;height:48px;font-size:17px}}
 .cs-profile-welcome{padding:clamp(30px,8vw,80px) 18px;max-width:620px;margin:0 auto;text-align:center;display:grid;justify-items:center;gap:18px}
 .cs-profile-welcome p{margin:0;color:#6f6a62;line-height:1.55}.cs-profile-welcome .cs-button{min-height:48px;padding:10px 22px}
