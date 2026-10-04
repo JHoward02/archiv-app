@@ -2,10 +2,21 @@ export const BRAND_STYLE_MARKER = "archiv-brand-v1";
 
 export const brandStyles = `
 .cs-header{position:relative !important}
-.cs-profile-button{position:absolute;right:0;top:8px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid #d9cebf;border-radius:999px;background:#fffdf8;color:#08243b;padding:8px 12px;font:700 12px Inter,system-ui,sans-serif;cursor:pointer}
-.cs-profile-button:focus-visible{outline:3px solid #f59a23}
-.cs-profile-panel{position:absolute;right:0;top:48px;z-index:40;width:min(300px,90vw);padding:18px;border:1px solid #d9cebf;border-radius:14px;background:#fffdf8;box-shadow:0 16px 40px #08243b33;display:grid;gap:10px}
-.cs-profile-panel p{margin:0}.cs-profile-panel small{color:#6f6a62}.cs-profile-panel button{min-height:40px}
+.cs-profile-button{position:absolute;right:0;top:0;display:flex;align-items:center;gap:7px;border:1px solid #d9cebf;border-radius:999px;background:#fffdf8;color:#08243b;padding:4px 10px 4px 4px;font:700 12px Inter,system-ui,sans-serif;cursor:pointer;min-height:36px}
+.cs-profile-button:focus-visible,.cs-profile-close:focus-visible{outline:3px solid #f59a23;outline-offset:3px}
+.cs-profile-avatar{display:grid;place-items:center;flex:none;width:28px;height:28px;border-radius:50%;background:#08243b;color:#fffdf8;font:700 11px Inter,system-ui,sans-serif}
+.cs-profile-avatar--large{width:48px;height:48px;font-size:17px}
+.cs-profile-panel{position:fixed;inset:0;margin:auto;width:min(380px,calc(100vw - 32px));box-sizing:border-box;padding:24px;border:1px solid #d9cebf;border-radius:20px;background:#fffdf8;color:#08243b;box-shadow:0 24px 70px #08243b33;font:14px/1.5 Inter,system-ui,sans-serif}
+.cs-profile-panel::backdrop{background:#08243b66}
+.cs-profile-panel[open]{display:grid;gap:22px}
+.cs-profile-panel p{margin:0}.cs-profile-panel small{color:#6f6a62}
+.cs-profile-panel__heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.cs-profile-panel__heading h2{font:500 30px/1.15 Georgia,serif;margin:0}
+.cs-profile-close{display:grid;place-items:center;width:40px;height:40px;min-height:40px;border:1px solid #d9cebf;border-radius:50%;background:transparent;color:#08243b;font-size:24px;cursor:pointer}
+.cs-profile-identity{display:flex;align-items:center;gap:14px;min-width:0}.cs-profile-identity>div{min-width:0}.cs-profile-identity strong{font-size:16px}.cs-profile-email{overflow-wrap:anywhere;color:#6f6a62}
+.cs-profile-status{padding:14px;border-radius:12px;background:#edf1e9;color:#465a47}.cs-profile-status--error{background:#fae8e1;color:#a84631}
+.cs-profile-signout{width:100%;min-height:46px}
+@media(max-width:640px){.cs-profile-button{min-height:32px;padding:2px 8px 2px 2px;font-size:10px}.cs-profile-avatar{width:24px;height:24px;font-size:10px}.cs-profile-avatar--large{width:48px;height:48px;font-size:17px}}
 .cs-profile-welcome{padding:clamp(30px,8vw,80px) 18px;max-width:620px;margin:0 auto;text-align:center;display:grid;justify-items:center;gap:18px}
 .cs-profile-welcome p{margin:0;color:#6f6a62;line-height:1.55}.cs-profile-welcome .cs-button{min-height:48px;padding:10px 22px}
 .cs-app {

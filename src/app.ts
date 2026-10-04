@@ -260,33 +260,62 @@ export class CollectorApp {
 
   private renderProfileControl(): HTMLElement {
     const user = profileState.user;
+    const name = user?.displayName || user?.email || "Your account";
+    const initials = (user?.displayName || user?.email || "A").split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
     const button = el("button", {
       class: "cs-profile-button",
-      text: user ? (user.displayName || user.email || "Profile") : "Sign in",
-      attrs: { type: "button", "aria-label": user ? "Open your profile" : "Sign in with Google" },
-      on: { click: () => {
-        if (user) this.showProfilePanel();
-        else void signInProfile().catch((error) => {
-          this.session.warnings.push(error instanceof Error ? error.message : "Sign-in failed.");
-          this.render();
-        });
-      } },
-    });
-    if (!profilesConfigured) button.setAttribute("title", "Cloud profiles are awaiting configuration");
+      attrs: { type: "button", "aria-label": `Open profile for ${name}`, "aria-haspopup": "dialog" },
+      on: { click: () => this.showProfilePanel(button) },
+    }, [
+      el("span", { class: "cs-profile-avatar", text: initials, attrs: { "aria-hidden": "true" } }),
+      el("span", { class: "cs-profile-button__label", text: "Your profile" }),
+    ]);
     return button;
   }
 
-  private showProfilePanel(): void {
+  private showProfilePanel(trigger: HTMLElement): void {
     const user = profileState.user;
-    if (!user) return;
-    const panel = el("div", { class: "cs-profile-panel", attrs: { role: "dialog", "aria-label": "Your profile" } }, [
-      el("p", { text: user.displayName || "Your profile" }),
-      el("small", { text: user.email || "Signed in with Google" }),
-      el("p", { text: profileState.error || "Your shelves sync to your Archív account." }),
-      el("button", { class: "cs-button cs-button--ghost", text: "Sign out", attrs: { type: "button" }, on: { click: () => void signOutProfile().finally(() => panel.remove()) } }),
-      el("button", { class: "cs-button cs-button--ghost", text: "Close", attrs: { type: "button" }, on: { click: () => panel.remove() } }),
-    ]);
+    if (!user || this.root?.querySelector(".cs-profile-panel")) return;
+    const panel = el("dialog", { class: "cs-profile-panel", attrs: { "aria-labelledby": "cs-profile-title" } });
+    const close = (): void => { panel.close(); panel.remove(); trigger.focus(); };
+    const signOut = el("button", {
+      class: "cs-button cs-profile-signout", text: "Sign out", attrs: { type: "button" },
+      on: { click: () => {
+        signOut.disabled = true;
+        signOut.textContent = "Signing out…";
+        void signOutProfile().then(close).catch(() => {
+          status.textContent = "Could not sign out. Please try again.";
+          status.classList.add("cs-profile-status--error");
+          signOut.disabled = false;
+          signOut.textContent = "Sign out";
+        });
+      } },
+    });
+    const status = el("p", {
+      class: `cs-profile-status${profileState.error ? " cs-profile-status--error" : ""}`,
+      text: profileState.error || "Your shelves are saved to your account and available on every device.",
+      attrs: { role: "status" },
+    });
+    panel.append(
+      el("div", { class: "cs-profile-panel__heading" }, [
+        el("h2", { text: "Your profile", attrs: { id: "cs-profile-title" } }),
+        el("button", { class: "cs-profile-close", text: "×", attrs: { type: "button", "aria-label": "Close profile" }, on: { click: close } }),
+      ]),
+      el("div", { class: "cs-profile-identity" }, [
+        el("span", { class: "cs-profile-avatar cs-profile-avatar--large", text: (user.displayName || user.email || "A").split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase(), attrs: { "aria-hidden": "true" } }),
+        el("div", {}, [
+          el("strong", { text: user.displayName || "Your Archív account" }),
+          el("p", { class: "cs-profile-email", text: user.email || "Google account" }),
+          el("small", { text: "Signed in with Google" }),
+        ]),
+      ]),
+      status,
+      signOut,
+    );
+    panel.addEventListener("cancel", (event) => { event.preventDefault(); close(); });
+    panel.addEventListener("click", (event) => { if (event.target === panel) { const bounds = panel.getBoundingClientRect(); if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) close(); } });
     this.root?.append(panel);
+    panel.showModal();
   }
 
   private renderTabs(): HTMLElement {
