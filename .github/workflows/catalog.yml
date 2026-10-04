@@ -47,6 +47,14 @@ jobs:
       # GITHUB_TOKEN pushes do not trigger the normal Pages workflow, so deploy here.
       - run: npm ci
       - run: npm run build:web
+      - name: Build isolated profiles preview
+        run: |
+          git fetch origin feature/cloud-profiles
+          git worktree add "$RUNNER_TEMP/archiv-profile-preview" 8b2fdb2d9afb8555a7b90326252c5f33d6c83591
+          npm --prefix "$RUNNER_TEMP/archiv-profile-preview" ci
+          npm --prefix "$RUNNER_TEMP/archiv-profile-preview" run build:web
+          mkdir -p dist-web/profile-preview
+          cp -R "$RUNNER_TEMP/archiv-profile-preview/dist-web/." dist-web/profile-preview/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
