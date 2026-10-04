@@ -186,3 +186,18 @@ export async function deleteProfile(): Promise<void> {
     if (!auth.currentUser) announce();
   }
 }
+
+/** Read confirmed cloud records after queued writes, never a browser cache or optimistic state. */
+export async function exportProfile(): Promise<{ items: CollectionItem[]; groups: CollectionGroup[] }> {
+  const user = auth?.currentUser;
+  if (!user || !db || !profileState.ready || deletingAccount || profileState.deletionPending) throw new Error("Sign in and wait for your Archív to load before exporting.");
+  const accountGeneration = generation;
+  await writeQueue;
+  if (auth?.currentUser?.uid !== user.uid || accountGeneration !== generation) throw new Error("Your account changed. Please try again.");
+  const [items, groups] = await Promise.all([
+    getDocsFromServer(collection(db, "users", user.uid, "items")),
+    getDocsFromServer(collection(db, "users", user.uid, "groups")),
+  ]);
+  if (auth?.currentUser?.uid !== user.uid || accountGeneration !== generation || deletingAccount || profileState.deletionPending) throw new Error("Your account changed. Please try again.");
+  return { items: items.docs.map((record) => record.data() as CollectionItem), groups: groups.docs.map((record) => record.data() as CollectionGroup) };
+}

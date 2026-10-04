@@ -1,3 +1,4 @@
+import { collectionExport, downloadExport } from "./export.ts";
 import { append, clear, el, money, parseMoney, safeUrl, thumbnail, type Child } from "./dom.ts";
 import type { CanvasExtensionHost } from "./host.ts";
 import { confidenceLabel, type ScoredCandidate } from "./match.ts";
@@ -6,7 +7,7 @@ import { parseQuery } from "./query.ts";
 import { manualOnlySelection, selectSearchCategory } from "./search-selection.ts";
 import type { AppSession, SortKey, Tab } from "./session.ts";
 import { CollectionStore, itemFromCandidate, makeId } from "./store.ts";
-import { deleteProfile, deletingAccount, profileState, profilesConfigured, saveProfile, signInProfile, signOutProfile, subscribeProfile } from "./profiles.ts";
+import { exportProfile, deleteProfile, deletingAccount, profileState, profilesConfigured, saveProfile, signInProfile, signOutProfile, subscribeProfile } from "./profiles.ts";
 import { formatDate, normalizeText, tokenize } from "./text.ts";
 import {
   CATEGORY_GLYPHS,
@@ -316,6 +317,22 @@ export class CollectorApp {
         ]),
       ]),
       status,
+      el("div", { class: "cs-profile-export" }, [
+        el("button", { class: "cs-button cs-button--ghost", text: "Export your Archív", attrs: { type: "button", disabled: profileState.deletionPending }, on: { click: (event) => {
+          const button = event.currentTarget as HTMLButtonElement;
+          button.disabled = true; button.textContent = "Preparing your export…";
+          void exportProfile().then(({items, groups}) => {
+            const backup = collectionExport(items, groups);
+            downloadExport(backup.filename, backup.json);
+            status.classList.remove("cs-profile-status--error");
+            status.textContent = "Your export is ready. Check your browser's downloads or save prompt.";
+          }).catch(() => {
+            status.classList.add("cs-profile-status--error");
+            status.textContent = "Could not export your Archív. Check your connection and try again.";
+          }).finally(() => { button.disabled = profileState.deletionPending; button.textContent = "Export your Archív"; });
+        } } }),
+        el("small", { text: "Download your items, groups, notes, and uploaded photos in one JSON file. Catalog images remain links." }),
+      ]),
       signOut,
       el("button", { class: "cs-profile-delete", text: profileState.deletionPending ? "Finish deleting account" : "Delete account", attrs: { type: "button" }, on: { click: () => {
         clear(panel);
