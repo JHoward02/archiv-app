@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, type User } from "firebase/auth";
-import { collection, doc, getFirestore, onSnapshot, writeBatch, type Unsubscribe } from "firebase/firestore";
+import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, deleteUser, reauthenticateWithPopup, type User } from "firebase/auth";
+import { collection, doc, getFirestore, onSnapshot, writeBatch, getDocsFromServer, getDocFromServer, setDoc, query, limit, type Unsubscribe } from "firebase/firestore";
 import type { CollectionGroup, CollectionItem } from "./types.ts";
 
 export interface ProfileState {
@@ -10,6 +10,7 @@ export interface ProfileState {
   items: CollectionItem[];
   groups: CollectionGroup[];
   error: string | null;
+  deletionPending: boolean;
 }
 
 const config = {
@@ -23,12 +24,13 @@ const app = profilesConfigured ? (getApps()[0] ?? initializeApp(config)) : null;
 const auth = app ? getAuth(app) : null;
 const db = app ? getFirestore(app) : null;
 const listeners = new Set<(state: ProfileState) => void>();
-export const profileState: ProfileState = { user: null, ready: !auth, loading: false, items: [], groups: [], error: null };
+export const profileState: ProfileState = { user: null, ready: !auth, loading: false, items: [], groups: [], error: null, deletionPending: false };
 let unsubscribeItems: Unsubscribe | null = null;
 let unsubscribeGroups: Unsubscribe | null = null;
 let generation = 0;
 let writeQueue = Promise.resolve();
 let pendingSaves = 0;
+export let deletingAccount = false;
 let confirmedItems: CollectionItem[] = [];
 let confirmedGroups: CollectionGroup[] = [];
 
@@ -59,11 +61,17 @@ if (auth && db) onAuthStateChanged(auth, async (user) => {
   unsubscribeItems?.(); unsubscribeGroups?.();
   unsubscribeItems = unsubscribeGroups = null;
   profileState.user = user;
+  profileState.deletionPending = false;
   profileState.items = []; profileState.groups = [];
   confirmedItems = []; confirmedGroups = [];
   profileState.ready = !user; profileState.loading = Boolean(user); profileState.error = null;
   announce();
   if (!user) return;
+  void getDocFromServer(doc(db, "users", user.uid, "account", "deletion")).then((record) => {
+    if (current !== generation) return;
+    profileState.deletionPending = record.exists();
+    announce();
+  }).catch(() => { /* Older rules may not yet expose the deletion marker. */ });
   try {
     let itemsReady = false, groupsReady = false;
     const loaded = () => {
@@ -109,6 +117,7 @@ export async function signOutProfile(): Promise<void> {
 
 export function saveProfile(items: CollectionItem[], groups: CollectionGroup[]): Promise<void> {
   const user = profileState.user;
+  if (deletingAccount || profileState.deletionPending) return Promise.reject(new Error("Account deletion has started. Finish deleting your account from Your profile."));
   if (!db || !user || !profileState.ready) return Promise.reject(new Error("Sign in and wait for your Archív to load before saving."));
   const uid = user.uid;
   const accountGeneration = generation;
@@ -143,4 +152,37 @@ export function saveProfile(items: CollectionItem[], groups: CollectionGroup[]):
   });
   writeQueue = result.catch(() => undefined);
   return result;
+}
+
+/** Reauthenticate before any destructive write; delete auth only after all data is removed. */
+export async function deleteProfile(): Promise<void> {
+  const user = auth?.currentUser;
+  if (!user || !db || !auth) throw new Error("Sign in before deleting your account.");
+  if (deletingAccount) throw new Error("Account deletion is already running.");
+  deletingAccount = true;
+  try {
+    await reauthenticateWithPopup(user, new GoogleAuthProvider());
+    await writeQueue;
+    if (auth.currentUser?.uid !== user.uid) throw new Error("Your account changed. Please try again.");
+    const marker = doc(db, "users", user.uid, "account", "deletion");
+    const prior = await getDocFromServer(marker);
+    if (!prior.exists()) await setDoc(marker, { deleting: true });
+    profileState.deletionPending = true;
+    // The marker is immutable under the rules and blocks writes from every device.
+    for (const section of ["items", "groups"]) {
+      while (true) {
+        const snapshot = await getDocsFromServer(query(collection(db, "users", user.uid, section), limit(200)));
+        if (snapshot.empty) break;
+        const batch = writeBatch(db);
+        for (const record of snapshot.docs) batch.delete(record.ref);
+        await batch.commit();
+      }
+    }
+    await deleteUser(user);
+  } catch (error) {
+    throw error;
+  } finally {
+    deletingAccount = false;
+    if (!auth.currentUser) announce();
+  }
 }
