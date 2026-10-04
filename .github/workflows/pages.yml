@@ -28,8 +28,8 @@ jobs:
       - run: npm run build:web
       - name: Build isolated profiles preview
         run: |
-          git fetch origin feature/profile-menu
-          git worktree add "$RUNNER_TEMP/archiv-profile-preview" 354ad1ae64c770124e075b5755c2fa7da0a50cf8
+          git fetch origin feature/privacy-account
+          git worktree add "$RUNNER_TEMP/archiv-profile-preview" 6f3da1abb62ac6de0f27bd60ba7ea014068fd6ff
           npm --prefix "$RUNNER_TEMP/archiv-profile-preview" ci
           npm --prefix "$RUNNER_TEMP/archiv-profile-preview" run build:web
           mkdir -p dist-web/profile-preview
