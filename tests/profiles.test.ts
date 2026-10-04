@@ -24,8 +24,10 @@ vi.mock("firebase/firestore", () => ({
   setDoc: async (path: string, value: unknown) => { if (fake.fail) throw new Error("Permission denied"); fake.records.set(path,value); },
   limit: (count: number) => count,
   query: (path: string, count: number) => ({path,count}),
-  getDocsFromServer: async ({path,count}: {path:string;count:number}) => {
-    const docs = [...fake.records.keys()].filter(key => key.startsWith(path + "/")).slice(0,count).map(ref => ({ref}));
+  getDocsFromServer: async (source: string | {path:string;count:number}) => {
+    if (fake.fail) throw new Error("Read failed");
+    const {path,count} = typeof source === "string" ? {path:source,count:Infinity} : source;
+    const docs = [...fake.records.keys()].filter(key => key.startsWith(path + "/")).slice(0,count).map(ref => ({ref,data: () => fake.records.get(ref)}));
     return {docs,empty:docs.length===0};
   },
   collection: (_db: unknown, ...parts: string[]) => parts.join("/"),
@@ -121,7 +123,7 @@ it("deletes multiple batches of account records before deleting authentication",
 it("keeps authentication when a data batch fails and allows deletion retry", async () => {
   const profile = await signedIn(); await profile.saveProfile([item], []);
   fake.records.set("users/account-a/account/deletion", {deleting:true}); fake.fail = true;
-  await expect(profile.deleteProfile()).rejects.toThrow("Permission denied");
+  await expect(profile.deleteProfile()).rejects.toThrow("Read failed");
   expect(fake.deleted).toBe(false);
   await expect(profile.saveProfile([], [])).rejects.toThrow("deletion has started");
   fake.fail = false; await profile.deleteProfile(); expect(fake.deleted).toBe(true);
@@ -132,4 +134,20 @@ it("can finish deletion if authentication removal fails after record cleanup", a
   expect(fake.records.has("users/account-a/items/item-1")).toBe(false);
   expect(fake.auth.currentUser).not.toBeNull();
   fake.deleteFail = false; await profile.deleteProfile(); expect(fake.deleted).toBe(true);
+});
+
+it("exports committed records from the current account without other accounts or deletion markers", async () => {
+  const profile = await signedIn();
+  fake.records.set("users/account-a/items/server-only", {id:"server-only",notes:"Private notes",imageUrl:"data:image/jpeg;base64,aA=="});
+  fake.records.set("users/account-a/groups/g1", {id:"g1",name:"Favorites"});
+  fake.records.set("users/account-b/items/private", {id:"private"});
+  expect(await profile.exportProfile()).toEqual({items:[{id:"server-only",notes:"Private notes",imageUrl:"data:image/jpeg;base64,aA=="}],groups:[{id:"g1",name:"Favorites"}]});
+});
+it("rejects export if a server read fails rather than returning an incomplete backup", async () => {
+  const profile = await signedIn(); fake.fail = true;
+  await expect(profile.exportProfile()).rejects.toThrow("Read failed");
+});
+it("rejects export after sign-out", async () => {
+  const profile = await signedIn(); await profile.signOutProfile();
+  await expect(profile.exportProfile()).rejects.toThrow("Sign in");
 });
