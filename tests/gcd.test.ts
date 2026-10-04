@@ -12,7 +12,7 @@ it("routes a bare issue number through the relay and preserves publication year"
   expect(result.candidates[0]).toMatchObject({ id: "gcd:44451", year: 1988, category: "comic" });
 });
 it("adds browser CORS headers and requests upstream JSON", async () => {
-  const upstream = vi.fn().mockResolvedValue(new Response(JSON.stringify([{ api_url: "issue", private_field: "omit" }])));
+  const upstream = vi.fn().mockResolvedValue(new Response(JSON.stringify([{ api_url: "issue", private_field: "omit" }]), { headers: { "Content-Type": "application/json" } }));
   const response = await handleComics(new Request("https://relay.test/comics/search?series=Batman&number=1", { headers: { Origin: "https://jhoward02.github.io" } }), upstream);
   expect(response!.headers.get("Access-Control-Allow-Origin")).toBe("https://jhoward02.github.io");
   expect(upstream.mock.calls[0][0]).toBe("https://www.comics.org/api/series/name/Batman/issue/1/?format=json");

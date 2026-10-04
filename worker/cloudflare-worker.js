@@ -17,12 +17,15 @@ async function handleComics(request, fetchUpstream = fetch) {
   const path = `/api/series/name/${encodeURIComponent(series)}/issue/${encodeURIComponent(number)}/${year ? `year/${year}/` : ""}`;
   try {
     const upstream = await fetchUpstream(`https://www.comics.org${path}?format=json`, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(8000) });
-    if (!upstream.ok) return reply({ error: upstream.status === 429 ? "Comics lookup is busy. Try again shortly." : "Comics catalog is unavailable." }, upstream.status === 429 ? 429 : 502);
+    if (!upstream.ok) return reply({ upstreamStatus: upstream.status, error: upstream.status === 429 ? "Comics lookup is busy. Try again shortly." : "Comics catalog is unavailable." }, upstream.status === 429 ? 429 : 502);
+    if (!(upstream.headers.get("Content-Type") || "").includes("json")) return reply({ error: "Comics catalog returned a non-JSON response", upstreamStatus: upstream.status }, 502);
     const payload = await upstream.json();
     const rows = Array.isArray(payload) ? payload : payload?.results;
     if (!Array.isArray(rows)) return reply({ error: "Unexpected comics catalog response" }, 502);
     return reply({ results: rows.slice(0, 40).map(({ api_url, series_name, descriptor, publication_date, series }) => ({ api_url, series_name, descriptor, publication_date, series })) });
-  } catch { return reply({ error: "Comics catalog is unavailable. Try again shortly." }, 502); }
+  } catch (error) {
+    return reply({ error: "Comics catalog is unavailable. Try again shortly.", diagnostic: String(error?.message || error).slice(0, 240) }, 502);
+  }
 }
 
 
