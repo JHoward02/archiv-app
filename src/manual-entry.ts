@@ -1,4 +1,5 @@
 import { getSearchSelection } from "./search-selection.ts";
+import { profileState, saveProfile } from "./profiles.ts";
 
 const STORAGE_KEY = "openhands:apps:collector-scan:standalone:collection:v1";
 
@@ -20,17 +21,24 @@ function id(): string {
 
 async function photoData(file: File): Promise<string> {
   const bitmap = await createImageBitmap(file);
-  const max = 1200;
+  const max = 800;
   const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
   const canvas = document.createElement("canvas");
   canvas.width = Math.max(1, Math.round(bitmap.width * scale));
   canvas.height = Math.max(1, Math.round(bitmap.height * scale));
   canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   bitmap.close();
-  return canvas.toDataURL("image/jpeg", 0.82);
+  return canvas.toDataURL("image/jpeg", 0.7);
 }
 
-function saveManual(item: Record<string, unknown>): void {
+async function saveManual(item: Record<string, unknown>): Promise<void> {
+  if (profileState.user) {
+    await saveProfile([item as unknown as typeof profileState.items[number], ...profileState.items], profileState.groups);
+    return;
+  }
+  // The Canvas extension still has a local collection. The standalone web
+  // app requires an account and never writes a guest collection to this device.
+  if (document.querySelector("#app")) throw new Error("Sign in with Google to save to your Archív.");
   let parsed: { schemaVersion: number; items: unknown[]; groups: unknown[] } = { schemaVersion: 1, items: [], groups: [] };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -80,7 +88,7 @@ function openManual(): void {
   panel.style.cssText = "background:#fffdf8;color:#08243b;width:min(560px,100%);max-height:90vh;overflow:auto;border:1px solid #d9cebf;border-radius:18px;padding:20px;display:grid;gap:12px;box-shadow:0 24px 60px rgba(8,36,59,.25)";
   panel.innerHTML = `
     <div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><h3 style="margin:0;font-family:Georgia,serif">Add it to Archív</h3><button type="button" data-close aria-label="Close" style="font-size:24px;border:0;background:none;color:#08243b">×</button></div>
-    <p style="margin:0;color:#6f6a62">Save privately to this device, or propose the item for Archív's shared catalog. Catalog proposals open on GitHub, require a GitHub account, and appear in search after review.</p>
+    <p style="margin:0;color:#6f6a62">Save privately to your Archív account. Catalog proposals open on GitHub, require a GitHub account, and appear in search after review.</p>
     <label>Title / name<input required name="title" value="${query.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!))}" class="cs-input" style="width:100%;margin-top:5px"></label>
     <label>Type<select name="category" class="cs-select" style="width:100%;margin-top:5px">
       <option value="comic">Comic</option><option value="tcg">TCG</option><option value="sports-card">Sports card</option><option value="book">Book</option><option value="video-game">Video game</option><option value="figure">Figure</option><option value="toy">Toy</option><option value="coin">Coin</option><option value="vinyl">Vinyl</option><option value="sneaker">Sneaker</option><option value="other">Other</option>
@@ -119,14 +127,17 @@ function openManual(): void {
     const category = String(fd.get("category") || "other");
     const selection = getSearchSelection();
     const line = category === "figure" ? selection.figureLine : category === "toy" ? selection.toyLine : category === "tcg" ? selection.tcgGame : null;
-    saveManual({
+    try { await saveManual({
       id: id(), addedAt: now, updatedAt: now, title, subtitle: maker || null,
       category, year: Number.isFinite(yearRaw) && yearRaw > 0 ? yearRaw : null,
       imageUrl, description: null, sourceUrl: null, sourceLabel: "Manual entry",
       details: [maker ? { label: "Maker / publisher / artist", value: maker } : null, identifier ? { label: "Identifier", value: identifier } : null, line ? { label: "Line / game", value: line } : null, category === "toy" && selection.toyLine === "die-cast" && selection.dieCastBrand ? { label: "Brand", value: selection.dieCastBrand } : null].filter(Boolean),
       condition: "good", grade: "", quantity: 1, pricePaid: null, estimatedValue: null,
       notes: String(fd.get("notes") || "").trim(), favorite: false, groupId: null,
-    });
+    }); } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Could not save your item. Please try again.");
+      return;
+    }
     overlay.remove();
     location.hash = `#/collection/category/${category}`;
     location.reload();
