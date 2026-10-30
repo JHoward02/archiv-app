@@ -353,3 +353,12 @@
  .lego-detail-header>.lego-account-controls{right:0;top:0;margin:0}
  .lego-detail-header>.lego-back-to-themes{right:54px;top:5px}
 }
+
+/* Reserve a real top control lane on theme pages so the navigation never overlays the theme tile. */
+.lego-theme-header{padding-top:64px;box-sizing:border-box}
+.lego-theme-header>.lego-account-controls{top:0;right:0}
+.lego-theme-header>.lego-back-to-themes{top:5px;right:58px}
+@media(max-width:640px){
+ .lego-theme-header{padding-top:64px}
+ .lego-theme-header>.lego-back-to-themes{right:54px}
+}
