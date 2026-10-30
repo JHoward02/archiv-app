@@ -46,7 +46,6 @@ for(const [label,file] of [["Contact","contact.html"],["Attribution","attributio
 footer.append(footerLinks);
 footer.append(e("p","lego-copyright","© 2026 Archív. All rights reserved."));
 footer.append(e("p","lego-footer-disclaimer","LEGO® and the LEGO® logo are trademarks of the LEGO Group. Archív is an independent collector app and is not sponsored or endorsed by the LEGO Group."));
-shell.append(footer);
 if(selected!=="All LEGO"){
 const main=e("section","lego-main lego-catalog-section");main.append(e("h2","",selected));
 const controls=e("div","lego-controls");const input=e("input") as HTMLInputElement;input.placeholder="Search by set name or number";input.value=search;input.setAttribute("aria-label","Search LEGO® sets");input.oninput=()=>{search=input.value;page=0;renderResults()};controls.append(input);
@@ -79,5 +78,7 @@ card.append(actions);results.append(card);
 if(page>0)pager.append(button("Previous",()=>{page--;renderResults()}));
 if((page+1)*24<rows.length)pager.append(button("Next",()=>{page++;renderResults()}));
 }
-renderResults()}}
+renderResults()}
+shell.append(footer);
+}
 void load();
