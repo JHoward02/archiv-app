@@ -68,3 +68,10 @@
 .lego-affiliate p{font-size:13px;margin:0;color:#655f56}
 @media(max-width:850px){.lego-results{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:640px){.lego-results{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.lego-set-cover{padding:9px}.lego-set-details{padding:11px 10px 7px}.lego-set-details h3{font-size:14px;min-height:36px}.lego-set-actions{padding:8px 9px 10px}.lego-set-status{font-size:9px}.lego-set-actions .lego-button{font-size:12px;padding:6px}}
+
+/* Selection is integrated into the brick, never an external dark outline. */
+.lego-theme.current{outline:none!important;outline-offset:0!important;filter:saturate(1.09) brightness(1.045);box-shadow:inset 2px 2px 0 #ffffff55,inset -4px -4px 0 #0000001c,0 5px 0 var(--brick-dark),0 12px 18px -13px #08243b77}
+.lego-theme-selected{position:absolute;right:10px;bottom:9px;border-radius:100px;padding:4px 8px;background:#fffdf8;color:#08243b;font:700 10px Inter,system-ui,sans-serif;box-shadow:0 1px 4px #0002;letter-spacing:.01em}
+.lego-theme.current .lego-theme-name{padding-right:85px}
+.lego-theme:focus-visible{outline:2px solid #f59a23!important;outline-offset:3px!important}
+@media(max-width:640px){.lego-theme-selected{font-size:9px;right:7px;bottom:6px;padding:3px 6px}.lego-theme.current .lego-theme-name{padding-right:70px}}
