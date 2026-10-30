@@ -44,7 +44,7 @@ jobs:
 
       - name: Install Capacitor Android and native plugins for this isolated build
         run: |
-          npm install --no-save --no-audit --no-fund \
+          npm install --no-save --legacy-peer-deps --no-audit --no-fund \
             @capacitor/core@7.6.10 @capacitor/cli@7.6.10 @capacitor/android@7.6.10 \
             @capacitor/browser@7.0.5 @capacitor-firebase/authentication@7.5.0
 
