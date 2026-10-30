@@ -281,3 +281,12 @@
 .lego-account-button:hover{background:#174665;color:#fff}
 .lego-account-message{border:1px solid #e4cbaa;background:#fff9ed;border-radius:10px;padding:11px 15px;color:#78511e;font-size:13px}
 @media(max-width:640px){.lego-account-controls{margin:14px 0 0;justify-content:flex-start}}
+
+/* Google Identity style controls, retaining Firebase Authentication functionality. */
+.gsi-material-button{background:#fff;color:#1f1f1f;border:1px solid #747775;border-radius:4px;font:500 14px/20px Roboto,Arial,sans-serif;letter-spacing:.25px;height:40px;padding:0 12px;cursor:pointer;min-width:174px;display:inline-flex;align-items:center;justify-content:center;box-shadow:none}
+.gsi-material-button:hover{background:#f8faff;border-color:#747775}
+.gsi-material-button:focus-visible{outline:2px solid #4285f4;outline-offset:2px}
+.gsi-material-button-content-wrapper{display:inline-flex;align-items:center;justify-content:center;gap:10px;white-space:nowrap}
+.gsi-material-button-icon{display:block;width:18px;height:18px;flex:none}
+.gsi-material-button-contents{font-weight:500}
+@media(max-width:640px){.lego-account-controls{justify-content:center}.gsi-material-button{flex:1 1 185px}}
