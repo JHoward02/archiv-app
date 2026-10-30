@@ -264,5 +264,9 @@
 .lego-image-collection .lego-detail-status{margin-bottom:10px}
 .lego-image-collection .lego-detail-actions{margin-bottom:0}
 
-/* Equal-height set detail panels on desktop. */
-@media(min-width:701px){.lego-detail-layout{align-items:stretch}.lego-detail-layout>.lego-detail-figure,.lego-detail-layout>.lego-detail-info{box-sizing:border-box;height:100%}}
+/* Keep both set-detail cards flush at the top and bottom on desktop. */
+@media(min-width:701px){
+ .lego-detail-layout{align-items:stretch;grid-auto-rows:auto}
+ .lego-detail-layout>.lego-detail-figure,
+ .lego-detail-layout>.lego-detail-info{box-sizing:border-box;align-self:stretch;height:auto;min-height:0}
+}
