@@ -117,10 +117,10 @@ if(!rows.length){results.append(e("p","lego-empty","No matching sets. Try anothe
 for(const row of rows.slice(page*24,(page+1)*24)){
 const owned=saved[row.number]==="owned",wish=saved[row.number]==="wishlist";
 const card=e("article","lego-set-tile "+(owned?"is-owned":"is-unowned"));
-const cover=e("div","lego-set-cover");const img=e("img","lego-set-photo");
+const cover=e("a","lego-set-cover lego-set-open");cover.href="#/set/"+encodeURIComponent(row.number);cover.setAttribute("aria-label","View details for "+row.name);const img=e("img","lego-set-photo");
 img.src=row.image||setImage(row.number);img.alt=row.name+" set image";img.loading="lazy";img.onerror=()=>{img.style.display="none";cover.append(e("span","lego-image-fallback","Image unavailable"))};cover.append(img);
 const status=e("span","lego-set-status "+(owned?"owned":wish?"wishlist":"missing"),owned?"✓ OWNED":wish?"♡ WISHLIST":"NOT OWNED");cover.append(status);card.append(cover);
-const details=e("div","lego-set-details");details.append(e("p","lego-number",row.number+" · "+row.year));details.append(e("h3","",row.name));details.append(e("p","lego-detail",row.parts+" pieces"));card.append(details);
+const details=e("a","lego-set-details lego-set-open");details.href="#/set/"+encodeURIComponent(row.number);details.setAttribute("aria-label","View details for "+row.name);details.append(e("p","lego-number",row.number+" · "+row.year));details.append(e("h3","",row.name));details.append(e("p","lego-detail",row.parts+" pieces"));card.append(details);
 const actions=e("div","lego-set-actions");actions.append(button(owned?"✓ Owned":"Mark owned",()=>save(row.number,"owned"),owned?"on":""));
 if(!owned){
 actions.append(button(wish?"✓ Wishlisted":"♡ Wishlist",()=>save(row.number,"wishlist"),wish?"on":""));
