@@ -1,5 +1,5 @@
 import "./lego-styles.css";
-type SetRow={number:string;name:string;year:number;theme:string;parts:number;image?:string};
+type SetRow={number:string;name:string;year:number;theme:string;parts:number;image?:string;images?:string[]};
 type Status="owned"|"wishlist";
 const featured=["City","Pokemon","Star Wars","Technic","Botanicals","Icons"];
 let themes=["All LEGO",...featured,"Complete Catalog"];
@@ -46,7 +46,23 @@ function renderSetDetail(shell:HTMLElement,id:string){
  if(!row){wrap.append(e("h1","","Set not found"));wrap.append(e("p","","This set is not present in the current Rebrickable catalog."));shell.append(wrap);return}
  const owned=saved[row.number]==="owned",wish=saved[row.number]==="wishlist";
  const hero=e("div","lego-detail-layout");
- const figure=e("div","lego-detail-figure");const img=e("img");img.src=row.image||setImage(row.number);img.alt=row.name+" set photograph";img.onerror=()=>{img.style.display="none";figure.append(e("p","lego-empty","Set image unavailable"))};figure.append(img);
+ const figure=e("div","lego-detail-figure");
+ const candidates=[...(row.images||[]),row.image||""].filter(Boolean);
+ const images=[...new Set(candidates)];
+ if(!images.length){figure.append(e("p","lego-empty","No set photographs are available."))}
+ else{
+  const mainImage=e("img","lego-gallery-main");mainImage.alt=row.name+" photograph 1 of "+images.length;
+  const counter=e("p","lego-gallery-count");
+  const controls=e("div","lego-gallery-controls");
+  let active=0;
+  function showImage(index:number){active=(index+images.length)%images.length;mainImage.src=images[active];mainImage.alt=row.name+" photograph "+(active+1)+" of "+images.length;counter.textContent=(active+1)+" / "+images.length;for(const [i,b] of [...controls.children].entries())b.classList.toggle("active",i===active)}
+  mainImage.onerror=()=>{mainImage.style.display="none";counter.textContent="This photograph is unavailable."};
+  figure.append(mainImage);
+  if(images.length>1){const prev=button("← Previous",()=>showImage(active-1),"lego-gallery-prev"),next=button("Next →",()=>showImage(active+1),"lego-gallery-next");figure.append(e("div","lego-gallery-arrows"));figure.lastElementChild?.append(prev,next);for(let i=0;i<images.length;i++){const thumb=e("button","lego-gallery-thumb");thumb.setAttribute("aria-label","Show photograph "+(i+1));const pic=e("img");pic.src=images[i];pic.alt="";thumb.append(pic);thumb.onclick=()=>showImage(i);controls.append(thumb)}figure.append(controls)}
+  else figure.append(e("p","lego-gallery-single","Only one catalog photograph is currently available for this set."));
+  if(images.length>1)figure.append(counter);
+  showImage(0);
+ }
  const details=e("section","lego-detail-info");
  details.append(e("p","lego-detail-kicker","LEGO® set "+row.number));
  details.append(e("h1","",row.name));
@@ -59,7 +75,7 @@ function renderSetDetail(shell:HTMLElement,id:string){
  actions.append(button(wish?"✓ On wishlist":"♡ Add to wishlist",()=>save(row.number,"wishlist"),wish?"on":""));
  details.append(actions);
  if(!owned){const pending=e("div","lego-shop-pending");pending.append(e("strong","","Find a seller"),e("small","","Affiliate purchase offers are not connected yet."));details.append(pending)}
- const source=e("a","lego-detail-source","View set on Rebrickable ↗");source.href="https://rebrickable.com/sets/"+encodeURIComponent(row.number)+"/";source.target="_blank";source.rel="noopener noreferrer";details.append(source);
+
  hero.append(figure,details);wrap.append(hero);
  wrap.append(e("p","lego-detail-credit","Set information and imagery sourced from Rebrickable. Product images are owned by their respective rights holders."));
  shell.append(wrap);
