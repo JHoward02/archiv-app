@@ -152,11 +152,13 @@ function renderSetDetail(shell:HTMLElement,id:string){
  const facts=e("dl","lego-detail-facts");
  for(const [label,value] of [["Set number",row.number],["Theme",row.theme],["Release year",String(row.year||"Not listed")],["Pieces",row.parts?row.parts.toLocaleString():"Not listed"]]){const item=e("div");item.append(e("dt","",label),e("dd","",value));facts.append(item)}
  details.append(facts);
- details.append(e("p","lego-detail-status",owned?"✓ In your collection":wish?"♡ On your wishlist":"Not in your collection"));
+ const collection=e("div","lego-image-collection");
+ collection.append(e("p","lego-detail-status",owned?"✓ In your collection":wish?"♡ On your wishlist":"Not in your collection"));
  const actions=e("div","lego-detail-actions");
  actions.append(button(owned?"✓ Owned · Remove":"Mark as owned",()=>save(row.number,"owned"),owned?"on":""));
  actions.append(button(wish?"✓ On wishlist":"♡ Add to wishlist",()=>save(row.number,"wishlist"),wish?"on":""));
- details.append(actions);
+ collection.append(actions);
+ figure.append(collection);
  if(!owned){
   const seller=e("div","lego-shop-pending archiv-ebay-inline");
   const link=e("a","archiv-ebay-inline-link","Find on eBay ↗");
