@@ -59,7 +59,7 @@ function renderSetDetail(shell:HTMLElement,id:string){
   mainImage.onerror=()=>{mainImage.style.display="none";counter.textContent="This photograph is unavailable."};
   figure.append(mainImage);
   if(images.length>1){const prev=button("← Previous",()=>showImage(active-1),"lego-gallery-prev"),next=button("Next →",()=>showImage(active+1),"lego-gallery-next");figure.append(e("div","lego-gallery-arrows"));figure.lastElementChild?.append(prev,next);for(let i=0;i<images.length;i++){const thumb=e("button","lego-gallery-thumb");thumb.setAttribute("aria-label","Show photograph "+(i+1));const pic=e("img");pic.src=images[i];pic.alt="";thumb.append(pic);thumb.onclick=()=>showImage(i);controls.append(thumb)}figure.append(controls)}
-  else figure.append(e("p","lego-gallery-single","Only one catalog photograph is currently available for this set."));
+  
   if(images.length>1)figure.append(counter);
   showImage(0);
  }
