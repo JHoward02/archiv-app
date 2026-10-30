@@ -29,7 +29,8 @@ function classify(id){
   rootTheme=node;
   id=node.parent_id;
  }
- return rootTheme?.name || "Other LEGO";
+ const name=rootTheme?.name || "Other LEGO";
+ return name==="Pokémon"?"Pokemon":name;
 }
 const rows=csv("sets").filter(s=>s.set_num&&s.name).map(s=>({number:s.set_num,name:s.name,year:Number(s.year)||0,theme:classify(s.theme_id),parts:Number(s.num_parts)||0,image:s.img_url||""}));
 writeFileSync(new URL("src/lego-catalog.json",root),JSON.stringify(rows));
