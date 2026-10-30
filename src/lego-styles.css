@@ -343,3 +343,13 @@
  .lego-theme-header>.lego-account-controls{top:0;right:0;margin:0}
  .lego-theme-header>.lego-back-to-themes{top:5px;right:54px}
 }
+
+/* Product detail header: prevent the return button from overlapping the avatar. */
+.lego-detail-header{position:relative}
+.lego-detail-header>.lego-account-controls{position:absolute;right:0;top:0;margin:0;z-index:30}
+.lego-detail-header>.lego-back-to-themes{position:absolute;right:58px;top:5px;z-index:10}
+@media(max-width:640px){
+ .lego-detail-header{padding-top:54px}
+ .lego-detail-header>.lego-account-controls{right:0;top:0;margin:0}
+ .lego-detail-header>.lego-back-to-themes{right:54px;top:5px}
+}
