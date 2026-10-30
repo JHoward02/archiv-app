@@ -131,3 +131,9 @@
 .lego-theme[data-theme="architecture"]{--brick:#667b9a;--brick-dark:#425574;--brick-light:#99acca}
 /* Half an inch to the right relative to the previous theme-page position. */
 @media(min-width:641px){.lego-featured-theme{transform:translateX(64px)}}
+
+/* Theme-page-only back navigation, top-right without shifting the feature brick. */
+.lego-theme-header{position:relative;padding-top:35px}
+.lego-back-to-themes{position:absolute;top:0;right:0;background:transparent;border:1px solid #cfc1ac;color:#08243b;border-radius:100px;font-weight:700;min-height:34px;padding:6px 13px;font-size:12px}
+.lego-back-to-themes:hover{background:#fffdf8;border-color:#ad8e64}
+@media(max-width:640px){.lego-theme-header{padding-top:48px}.lego-back-to-themes{top:3px;right:0}}
