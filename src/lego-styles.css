@@ -305,3 +305,7 @@
 .lego-account-dropdown .gsi-material-button{width:100%;min-width:195px}
 .lego-account-dropdown .lego-account-button{min-width:195px;padding:10px 16px;border-radius:6px;cursor:pointer}
 @media(max-width:640px){.lego-account-controls{margin:0 0 0 auto;justify-content:initial}.lego-account-dropdown .gsi-material-button{flex:none}}
+
+/* Signed-in Google profile image replaces the hamburger trigger. */
+.lego-account-avatar{display:block;width:36px;height:36px;border-radius:50%;object-fit:cover}
+.lego-account-toggle:has(.lego-account-avatar){border-radius:50%;padding:3px;overflow:hidden}
