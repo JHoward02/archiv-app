@@ -121,3 +121,13 @@
 .lego-theme-header .lego-logo{flex:0 1 510px}
 .lego-featured-theme{margin-left:-12px}
 @media(max-width:640px){.lego-theme-header{gap:5px}.lego-theme-header .lego-logo{flex:1 1 55%}.lego-featured-theme{margin-left:0}}
+
+/* Theme identity, not DOM position, determines the brick color. */
+.lego-theme[data-theme="speed-champions"]{--brick:#bc473a;--brick-dark:#88372f;--brick-light:#e06a58}
+.lego-theme[data-theme="star-wars"]{--brick:#456c9d;--brick-dark:#2d476b;--brick-light:#7197c6}
+.lego-theme[data-theme="technic"]{--brick:#d6a23f;--brick-dark:#a17a2d;--brick-light:#e9c36a}
+.lego-theme[data-theme="city"]{--brick:#426d6a;--brick-dark:#294d4a;--brick-light:#72a6a1}
+.lego-theme[data-theme="icons"]{--brick:#a46c4e;--brick-dark:#754c39;--brick-light:#ce9571}
+.lego-theme[data-theme="architecture"]{--brick:#667b9a;--brick-dark:#425574;--brick-light:#99acca}
+/* Half an inch to the right relative to the previous theme-page position. */
+@media(min-width:641px){.lego-featured-theme{transform:translateX(48px)}}
