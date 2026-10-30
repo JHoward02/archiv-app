@@ -1,7 +1,7 @@
 import "./lego-styles.css";
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, type User } from "firebase/auth";
-import { collection, doc, getFirestore, onSnapshot, setDoc, deleteDoc, getDoc, getDocs, increment, serverTimestamp, type Unsubscribe } from "firebase/firestore";
+import { collection, doc, getFirestore, onSnapshot, setDoc, deleteDoc, getDoc, getDocs, addDoc, increment, serverTimestamp, type Unsubscribe } from "firebase/firestore";
 type SetRow={number:string;name:string;year:number;theme:string;parts:number;image?:string;images?:string[]};
 type Status="owned"|"wishlist";
 const featured=["City","Pokemon","Star Wars","Technic","Botanicals","Icons"];
@@ -16,6 +16,9 @@ const legoDb=firebaseApp?getFirestore(firebaseApp):null;
 const legoRecordPrefix="archiv-lego-set:";
 let currentUser:User|null=null,authReady=!legoAuth,collectionReady=!legoAuth,accountError="";
 let stopCollection:Unsubscribe|null=null,authGeneration=0;
+type Activity={uid:string;type:string;setNumber?:string;theme?:string;at:string};
+type Profile={uid:string;name?:string;email?:string;firstSeen?:string;lastSeen?:string};
+let profiles:Profile[]=[],events:Activity[]=[],chosenUid="";
 let adminEnabled=false,adminStatus="Checking access…",adminRows:Array<{owned?:number;wishlist?:number;themes?:Record<string,number>;affiliateClicks?:number}>=[],adminLoading=false,adminError="";
 async function checkAdmin(user:User|null,gen:number){
  adminEnabled=false;adminRows=[];adminStatus="Checking access…";
@@ -32,9 +35,37 @@ async function checkAdmin(user:User|null,gen:number){
 async function loadAdmin(){
  if(!adminEnabled||!legoDb)return;
  adminLoading=true;adminError="";render();
- try{const s=await getDocs(collection(legoDb,"collectorSummaries"));adminRows=s.docs.map(d=>d.data())}
+ try{
+  const [summaries,people]=await Promise.all([getDocs(collection(legoDb,"collectorSummaries")),getDocs(collection(legoDb,"collectorProfiles"))]);
+  adminRows=summaries.docs.map(d=>d.data());
+  profiles=people.docs.map(d=>({uid:d.id,...d.data()}));
+  events=[];
+  for(const person of profiles.slice(0,50)){
+   const logs=await getDocs(collection(legoDb,"users",person.uid,"activity"));
+   events.push(...logs.docs.map(d=>({uid:person.uid,...d.data()} as Activity)));
+  }
+ }
  catch(err){adminError=err instanceof Error?err.message:"Reporting unavailable"}
  adminLoading=false;render();
+}
+async function registerCollector(user:User){
+ if(!legoDb)return;
+ try{
+  const ref=doc(legoDb,"collectorProfiles",user.uid);
+  const prior=await getDoc(ref);
+  await setDoc(ref,{
+   name:user.displayName||"Collector",
+   email:user.email||"",
+   firstSeen:prior.exists()?prior.data().firstSeen:new Date().toISOString(),
+   lastSeen:new Date().toISOString()
+  },{merge:true});
+ }catch(err){console.warn("Registration reporting unavailable",err)}
+}
+async function recordActivity(type:string,setNumber?:string,theme?:string){
+ if(!currentUser||!legoDb)return;
+ try{await addDoc(collection(legoDb,"users",currentUser.uid,"activity"),{
+  type,at:new Date().toISOString(),...(setNumber?{setNumber}:{}),...(theme?{theme}:{})
+ })}catch(err){console.warn("Activity event unavailable",err)}
 }
 async function reportCollector(user:User,items:Record<string,Status>){
  if(!legoDb)return;
@@ -52,7 +83,7 @@ async function reportCollector(user:User,items:Record<string,Status>){
 }
 async function reportAffiliateClick(){
  if(!currentUser||!legoDb)return;
- try{await setDoc(doc(legoDb,"collectorSummaries",currentUser.uid),{affiliateClicks:increment(1),lastActive:serverTimestamp()},{merge:true})}
+ try{await setDoc(doc(legoDb,"collectorSummaries",currentUser.uid),{affiliateClicks:increment(1),lastActive:serverTimestamp()},{merge:true});void recordActivity("affiliate_click")}
  catch(err){console.warn("Click reporting unavailable",err)}
 }
 document.addEventListener("click",ev=>{
@@ -116,6 +147,7 @@ async function save(id:string,status:Status){
   accountError="";
   if(nextStatus){const now=Date.now();await setDoc(ref,{id:legoRecordPrefix+id,addedAt:now,updatedAt:now,title:row.name,subtitle:"LEGO set "+id,category:"other",year:row.year||null,imageUrl:row.image||null,description:null,sourceUrl:null,sourceLabel:"Rebrickable",details:[{label:"Set number",value:id},{label:"Theme",value:row.theme},{label:"Collection status",value:nextStatus}],condition:"raw",grade:"",quantity:1,pricePaid:null,estimatedValue:null,notes:"",favorite:false,groupId:null,legoStatus:nextStatus,legoSetNumber:id})}
   else await deleteDoc(ref);
+  void recordActivity(nextStatus===null?"removed":nextStatus,id,row.theme);
  }catch(error){accountError="Could not save your set: "+(error instanceof Error?error.message:"Unknown error");render()}
 }
 type PartLine={id:string;name:string;color:string;quantity:number;image:string};
@@ -288,6 +320,36 @@ if(location.hash==="#/admin"){
   const cards=e("div","lego-admin-cards");
   for(const [label,total] of totals){const card=e("div","lego-admin-card");card.append(e("strong","",total.toLocaleString()),e("span","",label));cards.append(card)}
   main.append(cards);
+  const registry=e("div","lego-admin-card");registry.append(e("strong","",profiles.length.toLocaleString()),e("span","","Accounts seen since registration tracking began"));main.append(registry);
+  main.append(e("h2","","Daily activity (last 14 days)"));
+  const trend=e("div","lego-admin-themes");
+  for(let d=13;d>=0;d--){
+   const date=new Date();date.setUTCHours(0,0,0,0);date.setUTCDate(date.getUTCDate()-d);
+   const day=date.toISOString().slice(0,10),dayEvents=events.filter(x=>x.at?.slice(0,10)===day);
+   const changes=dayEvents.filter(x=>["owned","wishlist","removed"].includes(x.type)).length;
+   const clicks=dayEvents.filter(x=>x.type==="affiliate_click").length;
+   const line=e("div","lego-admin-day");line.append(e("span","",day),e("span","",changes+" collection changes"),e("strong","",clicks+" affiliate clicks"));trend.append(line);
+  }main.append(trend);
+  main.append(e("p","lego-admin-note","Daily activity reflects recorded events, not unique visitors. Event history begins with this release. First 50 reporting profiles are included."));
+  main.append(e("h2","","Individual user activity"));
+  const people=e("div","lego-admin-people");
+  for(const person of profiles){
+   const pick=button(person.name||person.email||person.uid,()=>{chosenUid=person.uid;render()},"lego-admin-person");
+   if(chosenUid===person.uid)pick.classList.add("active");
+   people.append(pick);
+  }main.append(people);
+  const selectedPerson=profiles.find(p=>p.uid===chosenUid)||profiles[0];
+  if(selectedPerson){
+   const details=e("div","lego-admin-themes");
+   details.append(e("h3","",selectedPerson.name||"Collector"));
+   details.append(e("p","",selectedPerson.email||selectedPerson.uid));
+   details.append(e("p","", "First seen: "+(selectedPerson.firstSeen||"Unknown")));
+   const personalEvents=events.filter(x=>x.uid===selectedPerson.uid).sort((a,b)=>(b.at||"").localeCompare(a.at||"")).slice(0,50);
+   if(!personalEvents.length)details.append(e("p","","No recorded activity yet."));
+   for(const evt of personalEvents){const line=e("div","lego-admin-day");line.append(e("span","",new Date(evt.at).toLocaleString()),e("span","",evt.type.replace(/_/g," ")),e("strong","",evt.setNumber||evt.theme||""));details.append(line)}
+   main.append(details);
+  }
+
   const refresh=button(adminLoading?"Refreshing…":"Refresh data",()=>{void loadAdmin()});refresh.disabled=adminLoading;main.append(refresh);
   if(adminError)main.append(e("p","lego-account-message",adminError));
   main.append(e("h2","","Popular themes in owned collections"));
