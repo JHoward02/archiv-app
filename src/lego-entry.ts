@@ -49,8 +49,9 @@ const more=e("section","lego-more-themes");more.append(e("h2","","More LEGO® th
 const field=e("input","lego-theme-search") as HTMLInputElement;field.type="search";field.placeholder="Find a LEGO® theme";field.setAttribute("aria-label","Find a LEGO theme");more.append(field);
 const count=e("p","lego-theme-count");more.append(count);
 const grid=e("div","lego-theme-name-grid");more.append(grid);
-function showThemes(){const query=field.value.trim().toLowerCase();grid.replaceChildren();const options=themes.filter(n=>!featured.includes(n)&&n!=="All LEGO"&&n.toLowerCase().includes(query));count.textContent=options.length+" themes";options.forEach(n=>grid.append(button(n,()=>goTheme(n),"lego-theme-name-button")))}
-field.oninput=showThemes;showThemes();shell.append(more);
+let showAllThemes=false;const toggle=button("See More",()=>{showAllThemes=!showAllThemes;showThemes()},"lego-more-toggle");
+function showThemes(){const query=field.value.trim().toLowerCase();grid.replaceChildren();const options=themes.filter(n=>!featured.includes(n)&&n!=="All LEGO"&&n.toLowerCase().includes(query));const visible=query||showAllThemes?options:options.slice(0,12);count.textContent=options.length+" themes";visible.forEach(n=>grid.append(button(n,()=>goTheme(n),"lego-theme-name-button")));toggle.textContent=showAllThemes?"See Less":"See More";toggle.hidden=!!query||options.length<=12}
+field.oninput=showThemes;showThemes();more.append(toggle);shell.append(more);
 }else{
 header.classList.add("lego-theme-header");const feature=e("div","lego-featured-theme");feature.append(themeTile(selected));header.append(feature);const back=button("← Back to Themes",()=>goTheme("All LEGO"),"lego-back-to-themes");back.setAttribute("aria-label","Back to all LEGO themes");header.append(back);
 }
