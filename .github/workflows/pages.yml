@@ -34,6 +34,14 @@ jobs:
           npm --prefix "$RUNNER_TEMP/archiv-profile-preview" run build:web
           mkdir -p dist-web/profile-preview
           cp -R "$RUNNER_TEMP/archiv-profile-preview/dist-web/." dist-web/profile-preview/
+      - name: Build isolated LEGO preview
+        run: |
+          git fetch origin archiv-2-lego-staging
+          git worktree add "$RUNNER_TEMP/archiv-lego-preview" origin/archiv-2-lego-staging
+          npm --prefix "$RUNNER_TEMP/archiv-lego-preview" ci
+          npm --prefix "$RUNNER_TEMP/archiv-lego-preview" run build:web
+          mkdir -p dist-web/lego-preview
+          cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/lego-preview/
       - uses: actions/configure-pages@v5
         with:
           enablement: true
