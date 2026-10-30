@@ -362,3 +362,15 @@
  .lego-theme-header{padding-top:64px}
  .lego-theme-header>.lego-back-to-themes{right:54px}
 }
+
+/* Home and admin on narrow screens: anchor the account avatar to the top-right
+   of the header, not as a new block beneath the wide Archív wordmark. */
+@media(max-width:640px){
+  .lego-header:not(.lego-theme-header):not(.lego-detail-header)>.lego-account-controls{
+    position:absolute;
+    top:0;
+    right:0;
+    margin:0;
+    z-index:30;
+  }
+}
