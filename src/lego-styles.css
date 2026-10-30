@@ -93,3 +93,25 @@
 .lego-footer-links a:hover,.lego-footer-links a:focus-visible{text-decoration:underline}
 .lego-copyright{font-weight:650;margin:7px 0}
 .lego-footer-disclaimer{max-width:760px;margin:8px auto;color:#746b60;line-height:1.6}
+
+/* Separate clean homepage from dedicated theme collection view */
+.lego-home-themes{margin-top:48px}
+.lego-theme-header{align-items:center;flex-wrap:nowrap;gap:30px;min-height:245px}
+.lego-theme-header .lego-logo{flex:0 1 560px}
+.lego-featured-theme{width:min(285px,32%);flex:0 0 min(285px,32%);padding-top:14px}
+.lego-featured-theme .lego-theme{width:100%}
+.lego-theme-header + .lego-main{margin-top:12px}
+.lego-catalog-section{margin-top:16px}
+.lego-home-themes .lego-theme.current{outline:none}
+@media(max-width:640px){
+ .lego-home-themes{margin-top:28px}
+ .lego-theme-header{gap:12px;align-items:center;min-height:0}
+ .lego-theme-header .lego-logo{flex:1 1 56%;min-width:0}
+ .lego-featured-theme{width:40%;flex:0 0 40%;padding-top:9px}
+ .lego-featured-theme .lego-theme{padding:8px 6px 6px}
+ .lego-featured-theme .lego-brick-studs{top:-7px;height:9px}
+ .lego-featured-theme .lego-brick-stud{height:9px}
+ .lego-featured-theme .lego-theme-name{font-size:13px;padding:7px 2px 2px}
+ .lego-featured-theme .lego-theme-art{padding:2px}
+ .lego-catalog-section{margin-top:18px}
+}
