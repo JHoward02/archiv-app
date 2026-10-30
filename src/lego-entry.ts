@@ -12,11 +12,11 @@ const tileSets:Record<string,string>={
 "Speed Champions":"77239-1",
 "Star Wars":"75192-1",
 "Technic":"42206-1",
-"City":"60473-1",
+"City":"60419-1",
 "Icons":"10354-1",
 "Architecture":"21063-1",
 "Complete Catalog":"10307-1",
-"Pokemon":"72153-1",
+"Pokemon":"72152-1",
 "Botanicals":"10311-1"
 };
 const setImage=(number:string)=>"https://cdn.rebrickable.com/media/sets/"+number+".jpg";
@@ -41,7 +41,7 @@ const logo=e("a","lego-logo");logo.href="#/";logo.onclick=(event)=>{event.preven
 const art=e("img");art.src=import.meta.env.BASE_URL+"archiv-lego-logo.png";art.alt="Archív. Your collection lives here.";art.onerror=()=>{art.onerror=null;art.src=import.meta.env.BASE_URL+"logo4"};logo.append(art);
 header.append(logo);
 shell.append(header);
-function themeTile(n:string){const b=button("",()=>goTheme(n),"lego-theme");b.dataset.theme=n.toLowerCase().replace(/\s+/g,"-");const palette=["#527c8c","#866f9f","#a76d65","#497e6c","#c29553","#4f6897","#8d8065","#8c618b"];if(!featured.includes(n)&&n!=="Complete Catalog"){const i=Math.max(0,extraThemes.findIndex(t=>t.name===n));b.style.setProperty("--brick",palette[i%palette.length]);b.style.setProperty("--brick-dark",["#355968","#5d4b75","#784a46","#30584c","#8c6b35","#344968","#625b46","#664665"][i%palette.length]);b.style.setProperty("--brick-light",["#7fa2af","#ab96c4","#c8958a","#78a68d","#e0bc78","#7d90b8","#afa387","#b48caf"][i%palette.length])}const studs=e("span","lego-brick-studs");studs.setAttribute("aria-hidden","true");for(let i=0;i<4;i++)studs.append(e("span","lego-brick-stud"));b.append(studs);const picture=e("img","lego-theme-art");picture.src=extraThemes.find(t=>t.name===n)?.image||setImage(tileSets[n]||"10307-1");picture.alt="LEGO® "+n+" set photograph sourced from Rebrickable";picture.loading="lazy";picture.onerror=()=>{picture.style.display="none"};const frame=e("span","lego-brick-window");frame.append(picture);b.append(frame,e("span","lego-theme-name",n));return b}
+function themeTile(n:string){const b=button("",()=>goTheme(n),"lego-theme");b.dataset.theme=n.toLowerCase().replace(/\s+/g,"-");const palette=["#527c8c","#866f9f","#a76d65","#497e6c","#c29553","#4f6897","#8d8065","#8c618b"];if(!featured.includes(n)&&n!=="Complete Catalog"){const i=Math.max(0,extraThemes.findIndex(t=>t.name===n));b.style.setProperty("--brick",palette[i%palette.length]);b.style.setProperty("--brick-dark",["#355968","#5d4b75","#784a46","#30584c","#8c6b35","#344968","#625b46","#664665"][i%palette.length]);b.style.setProperty("--brick-light",["#7fa2af","#ab96c4","#c8958a","#78a68d","#e0bc78","#7d90b8","#afa387","#b48caf"][i%palette.length])}const studs=e("span","lego-brick-studs");studs.setAttribute("aria-hidden","true");for(let i=0;i<4;i++)studs.append(e("span","lego-brick-stud"));b.append(studs);const picture=e("img","lego-theme-art");picture.src=tileSets[n]?setImage(tileSets[n]):extraThemes.find(t=>t.name===n)?.image||setImage("10307-1");picture.alt="LEGO® "+n+" set photograph sourced from Rebrickable";picture.loading="lazy";picture.onerror=()=>{picture.style.display="none"};const frame=e("span","lego-brick-window");frame.append(picture);b.append(frame,e("span","lego-theme-name",n));return b}
 if(selected==="All LEGO"){
 const heading=e("h2","lego-popular-heading","Most Popular");shell.append(heading);
 const t=e("div","lego-theme-grid lego-home-themes");featured.forEach(n=>t.append(themeTile(n)));shell.append(t);
