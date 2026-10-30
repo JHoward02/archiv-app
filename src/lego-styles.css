@@ -209,3 +209,34 @@
 .lego-gallery-thumb.active{border-color:#08243b}
 .lego-gallery-thumb img{width:100%;height:100%;object-fit:contain}
 .lego-gallery-count,.lego-gallery-single{font-size:12px;color:#70665a;text-align:center;margin:0}
+
+/* Archív inventory: its own collector-oriented layout, not a Rebrickable clone */
+.archiv-inventory{margin:38px 0 12px;border-top:1px solid #d8cbba;padding-top:25px}
+.archiv-eyebrow{font-size:11px;font-weight:800;letter-spacing:.14em;color:#ab7031;margin:0 0 5px}
+.archiv-inventory h2{font:normal clamp(27px,3vw,39px) Georgia,serif;margin:0 0 15px}
+.archiv-parts-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:22px 0 10px}
+.archiv-parts-toolbar input,.archiv-parts-toolbar select{font:inherit;color:#08243b;min-height:43px;padding:8px 12px;border:1px solid #d4c9b9;border-radius:10px;background:#fffdf8}
+.archiv-parts-toolbar input{flex:1 1 240px;min-width:0}
+.archiv-parts-toolbar select{max-width:230px}
+.archiv-check-toggle{background:#08243b;color:white;border-radius:10px}
+.archiv-parts-progress{color:#756a5e;font-size:13px;margin:8px 0 21px}
+.archiv-parts-lists{display:grid;gap:15px}
+.archiv-parts-panel{background:#fffdf8;border:1px solid #ddd2c1;border-radius:16px;overflow:hidden}
+.archiv-parts-section-head{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:19px 21px;font-size:20px;font-weight:750;color:#08243b}
+.archiv-parts-section-head::-webkit-details-marker{display:none}
+.archiv-parts-section-head:after{content:"⌄";margin-left:4px;color:#a76b30}
+.archiv-parts-section[open]>.archiv-parts-section-head:after{content:"⌃"}
+.archiv-parts-pill{margin-left:auto;padding:6px 10px;border-radius:50px;background:#eee6d9;color:#63584c;font-size:12px;font-weight:650;white-space:nowrap}
+.archiv-parts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:12px;padding:0 18px 19px}
+.archiv-part-card{min-width:0;border:1px solid #e4dacc;background:#fff;border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:4px}
+.archiv-part-photo{height:104px;display:flex;align-items:center;justify-content:center;background:#faf8f3;border-radius:8px}
+.archiv-part-photo img{max-width:95%;max-height:95%;object-fit:contain}
+.archiv-part-placeholder{color:#978e83;font-size:11px}
+.archiv-part-quantity{font-size:17px;color:#08243b}
+.archiv-part-name{font-size:12px;font-weight:650;line-height:1.35;margin:0;overflow-wrap:anywhere}
+.archiv-part-meta{font-size:11px;color:#7b7267;margin:0 0 4px;overflow-wrap:anywhere}
+.archiv-part-check{margin-top:auto;display:flex;gap:7px;align-items:center;font-size:12px;cursor:pointer;padding-top:6px}
+.archiv-part-checked{border-color:#52876a;background:#f0f9f1}
+.archiv-parts-no-match{padding:4px 20px 22px;color:#756a5e;font-size:13px}
+.archiv-inventory-loading,.archiv-empty-inventory{color:#756a5e}
+@media(max-width:560px){.archiv-parts-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0 10px 12px}.archiv-parts-section-head{padding:15px 12px;font-size:16px}.archiv-parts-pill{font-size:10px;padding:5px 7px}.archiv-parts-toolbar select{max-width:100%}}
