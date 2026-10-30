@@ -115,3 +115,9 @@
  .lego-featured-theme .lego-theme-art{padding:2px}
  .lego-catalog-section{margin-top:18px}
 }
+
+/* Dedicated theme card: unchanged brick finish and closer logo alignment. */
+.lego-theme-header{justify-content:flex-start;gap:12px}
+.lego-theme-header .lego-logo{flex:0 1 510px}
+.lego-featured-theme{margin-left:-12px}
+@media(max-width:640px){.lego-theme-header{gap:5px}.lego-theme-header .lego-logo{flex:1 1 55%}.lego-featured-theme{margin-left:0}}
