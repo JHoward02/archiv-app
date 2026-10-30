@@ -7,7 +7,7 @@ const key="archiv-lego-v1";
 // Do not scrape or bulk-download images; display with source attribution.
 const tileSets:Record<string,string>={
 "Speed Champions":"77239-1",
-"Star Wars":"75409-1",
+"Star Wars":"75192-1",
 "Technic":"42206-1",
 "City":"60473-1",
 "Icons":"10354-1",
