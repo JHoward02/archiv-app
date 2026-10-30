@@ -347,7 +347,19 @@ if(location.hash==="#/admin"){
    details.append(e("p","", "First seen: "+(selectedPerson.firstSeen||"Unknown")));
    const personalEvents=events.filter(x=>x.uid===selectedPerson.uid).sort((a,b)=>(b.at||"").localeCompare(a.at||"")).slice(0,50);
    if(!personalEvents.length)details.append(e("p","","No recorded activity yet."));
-   for(const evt of personalEvents){const line=e("div","lego-admin-day");line.append(e("span","",new Date(evt.at).toLocaleString()),e("span","",evt.type.replace(/_/g," ")),e("strong","",evt.setNumber||evt.theme||""));details.append(line)}
+   for(const evt of personalEvents){
+    const line=e("div","lego-admin-day");
+    const verbs:Record<string,string>={owned:"Added to collection",wishlist:"Added to wishlist",removed:"Removed from collection",affiliate_click:"Clicked eBay affiliate link"};
+    line.append(e("span","",new Date(evt.at).toLocaleString()),e("span","",verbs[evt.type]||evt.type.replace(/_/g," ")));
+    const cell=e("strong","");
+    if(evt.setNumber){
+     const row=data.find(x=>x.number===evt.setNumber);
+     const link=e("a","lego-admin-set-link",row?row.name+" ("+evt.setNumber+")":"LEGO set "+evt.setNumber);
+     link.href="#/set/"+encodeURIComponent(evt.setNumber);
+     cell.append(link);
+    }else cell.textContent=evt.theme||"";
+    line.append(cell);details.append(line);
+   }
    main.append(details);
   }
 
