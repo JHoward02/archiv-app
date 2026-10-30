@@ -399,7 +399,7 @@ let showAllThemes=false;const toggle=button("See More",()=>{showAllThemes=!showA
 function showThemes(){const query=field.value.trim().toLowerCase();grid.replaceChildren();const options=themes.filter(n=>!featured.includes(n)&&n!=="All LEGO"&&n.toLowerCase().includes(query));const visible=query||showAllThemes?options:options.slice(0,12);count.textContent=options.length+" themes";visible.forEach(n=>grid.append(button(n,()=>goTheme(n),"lego-theme-name-button")));toggle.textContent=showAllThemes?"See Less":"See More";toggle.hidden=!!query||options.length<=12}
 field.oninput=showThemes;showThemes();more.append(toggle);shell.append(more);
 }else{
-header.classList.add("lego-theme-header");const feature=e("div","lego-featured-theme");feature.append(themeTile(selected));header.append(feature);const back=button("← Back to Themes",()=>goTheme("All LEGO"),"lego-back-to-themes");back.setAttribute("aria-label","Back to all LEGO themes");header.append(back);
+header.classList.add("lego-theme-header");const back=button("← Back to Themes",()=>goTheme("All LEGO"),"lego-back-to-themes");back.setAttribute("aria-label","Back to all LEGO themes");header.append(back);
 }
 const footer=e("footer","lego-footer");
 const footerLinks=e("nav","lego-footer-links");footerLinks.setAttribute("aria-label","Site information");
