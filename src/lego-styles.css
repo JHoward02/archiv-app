@@ -137,3 +137,6 @@
 .lego-back-to-themes{position:absolute;top:0;right:0;background:transparent;border:1px solid #cfc1ac;color:#08243b;border-radius:100px;font-weight:700;min-height:34px;padding:6px 13px;font-size:12px}
 .lego-back-to-themes:hover{background:#fffdf8;border-color:#ad8e64}
 @media(max-width:640px){.lego-theme-header{padding-top:48px}.lego-back-to-themes{top:3px;right:0}}
+
+/* Position the featured theme brick closer to the right edge on desktop. */
+@media(min-width:641px){.lego-theme-header{justify-content:space-between}.lego-featured-theme{transform:none;margin-left:auto;margin-right:18px;flex:0 0 285px;width:285px}}
