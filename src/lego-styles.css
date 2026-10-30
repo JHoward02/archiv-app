@@ -245,3 +245,12 @@
 .archiv-part-card[hidden],.archiv-parts-more[hidden]{display:none}
 .archiv-parts-more{display:block;margin:0 auto 20px;padding:10px 28px;background:#08243b;color:#fffdf8;border:1px solid #08243b;border-radius:999px;cursor:pointer}
 .archiv-parts-more:hover{background:#173b56}
+
+/* eBay EPN shopping discovery, intentionally distinct from unverified live listing cards */
+.archiv-ebay-shopping{margin:28px 0 20px;border:1px solid #dfd0b9;border-radius:18px;padding:22px 25px;background:linear-gradient(120deg,#fffdf8,#f8f0e3)}
+.archiv-ebay-shopping h2{font:normal clamp(25px,3vw,34px) Georgia,serif;margin:4px 0 10px}
+.archiv-ebay-description{color:#534c44;line-height:1.55;margin:0 0 17px}
+.archiv-ebay-action{display:inline-block;text-decoration:none;background:#08243b;color:#fff;padding:12px 23px;border-radius:999px;font-weight:750}
+.archiv-ebay-action:hover,.archiv-ebay-action:focus-visible{background:#174665;color:#fff}
+.archiv-ebay-disclosure{font-size:12px;color:#75695a;line-height:1.5;margin:14px 0 0}
+@media(max-width:640px){.archiv-ebay-shopping{padding:17px}}
