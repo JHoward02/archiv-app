@@ -140,3 +140,6 @@
 
 /* Position the featured theme brick closer to the right edge on desktop. */
 @media(min-width:641px){.lego-theme-header{justify-content:space-between}.lego-featured-theme{transform:none;margin-left:auto;margin-right:18px;flex:0 0 285px;width:285px}}
+
+/* Dedicated neutral brick for browsing the complete Rebrickable catalog. */
+.lego-theme[data-theme="complete-catalog"]{--brick:#435d79;--brick-dark:#2c4157;--brick-light:#6c89a6}
