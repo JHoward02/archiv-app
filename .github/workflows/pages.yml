@@ -39,6 +39,10 @@ jobs:
           git fetch origin archiv-2-lego-staging
           git worktree add "$RUNNER_TEMP/archiv-lego-preview" origin/archiv-2-lego-staging
           npm --prefix "$RUNNER_TEMP/archiv-lego-preview" ci
+          mkdir -p "$RUNNER_TEMP/archiv-lego-preview/data"
+          curl --fail --location --retry 3 --silent --show-error "https://cdn.rebrickable.com/media/downloads/sets.csv.gz" -o "$RUNNER_TEMP/archiv-lego-preview/data/sets.csv.gz"
+          curl --fail --location --retry 3 --silent --show-error "https://cdn.rebrickable.com/media/downloads/themes.csv.gz" -o "$RUNNER_TEMP/archiv-lego-preview/data/themes.csv.gz"
+          node "$RUNNER_TEMP/archiv-lego-preview/scripts/import-rebrickable.mjs"
           npm --prefix "$RUNNER_TEMP/archiv-lego-preview" run build:web
           mkdir -p dist-web/lego-preview
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/lego-preview/
