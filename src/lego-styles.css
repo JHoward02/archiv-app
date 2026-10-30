@@ -151,3 +151,17 @@
 .lego-theme-count{color:#746b60;font-size:13px;margin:12px 0 20px}
 .lego-all-theme-grid{margin-bottom:35px}
 @media(max-width:640px){.lego-more-themes{margin-top:24px}.lego-more-themes h2{font-size:25px}}
+
+/* Homepage: six popular bricks, with a simple two-column theme directory. */
+.lego-popular-heading{font:normal 30px Georgia,serif;margin:35px 0 6px}
+.lego-home-themes{margin-top:20px}
+.lego-theme-name-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:25px}
+.lego-theme-name-button{display:block;text-align:left;width:100%;background:#fffdf8;border:1px solid #d9cebf;border-radius:10px;padding:12px 16px;color:#08243b;font:600 15px Inter,system-ui,sans-serif;min-height:45px}
+.lego-theme-name-button:hover{background:#f9eede;border-color:#c29d69}
+.lego-theme[data-theme="city"]{--brick:#426d6a;--brick-dark:#294d4a;--brick-light:#72a6a1}
+.lego-theme[data-theme="pokemon"]{--brick:#d6a23f;--brick-dark:#a17a2d;--brick-light:#e9c36a}
+.lego-theme[data-theme="star-wars"]{--brick:#456c9d;--brick-dark:#2d476b;--brick-light:#7197c6}
+.lego-theme[data-theme="technic"]{--brick:#bc473a;--brick-dark:#88372f;--brick-light:#e06a58}
+.lego-theme[data-theme="botanicals"]{--brick:#497c58;--brick-dark:#2f573f;--brick-light:#7aaa87}
+.lego-theme[data-theme="icons"]{--brick:#a46c4e;--brick-dark:#754c39;--brick-light:#ce9571}
+@media(max-width:640px){.lego-popular-heading{font-size:26px;margin-top:26px}.lego-theme-name-grid{gap:8px}.lego-theme-name-button{padding:11px;font-size:13px}}
