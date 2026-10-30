@@ -87,9 +87,10 @@ function renderInventory(parent:HTMLElement,setNumber:string){
     if(kind==="parts"&&matched.length){const updateLimit=()=>{
       const cards=[...grid.children] as HTMLElement[];
       cards.forEach(card=>{card.hidden=false});
-      const rows=[...new Set(cards.map(card=>card.offsetTop))].sort((a,b)=>a-b);
+      const offsets=cards.map(card=>card.offsetTop);
+      const rows=[...new Set(offsets)].sort((a,b)=>a-b);
       const lastVisibleRow=rows[2]??Infinity;
-      cards.forEach(card=>{card.hidden=!showAllBuilding&&card.offsetTop>lastVisibleRow});
+      cards.forEach((card,i)=>{card.hidden=!showAllBuilding&&offsets[i]>lastVisibleRow});
       toggle.hidden=rows.length<=3;
       toggle.textContent=showAllBuilding?"See Less":"See More";
     };
