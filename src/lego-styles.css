@@ -333,3 +333,13 @@
 .lego-admin-people{display:flex;gap:9px;flex-wrap:wrap;margin:10px 0 20px}
 .lego-admin-person.active{background:#08243b;color:#fff}
 @media(max-width:640px){.lego-admin-day{grid-template-columns:1fr 1fr;gap:5px}.lego-admin-day strong{grid-column:2}.lego-admin-people{flex-direction:column}}
+
+/* Theme catalog headers: pin account at far right and back button immediately to its left. */
+.lego-theme-header{position:relative;padding-top:0;min-height:155px}
+.lego-theme-header>.lego-account-controls{position:absolute;top:0;right:0;margin:0;z-index:30}
+.lego-theme-header>.lego-back-to-themes{top:5px;right:58px;z-index:10}
+@media(max-width:640px){
+ .lego-theme-header{padding-top:54px}
+ .lego-theme-header>.lego-account-controls{top:0;right:0;margin:0}
+ .lego-theme-header>.lego-back-to-themes{top:5px;right:54px}
+}
