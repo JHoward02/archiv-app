@@ -44,3 +44,27 @@
 .lego-theme.current{outline:3px solid #08243b;outline-offset:4px;background:var(--brick)}
 .lego-theme:focus-visible{outline:3px solid #08243b;outline-offset:5px}
 @media(max-width:640px){.lego-theme-grid{gap:22px 11px}.lego-theme{padding:11px 8px 9px}.lego-brick-studs{left:9px;right:9px;top:-10px;height:12px;gap:5px}.lego-brick-stud{height:12px;max-width:35px}.lego-brick-stud::before{bottom:7px}.lego-theme-name{font-size:16px;padding:9px 3px 2px}.lego-theme-art{padding:4px}}
+
+/* Visual collection checklist: muted missing sets, full-color owned sets. */
+.lego-results{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;align-items:stretch}
+.lego-set-tile{min-width:0;display:flex;flex-direction:column;background:#fff;border:1px solid #dfd6c9;border-radius:15px;overflow:hidden;box-shadow:0 7px 24px -21px #08243b70}
+.lego-set-cover{position:relative;background:#f7f5f2;aspect-ratio:1.18;display:flex;align-items:center;justify-content:center;padding:14px;border-bottom:1px solid #e9e2d8;overflow:hidden}
+.lego-set-photo{width:100%;height:100%;object-fit:contain;transition:filter .2s ease}
+.lego-set-tile.is-unowned .lego-set-photo{filter:grayscale(1);opacity:.48}
+.lego-set-tile.is-owned .lego-set-photo{filter:none;opacity:1}
+.lego-set-status{position:absolute;top:9px;left:9px;border-radius:18px;padding:5px 8px;font:800 10px Inter,system-ui,sans-serif;letter-spacing:.06em;background:#e3e0da;color:#55534e}
+.lego-set-status.owned{background:#dcebdd;color:#215735}
+.lego-set-status.wishlist{background:#fff1d6;color:#875a1c}
+.lego-set-details{padding:13px 13px 9px;flex:1}
+.lego-set-details h3{font-size:15px;line-height:1.3;margin:7px 0 8px;min-height:39px}
+.lego-set-actions{padding:10px 12px 13px;display:flex;flex-direction:column;gap:7px}
+.lego-set-actions .lego-button{width:100%;min-height:36px}
+.lego-set-actions .on{background:#08243b;color:#fff}
+.lego-shop-pending{display:flex;flex-direction:column;gap:2px;border:1px dashed #d9c7a4;background:#fff9ed;color:#6e5932;border-radius:9px;padding:9px;text-align:center}
+.lego-shop-pending span{font-size:13px;font-weight:750}
+.lego-shop-pending small{font-size:11px;line-height:1.35}
+.lego-image-fallback{font-size:12px;color:#7e7973;text-align:center}
+.lego-affiliate{padding:13px 20px}
+.lego-affiliate p{font-size:13px;margin:0;color:#655f56}
+@media(max-width:850px){.lego-results{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:640px){.lego-results{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.lego-set-cover{padding:9px}.lego-set-details{padding:11px 10px 7px}.lego-set-details h3{font-size:14px;min-height:36px}.lego-set-actions{padding:8px 9px 10px}.lego-set-status{font-size:9px}.lego-set-actions .lego-button{font-size:12px;padding:6px}}
