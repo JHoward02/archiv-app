@@ -57,6 +57,7 @@ jobs:
           # Rebuild preview with optional Firebase Google sign-in and cloud LEGO records.
           # Retry staging preview via newest push; Pages concurrency cancels superseded runs.
           # Refresh staging preview for Google sign-in and sign-up button presentation.
+          # Refresh LEGO staging preview with expandable account menu.
           git -C "$RUNNER_TEMP/archiv-lego-preview" restore --source=b38ae779d5b322a667405116d6b9b90cce96eaba -- src/lego-entry.ts src/lego-styles.css
           npm --prefix "$RUNNER_TEMP/archiv-lego-preview" run build:web
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/
