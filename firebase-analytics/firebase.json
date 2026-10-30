@@ -1,0 +1,3 @@
+{
+  "functions": [{"source": "functions", "codebase": "archiv-analytics", "predeploy": ["npm --prefix functions run build"]}]
+}
