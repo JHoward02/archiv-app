@@ -34,6 +34,7 @@ jobs:
           cd android-test
           python3 generate_icons.py
       # AndroidX is enabled in android-test/gradle.properties on the staging branch.
+      # Release build after production promotion: theme set-list brick removed.
       - name: Build Android debug APK
         working-directory: android-test
         run: gradle --no-daemon assembleDebug
