@@ -1,6 +1,6 @@
 import "./lego-styles.css";
 import { initializeApp, getApps } from "firebase/app";
-import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, type User } from "firebase/auth";
+import { getAuth, initializeAuth, indexedDBLocalPersistence, GoogleAuthProvider, onAuthStateChanged, signInWithCredential, signInWithPopup, signInWithRedirect, signOut, type User } from "firebase/auth";
 import { collection, doc, getFirestore, onSnapshot, setDoc, deleteDoc, getDoc, getDocs, addDoc, increment, serverTimestamp, type Unsubscribe } from "firebase/firestore";
 type SetRow={number:string;name:string;year:number;theme:string;parts:number;image?:string;images?:string[]};
 type Status="owned"|"wishlist";
@@ -11,7 +11,11 @@ let extraThemes:ThemeInfo[]=[];
 const firebaseConfig={apiKey:import.meta.env.VITE_FIREBASE_API_KEY,authDomain:import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,projectId:import.meta.env.VITE_FIREBASE_PROJECT_ID,appId:import.meta.env.VITE_FIREBASE_APP_ID};
 const firebaseReady=Object.values(firebaseConfig).every(Boolean);
 const firebaseApp=firebaseReady?(getApps()[0]??initializeApp(firebaseConfig)):null;
-const legoAuth=firebaseApp?getAuth(firebaseApp):null;
+// The packaged Android app uses a Capacitor WebView, not a browser tab.
+type NativeBridge={isNativePlatform?:()=>boolean;nativePromise?:(plugin:string,method:string,options:object)=>Promise<{credential?:{idToken?:string}}>};
+const nativeBridge=(window as Window&{Capacitor?:NativeBridge}).Capacitor;
+const isNativeAndroid=nativeBridge?.isNativePlatform?.()===true;
+const legoAuth=firebaseApp?(isNativeAndroid?initializeAuth(firebaseApp,{persistence:indexedDBLocalPersistence}):getAuth(firebaseApp)):null;
 const legoDb=firebaseApp?getFirestore(firebaseApp):null;
 const legoRecordPrefix="archiv-lego-set:";
 let currentUser:User|null=null,authReady=!legoAuth,collectionReady=!legoAuth,accountError="";
@@ -92,8 +96,33 @@ document.addEventListener("click",ev=>{
  try{const host=new URL(a.href).hostname;if(host==="ebay.com"||host.endsWith(".ebay.com"))void reportAffiliateClick()}catch{}
 },true);
 
-async function signInLego(){if(!legoAuth){accountError="Cloud sign-in is not configured.";render();return}try{accountError="";await signInWithPopup(legoAuth,new GoogleAuthProvider())}catch(error){if((error as {code?:string}).code==="auth/popup-blocked"){await signInWithRedirect(legoAuth,new GoogleAuthProvider());return}accountError=error instanceof Error?error.message:"Sign-in failed.";render()}}
-async function signOutLego(){if(!legoAuth)return;try{await signOut(legoAuth)}catch(error){accountError=error instanceof Error?error.message:"Sign-out failed.";render()}}
+async function signInLego(){
+ if(!legoAuth){accountError="Cloud sign-in is not configured.";render();return}
+ try{
+  accountError="";
+  if(isNativeAndroid){
+   if(!nativeBridge?.nativePromise)throw new Error("Android authentication bridge unavailable.");
+   // Requires this APK's package and signing SHA-1 registered in Firebase.
+   const result=await nativeBridge.nativePromise("FirebaseAuthentication","signInWithGoogle",{});
+   const idToken=result.credential?.idToken;
+   if(!idToken)throw new Error("Android Google sign-in did not provide an ID token.");
+   await signInWithCredential(legoAuth,GoogleAuthProvider.credential(idToken));
+  }else await signInWithPopup(legoAuth,new GoogleAuthProvider());
+ }catch(error){
+  if(!isNativeAndroid&&(error as {code?:string}).code==="auth/popup-blocked"){
+   await signInWithRedirect(legoAuth,new GoogleAuthProvider());return;
+  }
+  const message=error instanceof Error?error.message:"Sign-in failed.";
+  accountError=isNativeAndroid?"Native Google sign-in: "+message+". Android Firebase registration and SHA-1 may still need configuration.":message;render();
+ }
+}
+async function signOutLego(){
+ if(!legoAuth)return;
+ try{
+  if(isNativeAndroid&&nativeBridge?.nativePromise)await nativeBridge.nativePromise("FirebaseAuthentication","signOut",{});
+  await signOut(legoAuth);
+ }catch(error){accountError=error instanceof Error?error.message:"Sign-out failed.";render()}
+}
 
 // Rebrickable set-image URLs supplied in the downloaded CSV catalog.
 // Do not scrape or bulk-download images; display with source attribution.
