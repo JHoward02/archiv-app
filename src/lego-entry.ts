@@ -216,7 +216,7 @@ const art=e("img");art.src=import.meta.env.BASE_URL+"archiv-lego-logo.png";art.a
 header.append(logo);
 const account=e("details","lego-account-controls");
 const toggle=e("summary","lego-account-toggle");toggle.setAttribute("aria-label","Account menu");toggle.setAttribute("title","Account menu");
-for(let i=0;i<3;i++)toggle.append(e("span","lego-menu-line"));
+if(currentUser?.photoURL){const avatar=e("img","lego-account-avatar") as HTMLImageElement;avatar.src=currentUser.photoURL;avatar.alt="";avatar.referrerPolicy="no-referrer";avatar.onerror=()=>{avatar.remove();for(let i=0;i<3;i++)toggle.append(e("span","lego-menu-line"))};toggle.append(avatar)}else{for(let i=0;i<3;i++)toggle.append(e("span","lego-menu-line"))}
 account.append(toggle);
 const menu=e("div","lego-account-dropdown");
 if(!authReady)menu.append(e("span","lego-account-label","Checking sign-in…"));
