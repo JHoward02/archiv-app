@@ -165,3 +165,8 @@
 .lego-theme[data-theme="botanicals"]{--brick:#497c58;--brick-dark:#2f573f;--brick-light:#7aaa87}
 .lego-theme[data-theme="icons"]{--brick:#a46c4e;--brick-dark:#754c39;--brick-light:#ce9571}
 @media(max-width:640px){.lego-popular-heading{font-size:26px;margin-top:26px}.lego-theme-name-grid{gap:8px}.lego-theme-name-button{padding:11px;font-size:13px}}
+
+/* Expand the two-column LEGO theme directory on demand. */
+.lego-more-toggle{display:block;margin:4px auto 22px;min-width:150px;background:#08243b;color:#fffdf8;border:1px solid #08243b;border-radius:999px}
+.lego-more-toggle:hover{background:#173b56;color:white}
+.lego-more-toggle[hidden]{display:none}
