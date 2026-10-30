@@ -143,3 +143,11 @@
 
 /* Dedicated neutral brick for browsing the complete Rebrickable catalog. */
 .lego-theme[data-theme="complete-catalog"]{--brick:#435d79;--brick-dark:#2c4157;--brick-light:#6c89a6}
+
+/* Full catalog homepage: retain featured cards, then searchable LEGO theme index. */
+.lego-more-themes{margin:35px 0 48px}
+.lego-more-themes h2{font:normal 30px Georgia,serif;margin:0 0 14px}
+.lego-theme-search{display:block;width:100%;max-width:430px;background:#fffdf8;border:1px solid #d9cebf;border-radius:10px;min-height:45px;padding:10px 14px;color:#08243b;font:inherit}
+.lego-theme-count{color:#746b60;font-size:13px;margin:12px 0 20px}
+.lego-all-theme-grid{margin-bottom:35px}
+@media(max-width:640px){.lego-more-themes{margin-top:24px}.lego-more-themes h2{font-size:25px}}
