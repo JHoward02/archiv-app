@@ -32,19 +32,37 @@ header.append(logo);
 const nav=e("nav","lego-topnav");nav.append(button("Explore New",()=>{filter="all";selected="All LEGO";render()},filter==="all"?"active":""),button("Your Archív",()=>{filter="saved";render()},filter==="saved"?"active":""));header.append(nav);shell.append(header);
 const title=e("section","lego-intro");title.append(e("h1","",filter==="saved"?"Your LEGO® collection":"Explore LEGO® collections"));title.append(e("p","",filter==="saved"?"See the sets you own and the ones on your wishlist.":"Discover sets across LEGO® themes, track what you own, and find what you're missing."));shell.append(title);
 const t=e("div","lego-theme-grid");themes.slice(1).forEach(n=>{const b=button("",()=>{selected=n;filter="all";page=0;render()},"lego-theme "+(selected===n?"current":""));const studs=e("span","lego-brick-studs");studs.setAttribute("aria-hidden","true");for(let i=0;i<4;i++)studs.append(e("span","lego-brick-stud"));b.append(studs);const picture=e("img","lego-theme-art");picture.src=setImage(tileSets[n]);picture.alt="LEGO® "+n+" set photograph sourced from Rebrickable";picture.loading="lazy";picture.onerror=()=>{picture.style.display="none"};picture.loading="lazy";const frame=e("span","lego-brick-window");frame.append(picture);b.append(frame,e("span","lego-theme-name",n));t.append(b)});shell.append(t);
-const main=e("section","lego-main");main.append(e("h2","",selected==="All LEGO"?"Browse LEGO® sets":selected));
+const main=e("section","lego-main lego-catalog-section");main.append(e("h2","",selected==="All LEGO"?"Browse LEGO® sets":selected));
 const controls=e("div","lego-controls");const input=e("input") as HTMLInputElement;input.placeholder="Search by set name or number";input.value=search;input.setAttribute("aria-label","Search LEGO® sets");input.oninput=()=>{search=input.value;page=0;renderResults()};controls.append(input);
 const select=e("select") as HTMLSelectElement;for(const [v,l] of [["name","Name"],["year","Newest first"],["number","Set number"]]){const o=e("option") as HTMLOptionElement;o.value=v;o.textContent=l;select.append(o)}select.value=sort;select.onchange=()=>{sort=select.value;renderResults()};controls.append(select);main.append(controls);
 const summary=e("div","lego-summary");const results=e("div","lego-results");const pager=e("div","lego-pagination");main.append(summary,results,pager);
 shell.append(main);
-const notice=e("section","lego-affiliate");notice.append(e("h2","","Find your next set"));notice.append(e("p","","LEGO.com affiliate shopping and prices are awaiting program approval and authorized feed access."));notice.append(button("Affiliate shopping · Approval pending",()=>{},"disabled"));shell.append(notice);
+const notice=e("section","lego-affiliate");notice.append(e("p","","Shopping links will appear on unowned sets once authorized seller offers are available. No live affiliate offers are connected yet."));shell.append(notice);
 const footer=e("footer","lego-footer");footer.append(e("p","","Set data and set images: Rebrickable (rebrickable.com). Image rights remain subject to LEGO® terms. LEGO® and the LEGO® logo are trademarks of the LEGO Group. Archív is independent and is not sponsored or endorsed by the LEGO Group."));shell.append(footer);
-function renderResults(){results.replaceChildren();pager.replaceChildren();let rows=data.filter(x=>(selected==="All LEGO"||x.theme===selected)&&(filter!=="saved"||saved[x.number])&&(!search||[x.name,x.number,String(x.year)].join(" ").toLowerCase().includes(search.toLowerCase())));
+function renderResults(){
+results.replaceChildren();pager.replaceChildren();
+let rows=data.filter(x=>(selected==="All LEGO"||x.theme===selected)&&(filter!=="saved"||saved[x.number])&&(!search||[x.name,x.number,String(x.year)].join(" ").toLowerCase().includes(search.toLowerCase())));
 rows.sort((a,b)=>sort==="year"?b.year-a.year:sort==="number"?a.number.localeCompare(b.number):a.name.localeCompare(b.name));
-summary.textContent=`${rows.length.toLocaleString()} sets · ${Object.values(saved).filter(x=>x==="owned").length} owned · ${Object.values(saved).filter(x=>x==="wishlist").length} wishlist`;
+const ownedCount=rows.filter(x=>saved[x.number]==="owned").length;
+summary.textContent=`${rows.length.toLocaleString()} sets in view · ${ownedCount} owned · ${Math.max(0,rows.length-ownedCount)} missing`;
 if(!data.length){results.append(e("p","lego-empty","Catalog preview temporarily unavailable."));return}
 if(!rows.length){results.append(e("p","lego-empty","No matching sets. Try another theme or search."));return}
-for(const row of rows.slice(page*24,(page+1)*24)){const card=e("article","lego-card");const info=e("div");if(row.image||row.number){const productImg=e("img","lego-product-image");productImg.src=row.image||setImage(row.number);productImg.alt=row.name+" set image";productImg.loading="lazy";productImg.onerror=()=>{productImg.style.display="none"};card.append(productImg)}info.append(e("p","lego-number",row.number+" · "+row.year));info.append(e("h3","",row.name));info.append(e("p","lego-detail",row.theme+" · "+row.parts+" pieces"));card.append(info);const actions=e("div","lego-actions");actions.append(button(saved[row.number]==="owned"?"✓ Owned":"+ Owned",()=>save(row.number,"owned"),saved[row.number]==="owned"?"on":""),button(saved[row.number]==="wishlist"?"✓ Wishlist":"+ Wishlist",()=>save(row.number,"wishlist"),saved[row.number]==="wishlist"?"on":""));card.append(actions);results.append(card)}
-if(page>0)pager.append(button("Previous",()=>{page--;renderResults()}));if((page+1)*24<rows.length)pager.append(button("Next",()=>{page++;renderResults()}));}
+for(const row of rows.slice(page*24,(page+1)*24)){
+const owned=saved[row.number]==="owned",wish=saved[row.number]==="wishlist";
+const card=e("article","lego-set-tile "+(owned?"is-owned":"is-unowned"));
+const cover=e("div","lego-set-cover");const img=e("img","lego-set-photo");
+img.src=row.image||setImage(row.number);img.alt=row.name+" set image";img.loading="lazy";img.onerror=()=>{img.style.display="none";cover.append(e("span","lego-image-fallback","Image unavailable"))};cover.append(img);
+const status=e("span","lego-set-status "+(owned?"owned":wish?"wishlist":"missing"),owned?"✓ OWNED":wish?"♡ WISHLIST":"NOT OWNED");cover.append(status);card.append(cover);
+const details=e("div","lego-set-details");details.append(e("p","lego-number",row.number+" · "+row.year));details.append(e("h3","",row.name));details.append(e("p","lego-detail",row.parts+" pieces"));card.append(details);
+const actions=e("div","lego-set-actions");actions.append(button(owned?"✓ Owned":"Mark owned",()=>save(row.number,"owned"),owned?"on":""));
+if(!owned){
+actions.append(button(wish?"✓ Wishlisted":"♡ Wishlist",()=>save(row.number,"wishlist"),wish?"on":""));
+const shop=e("div","lego-shop-pending");shop.append(e("span","","Find a seller"));shop.append(e("small","","Affiliate offers coming soon"));actions.append(shop);
+}
+card.append(actions);results.append(card);
+}
+if(page>0)pager.append(button("Previous",()=>{page--;renderResults()}));
+if((page+1)*24<rows.length)pager.append(button("Next",()=>{page++;renderResults()}));
+}
 renderResults()}
 void load();
