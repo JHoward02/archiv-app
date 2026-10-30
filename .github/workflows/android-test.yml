@@ -33,6 +33,7 @@ jobs:
           python3 -m pip install --user pillow
           cd android-test
           python3 generate_icons.py ../public/archiv-lego-logo.png
+      # AndroidX is enabled in android-test/gradle.properties on the staging branch.
       - name: Build Android debug APK
         working-directory: android-test
         run: gradle --no-daemon assembleDebug
