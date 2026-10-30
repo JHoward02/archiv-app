@@ -130,4 +130,4 @@
 .lego-theme[data-theme="icons"]{--brick:#a46c4e;--brick-dark:#754c39;--brick-light:#ce9571}
 .lego-theme[data-theme="architecture"]{--brick:#667b9a;--brick-dark:#425574;--brick-light:#99acca}
 /* Half an inch to the right relative to the previous theme-page position. */
-@media(min-width:641px){.lego-featured-theme{transform:translateX(48px)}}
+@media(min-width:641px){.lego-featured-theme{transform:translateX(64px)}}
