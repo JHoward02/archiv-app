@@ -14,7 +14,7 @@ const tileSets:Record<string,string>={
 "Architecture":"21063-1"
 };
 const setImage=(number:string)=>"https://cdn.rebrickable.com/media/sets/"+number+".jpg";
-let selected="All LEGO",search="",filter="all",sort="name",page=0;
+let selected="All LEGO",search="",sort="name",page=0;
 let saved:Record<string,Status>={};
 try{saved=JSON.parse(localStorage.getItem(key)||"{}")}catch{}
 const app=document.querySelector<HTMLElement>("#app")!;
@@ -29,9 +29,9 @@ const header=e("header","lego-header");
 const logo=e("a","lego-logo");logo.href="#/";logo.setAttribute("aria-label","Archív home");
 const art=e("img");art.src=import.meta.env.BASE_URL+"archiv-lego-logo.png";art.alt="Archív. Your collection lives here.";art.onerror=()=>{art.onerror=null;art.src=import.meta.env.BASE_URL+"logo4"};logo.append(art);
 header.append(logo);
-const nav=e("nav","lego-topnav");nav.append(button("Explore New",()=>{filter="all";selected="All LEGO";render()},filter==="all"?"active":""),button("Your Archív",()=>{filter="saved";render()},filter==="saved"?"active":""));header.append(nav);shell.append(header);
-const title=e("section","lego-intro");title.append(e("h1","",filter==="saved"?"Your LEGO® collection":"Explore LEGO® collections"));title.append(e("p","",filter==="saved"?"See the sets you own and the ones on your wishlist.":"Discover sets across LEGO® themes, track what you own, and find what you're missing."));shell.append(title);
-const t=e("div","lego-theme-grid");themes.slice(1).forEach(n=>{const b=button("",()=>{selected=n;filter="all";page=0;render()},"lego-theme "+(selected===n?"current":""));const studs=e("span","lego-brick-studs");studs.setAttribute("aria-hidden","true");for(let i=0;i<4;i++)studs.append(e("span","lego-brick-stud"));b.append(studs);const picture=e("img","lego-theme-art");picture.src=setImage(tileSets[n]);picture.alt="LEGO® "+n+" set photograph sourced from Rebrickable";picture.loading="lazy";picture.onerror=()=>{picture.style.display="none"};picture.loading="lazy";const frame=e("span","lego-brick-window");frame.append(picture);b.append(frame,e("span","lego-theme-name",n));if(selected===n){const indicator=e("span","lego-theme-selected","✓ Selected");indicator.setAttribute("aria-hidden","true");b.append(indicator);b.setAttribute("aria-pressed","true")}else b.setAttribute("aria-pressed","false");t.append(b)});shell.append(t);
+shell.append(header);
+const title=e("section","lego-intro");title.append(e("h1","","Your LEGO® collection"));title.append(e("p","",filter==="saved"?"See the sets you own and the ones on your wishlist.":"Discover sets across LEGO® themes, track what you own, and find what you're missing."));shell.append(title);
+const t=e("div","lego-theme-grid");themes.slice(1).forEach(n=>{const b=button("",()=>{selected=n;page=0;render()},"lego-theme "+(selected===n?"current":""));const studs=e("span","lego-brick-studs");studs.setAttribute("aria-hidden","true");for(let i=0;i<4;i++)studs.append(e("span","lego-brick-stud"));b.append(studs);const picture=e("img","lego-theme-art");picture.src=setImage(tileSets[n]);picture.alt="LEGO® "+n+" set photograph sourced from Rebrickable";picture.loading="lazy";picture.onerror=()=>{picture.style.display="none"};picture.loading="lazy";const frame=e("span","lego-brick-window");frame.append(picture);b.append(frame,e("span","lego-theme-name",n));if(selected===n){const indicator=e("span","lego-theme-selected","✓ Selected");indicator.setAttribute("aria-hidden","true");b.append(indicator);b.setAttribute("aria-pressed","true")}else b.setAttribute("aria-pressed","false");t.append(b)});shell.append(t);
 const main=e("section","lego-main lego-catalog-section");main.append(e("h2","",selected==="All LEGO"?"Browse LEGO® sets":selected));
 const controls=e("div","lego-controls");const input=e("input") as HTMLInputElement;input.placeholder="Search by set name or number";input.value=search;input.setAttribute("aria-label","Search LEGO® sets");input.oninput=()=>{search=input.value;page=0;renderResults()};controls.append(input);
 const select=e("select") as HTMLSelectElement;for(const [v,l] of [["name","Name"],["year","Newest first"],["number","Set number"]]){const o=e("option") as HTMLOptionElement;o.value=v;o.textContent=l;select.append(o)}select.value=sort;select.onchange=()=>{sort=select.value;renderResults()};controls.append(select);main.append(controls);
@@ -41,7 +41,7 @@ const notice=e("section","lego-affiliate");notice.append(e("p","","Shopping link
 const footer=e("footer","lego-footer");footer.append(e("p","","Set data and set images: Rebrickable (rebrickable.com). Image rights remain subject to LEGO® terms. LEGO® and the LEGO® logo are trademarks of the LEGO Group. Archív is independent and is not sponsored or endorsed by the LEGO Group."));shell.append(footer);
 function renderResults(){
 results.replaceChildren();pager.replaceChildren();
-let rows=data.filter(x=>(selected==="All LEGO"||x.theme===selected)&&(filter!=="saved"||saved[x.number])&&(!search||[x.name,x.number,String(x.year)].join(" ").toLowerCase().includes(search.toLowerCase())));
+let rows=data.filter(x=>(selected==="All LEGO"||x.theme===selected)&&(!search||[x.name,x.number,String(x.year)].join(" ").toLowerCase().includes(search.toLowerCase())));
 rows.sort((a,b)=>sort==="year"?b.year-a.year:sort==="number"?a.number.localeCompare(b.number):a.name.localeCompare(b.name));
 const ownedCount=rows.filter(x=>saved[x.number]==="owned").length;
 summary.textContent=`${rows.length.toLocaleString()} sets in view · ${ownedCount} owned · ${Math.max(0,rows.length-ownedCount)} missing`;
