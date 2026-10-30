@@ -290,3 +290,18 @@
 .gsi-material-button-icon{display:block;width:18px;height:18px;flex:none}
 .gsi-material-button-contents{font-weight:500}
 @media(max-width:640px){.lego-account-controls{justify-content:center}.gsi-material-button{flex:1 1 185px}}
+
+/* Compact account menu in the header (signed out: Google buttons; signed in: sign out). */
+.lego-header{position:relative}
+.lego-account-controls{position:relative;display:block;flex:0 0 auto;margin-left:auto;align-self:flex-start;z-index:20}
+.lego-account-toggle{list-style:none;cursor:pointer;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;width:44px;height:44px;border:1px solid #cbbfae;border-radius:8px;background:#fffdf8;color:#102c3e;box-sizing:border-box}
+.lego-account-toggle::-webkit-details-marker{display:none}
+.lego-account-toggle::marker{content:""}
+.lego-account-toggle:focus-visible{outline:2px solid #4285f4;outline-offset:2px}
+.lego-account-controls[open] .lego-account-toggle{background:#f4ead9}
+.lego-menu-line{width:21px;height:2px;border-radius:2px;background:currentColor;display:block}
+.lego-account-dropdown{position:absolute;right:0;top:calc(100% + 8px);width:max-content;max-width:min(90vw,270px);display:flex;flex-direction:column;gap:9px;padding:12px;border:1px solid #dbd0c0;border-radius:10px;background:#fffdf8;box-shadow:0 12px 32px rgba(25,29,33,.16);box-sizing:border-box}
+.lego-account-controls:not([open]) .lego-account-dropdown{display:none}
+.lego-account-dropdown .gsi-material-button{width:100%;min-width:195px}
+.lego-account-dropdown .lego-account-button{min-width:195px;padding:10px 16px;border-radius:6px;cursor:pointer}
+@media(max-width:640px){.lego-account-controls{margin:0 0 0 auto;justify-content:initial}.lego-account-dropdown .gsi-material-button{flex:none}}
