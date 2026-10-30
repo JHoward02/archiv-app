@@ -170,3 +170,25 @@
 .lego-more-toggle{display:block;margin:4px auto 22px;min-width:150px;background:#08243b;color:#fffdf8;border:1px solid #08243b;border-radius:999px}
 .lego-more-toggle:hover{background:#173b56;color:white}
 .lego-more-toggle[hidden]{display:none}
+
+/* Individual set detail pages */
+.lego-set-detail{margin:28px 0 45px}
+.lego-detail-back{margin-bottom:20px;border-radius:100px}
+.lego-detail-header{align-items:start}
+.lego-detail-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
+.lego-detail-figure,.lego-detail-info{background:#fffdf8;border:1px solid #ded4c5;border-radius:19px;padding:25px}
+.lego-detail-figure{display:flex;align-items:center;justify-content:center;min-height:320px}
+.lego-detail-figure img{display:block;max-width:100%;max-height:500px;object-fit:contain}
+.lego-detail-kicker{font-weight:750;font-size:12px;letter-spacing:.08em;color:#9b6631;margin:0 0 10px}
+.lego-detail-info h1{font:normal clamp(29px,3vw,43px) Georgia,serif;margin:0 0 23px}
+.lego-detail-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;margin:0 0 22px}
+.lego-detail-facts div{background:#f5efe5;border-radius:10px;padding:11px 13px}
+.lego-detail-facts dt{color:#70665a;font-size:12px;margin-bottom:4px}
+.lego-detail-facts dd{font-weight:750;margin:0;overflow-wrap:anywhere}
+.lego-detail-status{font-weight:750;margin:0 0 13px}
+.lego-detail-actions{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:20px}
+.lego-detail-actions .on{background:#08243b;color:#fffdf8}
+.lego-detail-source{display:inline-block;color:#87531d;margin-top:18px;font-weight:700}
+.lego-detail-credit{font-size:12px;color:#716a61;margin-top:15px}
+.lego-view-detail{margin-top:6px;width:100%;font-size:12px}
+@media(max-width:700px){.lego-detail-layout{grid-template-columns:1fr;gap:12px}.lego-detail-figure{min-height:240px}.lego-detail-figure,.lego-detail-info{padding:17px}.lego-set-detail{margin-top:20px}}
