@@ -38,7 +38,13 @@ const select=e("select") as HTMLSelectElement;for(const [v,l] of [["name","Name"
 const summary=e("div","lego-summary");const results=e("div","lego-results");const pager=e("div","lego-pagination");main.append(summary,results,pager);
 shell.append(main);
 const notice=e("section","lego-affiliate");notice.append(e("p","","Shopping links will appear on unowned sets once authorized seller offers are available. No live affiliate offers are connected yet."));shell.append(notice);
-const footer=e("footer","lego-footer");footer.append(e("p","","Set data and set images: Rebrickable (rebrickable.com). Image rights remain subject to LEGO® terms. LEGO® and the LEGO® logo are trademarks of the LEGO Group. Archív is independent and is not sponsored or endorsed by the LEGO Group."));shell.append(footer);
+const footer=e("footer","lego-footer");
+const footerLinks=e("nav","lego-footer-links");footerLinks.setAttribute("aria-label","Site information");
+for(const [label,file] of [["Contact","contact.html"],["Attribution","attribution.html"],["Terms of Use","terms.html"],["Privacy","privacy.html"]]){const link=e("a","",label);link.href=import.meta.env.BASE_URL+file;footerLinks.append(link)}
+footer.append(footerLinks);
+footer.append(e("p","lego-copyright","© 2026 Archív. All rights reserved."));
+footer.append(e("p","lego-footer-disclaimer","LEGO® and the LEGO® logo are trademarks of the LEGO Group. Archív is an independent collector app and is not sponsored or endorsed by the LEGO Group."));
+shell.append(footer);
 function renderResults(){
 results.replaceChildren();pager.replaceChildren();
 let rows=data.filter(x=>(selected==="All LEGO"||x.theme===selected)&&(!search||[x.name,x.number,String(x.year)].join(" ").toLowerCase().includes(search.toLowerCase())));
