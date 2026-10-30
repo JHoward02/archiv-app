@@ -40,14 +40,6 @@ const t=e("div","lego-theme-grid lego-home-themes");themes.slice(1).forEach(n=>t
 }else{
 header.classList.add("lego-theme-header");const feature=e("div","lego-featured-theme");feature.append(themeTile(selected));header.append(feature);
 }
-if(selected!=="All LEGO"){
-const main=e("section","lego-main lego-catalog-section");main.append(e("h2","",selected));
-const controls=e("div","lego-controls");const input=e("input") as HTMLInputElement;input.placeholder="Search by set name or number";input.value=search;input.setAttribute("aria-label","Search LEGO® sets");input.oninput=()=>{search=input.value;page=0;renderResults()};controls.append(input);
-const select=e("select") as HTMLSelectElement;for(const [v,l] of [["name","Name"],["year","Newest first"],["number","Set number"]]){const o=e("option") as HTMLOptionElement;o.value=v;o.textContent=l;select.append(o)}select.value=sort;select.onchange=()=>{sort=select.value;renderResults()};controls.append(select);main.append(controls);
-const summary=e("div","lego-summary");const results=e("div","lego-results");const pager=e("div","lego-pagination");main.append(summary,results,pager);
-shell.append(main);
-const notice=e("section","lego-affiliate");notice.append(e("p","","Shopping links will appear on unowned sets once authorized seller offers are available. No live affiliate offers are connected yet."));shell.append(notice);
-}
 const footer=e("footer","lego-footer");
 const footerLinks=e("nav","lego-footer-links");footerLinks.setAttribute("aria-label","Site information");
 for(const [label,file] of [["Contact","contact.html"],["Attribution","attribution.html"],["Terms of Use","terms.html"],["Privacy","privacy.html"]]){const link=e("a","",label);link.href=import.meta.env.BASE_URL+file;footerLinks.append(link)}
@@ -55,6 +47,13 @@ footer.append(footerLinks);
 footer.append(e("p","lego-copyright","© 2026 Archív. All rights reserved."));
 footer.append(e("p","lego-footer-disclaimer","LEGO® and the LEGO® logo are trademarks of the LEGO Group. Archív is an independent collector app and is not sponsored or endorsed by the LEGO Group."));
 shell.append(footer);
+if(selected!=="All LEGO"){
+const main=e("section","lego-main lego-catalog-section");main.append(e("h2","",selected));
+const controls=e("div","lego-controls");const input=e("input") as HTMLInputElement;input.placeholder="Search by set name or number";input.value=search;input.setAttribute("aria-label","Search LEGO® sets");input.oninput=()=>{search=input.value;page=0;renderResults()};controls.append(input);
+const select=e("select") as HTMLSelectElement;for(const [v,l] of [["name","Name"],["year","Newest first"],["number","Set number"]]){const o=e("option") as HTMLOptionElement;o.value=v;o.textContent=l;select.append(o)}select.value=sort;select.onchange=()=>{sort=select.value;renderResults()};controls.append(select);main.append(controls);
+const summary=e("div","lego-summary");const results=e("div","lego-results");const pager=e("div","lego-pagination");main.append(summary,results,pager);
+shell.append(main);
+const notice=e("section","lego-affiliate");notice.append(e("p","","Shopping links will appear on unowned sets once authorized seller offers are available. No live affiliate offers are connected yet."));shell.append(notice);
 function renderResults(){
 results.replaceChildren();pager.replaceChildren();
 let rows=data.filter(x=>(selected==="All LEGO"||x.theme===selected)&&(!search||[x.name,x.number,String(x.year)].join(" ").toLowerCase().includes(search.toLowerCase())));
