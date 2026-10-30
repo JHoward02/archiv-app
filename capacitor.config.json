@@ -1,0 +1,19 @@
+{
+  "appId": "app.archiv.collector",
+  "appName": "Archív",
+  "webDir": "dist-web",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "FirebaseAuthentication": {
+      "skipNativeAuth": false,
+      "providers": [
+        "google.com"
+      ]
+    },
+    "SplashScreen": {
+      "launchShowDuration": 1800,
+      "backgroundColor": "#f4efe6",
+      "showSpinner": false
+    }
+  }
+}
