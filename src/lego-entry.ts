@@ -1,7 +1,7 @@
 import "./lego-styles.css";
 type SetRow={number:string;name:string;year:number;theme:string;parts:number;image?:string};
 type Status="owned"|"wishlist";
-const themes=["All LEGO","Speed Champions","Star Wars","Technic","City","Icons","Architecture"];
+const themes=["All LEGO","Speed Champions","Star Wars","Technic","City","Icons","Architecture","Complete Catalog"];
 const key="archiv-lego-v1";
 // Rebrickable set-image URLs supplied in the downloaded CSV catalog.
 // Do not scrape or bulk-download images; display with source attribution.
@@ -11,7 +11,8 @@ const tileSets:Record<string,string>={
 "Technic":"42206-1",
 "City":"60473-1",
 "Icons":"10354-1",
-"Architecture":"21063-1"
+"Architecture":"21063-1",
+"Complete Catalog":"10307-1"
 };
 const setImage=(number:string)=>"https://cdn.rebrickable.com/media/sets/"+number+".jpg";
 let selected="All LEGO",search="",sort="name",page=0;
@@ -48,19 +49,19 @@ footer.append(e("p","lego-copyright","© 2026 Archív. All rights reserved."));
 footer.append(e("p","lego-footer-disclaimer","LEGO® and the LEGO® logo are trademarks of the LEGO Group. Archív is an independent collector app and is not sponsored or endorsed by the LEGO Group."));
 if(selected!=="All LEGO"){
 const main=e("section","lego-main lego-catalog-section");main.append(e("h2","",selected));
-const controls=e("div","lego-controls");const input=e("input") as HTMLInputElement;input.placeholder="Search by set name or number";input.value=search;input.setAttribute("aria-label","Search LEGO® sets");input.oninput=()=>{search=input.value;page=0;renderResults()};controls.append(input);
-const select=e("select") as HTMLSelectElement;for(const [v,l] of [["name","Name"],["year","Newest first"],["number","Set number"]]){const o=e("option") as HTMLOptionElement;o.value=v;o.textContent=l;select.append(o)}select.value=sort;select.onchange=()=>{sort=select.value;renderResults()};controls.append(select);main.append(controls);
+const controls=e("div","lego-controls");const input=e("input") as HTMLInputElement;input.placeholder="Search by set name, number, or year";input.value=search;input.setAttribute("aria-label","Search LEGO® sets");input.oninput=()=>{search=input.value;page=0;renderResults()};controls.append(input);
+const select=e("select") as HTMLSelectElement;for(const [v,l] of [["name","Name"],["year","Newest first"],["number","Set number"]]){const o=e("option") as HTMLOptionElement;o.value=v;o.textContent=l;select.append(o)}select.value=sort;select.onchange=()=>{sort=select.value;page=0;renderResults()};controls.append(select);main.append(controls);
 const summary=e("div","lego-summary");const results=e("div","lego-results");const pager=e("div","lego-pagination");main.append(summary,results,pager);
 shell.append(main);
 const notice=e("section","lego-affiliate");notice.append(e("p","","Shopping links will appear on unowned sets once authorized seller offers are available. No live affiliate offers are connected yet."));shell.append(notice);
 function renderResults(){
 results.replaceChildren();pager.replaceChildren();
-let rows=data.filter(x=>(selected==="All LEGO"||x.theme===selected)&&(!search||[x.name,x.number,String(x.year)].join(" ").toLowerCase().includes(search.toLowerCase())));
+let rows=data.filter(x=>(selected==="Complete Catalog"||x.theme===selected)&&(!search||[x.name,x.number,String(x.year)].join(" ").toLowerCase().includes(search.toLowerCase())));
 rows.sort((a,b)=>{const ownedDiff=Number(saved[b.number]==="owned")-Number(saved[a.number]==="owned");return ownedDiff|| (sort==="year"?b.year-a.year:sort==="number"?a.number.localeCompare(b.number):a.name.localeCompare(b.name))});
 const ownedCount=rows.filter(x=>saved[x.number]==="owned").length;
 summary.textContent=`${rows.length.toLocaleString()} sets in view · ${ownedCount} owned · ${Math.max(0,rows.length-ownedCount)} missing`;
 if(!data.length){results.append(e("p","lego-empty","Catalog preview temporarily unavailable."));return}
-if(!rows.length){results.append(e("p","lego-empty","No matching sets. Try another theme or search."));return}
+if(!rows.length){results.append(e("p","lego-empty","No matching sets. Try another search."));return}
 for(const row of rows.slice(page*24,(page+1)*24)){
 const owned=saved[row.number]==="owned",wish=saved[row.number]==="wishlist";
 const card=e("article","lego-set-tile "+(owned?"is-owned":"is-unowned"));
