@@ -171,7 +171,7 @@ function renderSetDetail(shell:HTMLElement,id:string){
 
  hero.append(figure,details);wrap.append(hero);
  renderInventory(wrap,row.number);
- wrap.append(e("p","lego-detail-credit","Set information and imagery sourced from Rebrickable. Product images are owned by their respective rights holders."));
+ 
  shell.append(wrap);
 }
 function render(){app.replaceChildren();const shell=e("div","lego-shell");app.append(shell);
@@ -234,7 +234,7 @@ const details=e("a","lego-set-details lego-set-open");details.href="#/set/"+enco
 const actions=e("div","lego-set-actions");actions.append(button(owned?"✓ Owned":"Mark owned",()=>save(row.number,"owned"),owned?"on":""));
 if(!owned){
 actions.append(button(wish?"✓ Wishlisted":"♡ Wishlist",()=>save(row.number,"wishlist"),wish?"on":""));
-const shop=e("div","lego-shop-pending");shop.append(e("span","","Find a seller"));shop.append(e("small","","Affiliate offers coming soon"));actions.append(shop);
+const shop=e("div","lego-shop-pending archiv-ebay-inline");const link=e("a","archiv-ebay-inline-link","Find on eBay ↗");link.href=ebaySetSearch(row);link.target="_blank";link.rel="noopener noreferrer sponsored";link.setAttribute("aria-label","Find "+row.name+" on eBay (affiliate link)");shop.append(link,e("small","","Search eBay for this exact set"));shop.append(e("p","archiv-ebay-inline-disclosure","Affiliate link: Archív may earn a commission from qualifying purchases. Listings, prices and availability are not verified."));actions.append(shop);
 }
 actions.append(button("View details →",()=>goSet(row.number),"lego-view-detail"));card.append(actions);results.append(card);
 }
