@@ -16,3 +16,5 @@
 .lego-logo{width:min(560px,100%)}
 .lego-logo img{height:auto;max-height:none;width:100%;object-fit:contain;object-position:left center}
 @media(max-width:640px){.lego-logo{width:100%}}
+
+.lego-registered{font-size:.48em;line-height:0;vertical-align:super;position:relative;top:-.04em;font-family:Arial,sans-serif;font-weight:600;margin-left:.03em}
