@@ -325,3 +325,11 @@
 .lego-admin-bar{height:100%;background:#e68c24;border-radius:9px}
 .lego-admin-theme strong{text-align:right}
 @media(max-width:640px){.lego-admin-theme{grid-template-columns:95px 1fr 40px;font-size:12px}}
+
+/* Daily trends and owner-only individual activity views. */
+.lego-admin-day{display:grid;grid-template-columns:minmax(125px,1fr) minmax(145px,1fr) minmax(105px,1fr);align-items:center;gap:12px;border-bottom:1px solid #ebe3d7;padding:11px 0;font-size:13px}
+.lego-admin-day:last-child{border-bottom:0}
+.lego-admin-day strong{text-align:right;font-size:13px}
+.lego-admin-people{display:flex;gap:9px;flex-wrap:wrap;margin:10px 0 20px}
+.lego-admin-person.active{background:#08243b;color:#fff}
+@media(max-width:640px){.lego-admin-day{grid-template-columns:1fr 1fr;gap:5px}.lego-admin-day strong{grid-column:2}.lego-admin-people{flex-direction:column}}
