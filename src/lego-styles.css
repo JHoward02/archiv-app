@@ -270,3 +270,6 @@
  .lego-detail-layout>.lego-detail-figure,
  .lego-detail-layout>.lego-detail-info{box-sizing:border-box;align-self:stretch;height:auto;min-height:0}
 }
+
+/* One clear affiliate disclosure at the bottom of each theme catalog. */
+.lego-theme-affiliate-disclosure{margin:18px 4px 24px;color:#75695a;font-size:12px;line-height:1.5;text-align:center}
