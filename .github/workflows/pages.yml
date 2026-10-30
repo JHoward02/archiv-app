@@ -67,6 +67,7 @@ jobs:
           # Refresh product detail header controls alignment in staging.
           # Reserve a dedicated navigation lane above the theme tile.
           # Preview mobile homepage avatar anchored to upper-right of logo.
+          # Preview theme set-list page without redundant featured theme brick.
           git -C "$RUNNER_TEMP/archiv-lego-preview" restore --source=7904b3f9b40bc042686752ecb126aac8b66b3854 -- src/lego-entry.ts src/lego-styles.css
           npm --prefix "$RUNNER_TEMP/archiv-lego-preview" run build:web
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/
