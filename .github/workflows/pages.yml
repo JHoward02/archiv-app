@@ -65,6 +65,7 @@ jobs:
           # Preview Firebase free-plan account reporting without callable functions.
           # Refresh theme header account and back-button alignment in staging.
           # Refresh product detail header controls alignment in staging.
+          # Reserve a dedicated navigation lane above the theme tile.
           git -C "$RUNNER_TEMP/archiv-lego-preview" restore --source=d18f6a439f497ddea1a731c63969ff517738ba40 -- src/lego-entry.ts src/lego-styles.css
           npm --prefix "$RUNNER_TEMP/archiv-lego-preview" run build:web
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/
