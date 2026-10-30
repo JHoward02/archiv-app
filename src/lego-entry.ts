@@ -122,6 +122,7 @@ if(legoAuth&&legoDb)onAuthStateChanged(legoAuth,user=>{
  void checkAdmin(user,generation);
  if(!user)return;
  const uid=user.uid;
+ void registerCollector(user);
  stopCollection=onSnapshot(collection(legoDb!,"users",uid,"items"),snapshot=>{
   if(generation!==authGeneration)return;
   const next:Record<string,Status>={};
