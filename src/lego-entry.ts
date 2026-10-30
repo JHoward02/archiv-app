@@ -96,6 +96,22 @@ document.addEventListener("click",ev=>{
  try{const host=new URL(a.href).hostname;if(host==="ebay.com"||host.endsWith(".ebay.com"))void reportAffiliateClick()}catch{}
 },true);
 
+// In the packaged app, open only external seller/attribution URLs in Android's
+// browser. Internal collection navigation remains in the embedded app.
+document.addEventListener("click",event=>{
+ if(!isNativeAndroid||!nativeBridge?.nativePromise||event.defaultPrevented)return;
+ const target=event.target;
+ if(!(target instanceof Element))return;
+ const link=target.closest("a[href]");
+ if(!(link instanceof HTMLAnchorElement))return;
+ try{
+  const url=new URL(link.href);
+  if(!["http:","https:"].includes(url.protocol)||url.hostname===location.hostname)return;
+  event.preventDefault();
+  void nativeBridge.nativePromise("Browser","open",{url:url.href}).catch(err=>console.warn("Unable to open external link",err));
+ }catch{}
+},true);
+
 async function signInLego(){
  if(!legoAuth){accountError="Cloud sign-in is not configured.";render();return}
  try{
