@@ -85,10 +85,12 @@ function renderInventory(parent:HTMLElement,setNumber:string){
     if(!matched.length)details.append(e("p","archiv-parts-no-match",items.length?"No pieces match this filter.":"No entries for this set."));
     details.append(grid);
     if(kind==="parts"&&matched.length){const updateLimit=()=>{
-      const columns=Math.max(1,Math.floor((grid.clientWidth+12)/157));
-      const limit=columns*3;
-      [...grid.children].forEach((card,i)=>{(card as HTMLElement).hidden=!showAllBuilding&&i>=limit});
-      toggle.hidden=matched.length<=limit;
+      const cards=[...grid.children] as HTMLElement[];
+      cards.forEach(card=>{card.hidden=false});
+      const rows=[...new Set(cards.map(card=>card.offsetTop))].sort((a,b)=>a-b);
+      const lastVisibleRow=rows[2]??Infinity;
+      cards.forEach(card=>{card.hidden=!showAllBuilding&&card.offsetTop>lastVisibleRow});
+      toggle.hidden=rows.length<=3;
       toggle.textContent=showAllBuilding?"See Less":"See More";
     };
     const toggle=button("See More",()=>{showAllBuilding=!showAllBuilding;updateLimit()},"archiv-parts-more");
