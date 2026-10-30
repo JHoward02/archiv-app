@@ -215,7 +215,7 @@ const controls=e("div","lego-controls");const input=e("input") as HTMLInputEleme
 const select=e("select") as HTMLSelectElement;for(const [v,l] of [["name","Name"],["year","Newest first"],["number","Set number"]]){const o=e("option") as HTMLOptionElement;o.value=v;o.textContent=l;select.append(o)}select.value=sort;select.onchange=()=>{sort=select.value;page=0;renderResults()};controls.append(select);main.append(controls);
 const summary=e("div","lego-summary");const results=e("div","lego-results");const pager=e("div","lego-pagination");main.append(summary,results,pager);
 shell.append(main);
-const notice=e("section","lego-affiliate");notice.append(e("p","","Shopping links will appear on unowned sets once authorized seller offers are available. No live affiliate offers are connected yet."));shell.append(notice);
+const disclosure=e("p","lego-theme-affiliate-disclosure","Affiliate link: Archív may earn a commission from qualifying purchases. Listings, prices and availability are not verified.");shell.append(disclosure);
 function renderResults(){
 results.replaceChildren();pager.replaceChildren();
 let rows=data.filter(x=>(selected==="Complete Catalog"||x.theme===selected||(selected==="Pokemon"&&(/pokemon|pokémon/i.test(x.name)||/pokemon|pokémon/i.test(x.theme))))&&(!search||[x.name,x.number,String(x.year)].join(" ").toLowerCase().includes(search.toLowerCase())));
@@ -234,9 +234,9 @@ const details=e("a","lego-set-details lego-set-open");details.href="#/set/"+enco
 const actions=e("div","lego-set-actions");actions.append(button(owned?"✓ Owned":"Mark owned",()=>save(row.number,"owned"),owned?"on":""));
 if(!owned){
 actions.append(button(wish?"✓ Wishlisted":"♡ Wishlist",()=>save(row.number,"wishlist"),wish?"on":""));
-const shop=e("div","lego-shop-pending archiv-ebay-inline");const link=e("a","archiv-ebay-inline-link","Find on eBay ↗");link.href=ebaySetSearch(row);link.target="_blank";link.rel="noopener noreferrer sponsored";link.setAttribute("aria-label","Find "+row.name+" on eBay (affiliate link)");shop.append(link,e("small","","Search eBay for this exact set"));shop.append(e("p","archiv-ebay-inline-disclosure","Affiliate link: Archív may earn a commission from qualifying purchases. Listings, prices and availability are not verified."));actions.append(shop);
+const shop=e("div","lego-shop-pending archiv-ebay-inline");const link=e("a","archiv-ebay-inline-link","Find on eBay ↗");link.href=ebaySetSearch(row);link.target="_blank";link.rel="noopener noreferrer sponsored";link.setAttribute("aria-label","Find "+row.name+" on eBay (affiliate link)");shop.append(link,e("small","","Search eBay for this exact set"));actions.append(shop);
 }
-actions.append(button("View details →",()=>goSet(row.number),"lego-view-detail"));card.append(actions);results.append(card);
+card.append(actions);results.append(card);
 }
 if(page>0)pager.append(button("Previous",()=>{page--;renderResults()}));
 if((page+1)*24<rows.length)pager.append(button("Next",()=>{page++;renderResults()}));
