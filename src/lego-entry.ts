@@ -1,7 +1,7 @@
 import "./lego-styles.css";
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, type User } from "firebase/auth";
-import { collection, doc, getFirestore, onSnapshot, setDoc, deleteDoc, type Unsubscribe } from "firebase/firestore";
+import { collection, doc, getFirestore, onSnapshot, setDoc, deleteDoc, getDoc, getDocs, increment, serverTimestamp, type Unsubscribe } from "firebase/firestore";
 type SetRow={number:string;name:string;year:number;theme:string;parts:number;image?:string;images?:string[]};
 type Status="owned"|"wishlist";
 const featured=["City","Pokemon","Star Wars","Technic","Botanicals","Icons"];
@@ -16,6 +16,51 @@ const legoDb=firebaseApp?getFirestore(firebaseApp):null;
 const legoRecordPrefix="archiv-lego-set:";
 let currentUser:User|null=null,authReady=!legoAuth,collectionReady=!legoAuth,accountError="";
 let stopCollection:Unsubscribe|null=null,authGeneration=0;
+let adminEnabled=false,adminStatus="Checking access…",adminRows:Array<{owned?:number;wishlist?:number;themes?:Record<string,number>;affiliateClicks?:number}>=[],adminLoading=false,adminError="";
+async function checkAdmin(user:User|null,gen:number){
+ adminEnabled=false;adminRows=[];adminStatus="Checking access…";
+ if(!user||!legoDb)return;
+ try{
+  const a=await getDoc(doc(legoDb,"adminAccess",user.uid));
+  if(gen!==authGeneration)return;
+  adminEnabled=a.exists()&&a.data().enabled===true;
+  adminStatus=adminEnabled?"Authorized":"Restricted";
+  if(adminEnabled&&location.hash==="#/admin")void loadAdmin();
+ }catch{adminStatus="Admin access not configured"}
+ if(gen===authGeneration)render();
+}
+async function loadAdmin(){
+ if(!adminEnabled||!legoDb)return;
+ adminLoading=true;adminError="";render();
+ try{const s=await getDocs(collection(legoDb,"collectorSummaries"));adminRows=s.docs.map(d=>d.data())}
+ catch(err){adminError=err instanceof Error?err.message:"Reporting unavailable"}
+ adminLoading=false;render();
+}
+async function reportCollector(user:User,items:Record<string,Status>){
+ if(!legoDb)return;
+ const themes:Record<string,number>={};
+ for(const [id,status] of Object.entries(items)){
+  if(status!=="owned")continue;
+  const theme=data.find(x=>x.number===id)?.theme||"Unknown";
+  themes[theme]=(themes[theme]||0)+1;
+ }
+ try{await setDoc(doc(legoDb,"collectorSummaries",user.uid),{
+  owned:Object.values(items).filter(x=>x==="owned").length,
+  wishlist:Object.values(items).filter(x=>x==="wishlist").length,
+  themes,lastActive:serverTimestamp()
+ },{merge:true})}catch(err){console.warn("Analytics summary unavailable",err)}
+}
+async function reportAffiliateClick(){
+ if(!currentUser||!legoDb)return;
+ try{await setDoc(doc(legoDb,"collectorSummaries",currentUser.uid),{affiliateClicks:increment(1),lastActive:serverTimestamp()},{merge:true})}
+ catch(err){console.warn("Click reporting unavailable",err)}
+}
+document.addEventListener("click",ev=>{
+ const el=ev.target;if(!(el instanceof Element))return;
+ const a=el.closest("a[href]");if(!a)return;
+ try{const host=new URL(a.href).hostname;if(host==="ebay.com"||host.endsWith(".ebay.com"))void reportAffiliateClick()}catch{}
+},true);
+
 async function signInLego(){if(!legoAuth){accountError="Cloud sign-in is not configured.";render();return}try{accountError="";await signInWithPopup(legoAuth,new GoogleAuthProvider())}catch(error){if((error as {code?:string}).code==="auth/popup-blocked"){await signInWithRedirect(legoAuth,new GoogleAuthProvider());return}accountError=error instanceof Error?error.message:"Sign-in failed.";render()}}
 async function signOutLego(){if(!legoAuth)return;try{await signOut(legoAuth)}catch(error){accountError=error instanceof Error?error.message:"Sign-out failed.";render()}}
 
@@ -39,17 +84,18 @@ function goSet(id:string){location.hash="#/set/"+encodeURIComponent(id);render()
 function themeFromHash(){const slug=decodeURIComponent(location.hash.replace(/^#\/?/,""));return themes.slice(1).find(n=>n.toLowerCase().replace(/\s+/g,"-")===slug)||"All LEGO"}
 selected=themeFromHash();
 function goTheme(n:string){selected=n;search="";page=0;location.hash=n==="All LEGO"?"#/":"#/"+encodeURIComponent(n.toLowerCase().replace(/\s+/g,"-"));render()}
-window.addEventListener("hashchange",()=>{if(setFromHash()){render();return}const next=themeFromHash();if(next!==selected){selected=next;search="";page=0;render()}});
+window.addEventListener("hashchange",()=>{if(location.hash==="#/admin"){if(adminEnabled)void loadAdmin();else render();return}if(setFromHash()){render();return}const next=themeFromHash();if(next!==selected){selected=next;search="";page=0;render()}});
 let saved:Record<string,Status>={};
 if(legoAuth&&legoDb)onAuthStateChanged(legoAuth,user=>{
  const generation=++authGeneration;stopCollection?.();stopCollection=null;currentUser=user;saved={};authReady=true;collectionReady=!user;accountError="";render();
+ void checkAdmin(user,generation);
  if(!user)return;
  const uid=user.uid;
  stopCollection=onSnapshot(collection(legoDb!,"users",uid,"items"),snapshot=>{
   if(generation!==authGeneration)return;
   const next:Record<string,Status>={};
   snapshot.docs.forEach(record=>{if(record.id.startsWith(legoRecordPrefix)){const status=record.data().legoStatus;if(status==="owned"||status==="wishlist")next[record.id.slice(legoRecordPrefix.length)]=status}});
-  saved=next;collectionReady=true;render();
+  saved=next;collectionReady=true;void reportCollector(user,next);render();
  },error=>{if(generation!==authGeneration)return;collectionReady=false;accountError="Could not load your saved LEGO sets: "+error.message;render()});
 },error=>{authReady=true;accountError=error.message;render()});
 const app=document.querySelector<HTMLElement>("#app")!;
@@ -220,7 +266,7 @@ if(currentUser?.photoURL){const avatar=e("img","lego-account-avatar") as HTMLIma
 account.append(toggle);
 const menu=e("div","lego-account-dropdown");
 if(!authReady)menu.append(e("span","lego-account-label","Checking sign-in…"));
-else if(currentUser){menu.append(button("Sign out",()=>{account.open=false;void signOutLego()},"lego-account-button"))}
+else if(currentUser){if(adminEnabled)menu.append(button("Admin dashboard",()=>{account.open=false;location.hash="#/admin";void loadAdmin()},"lego-account-button"));menu.append(button("Sign out",()=>{account.open=false;void signOutLego()},"lego-account-button"))}
 else {
  const googleMark=()=>{const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");svg.setAttribute("viewBox","0 0 48 48");svg.setAttribute("aria-hidden","true");svg.classList.add("gsi-material-button-icon");for(const [fill,d] of [["#EA4335","M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"],["#4285F4","M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"],["#FBBC05","M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"],["#34A853","M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"]] ){const p=document.createElementNS("http://www.w3.org/2000/svg","path");p.setAttribute("fill",fill);p.setAttribute("d",d);svg.append(p)}return svg};
 
@@ -231,6 +277,30 @@ header.append(account);
 shell.append(header);
 if(accountError)shell.append(e("p","lego-account-message",accountError));
 if(currentUser&&!collectionReady)shell.append(e("p","lego-account-message","Loading your saved collection…"));
+if(location.hash==="#/admin"){
+ const main=e("main","lego-admin");
+ main.append(e("h1","","Archív analytics"));
+ if(!currentUser)main.append(e("p","","Please sign in to access analytics."));
+ else if(!adminEnabled)main.append(e("p","",adminStatus));
+ else{
+  main.append(e("p","lego-admin-note","Counts reflect signed-in collectors recorded after reporting was enabled. They exclude anonymous browsing, unreported registered accounts, and guest affiliate clicks."));
+  const totals=[["Reporting collectors",adminRows.length],["Owned sets",adminRows.reduce((n,x)=>n+(Number(x.owned)||0),0)],["Wishlisted sets",adminRows.reduce((n,x)=>n+(Number(x.wishlist)||0),0)],["Signed-in affiliate clicks",adminRows.reduce((n,x)=>n+(Number(x.affiliateClicks)||0),0)]] as const;
+  const cards=e("div","lego-admin-cards");
+  for(const [label,total] of totals){const card=e("div","lego-admin-card");card.append(e("strong","",total.toLocaleString()),e("span","",label));cards.append(card)}
+  main.append(cards);
+  const refresh=button(adminLoading?"Refreshing…":"Refresh data",()=>{void loadAdmin()});refresh.disabled=adminLoading;main.append(refresh);
+  if(adminError)main.append(e("p","lego-account-message",adminError));
+  main.append(e("h2","","Popular themes in owned collections"));
+  const themes:Record<string,number>={};
+  for(const item of adminRows)for(const [name,count] of Object.entries(item.themes||{}))themes[name]=(themes[name]||0)+(Number(count)||0);
+  const list=e("div","lego-admin-themes"),rank=Object.entries(themes).sort((a,b)=>b[1]-a[1]).slice(0,12),top=rank[0]?.[1]||1;
+  if(!rank.length)list.append(e("p","","No collection summaries recorded yet."));
+  for(const [name,count] of rank){const row=e("div","lego-admin-theme"),track=e("div","lego-admin-track"),bar=e("div","lego-admin-bar");bar.style.width=100*count/top+"%";track.append(bar);row.append(e("span","",name),track,e("strong","",count.toLocaleString()));list.append(row)}
+  main.append(list);
+ }
+ main.append(button("← Return to Archív",()=>goTheme("All LEGO")));
+ shell.append(main);return;
+}
 const setId=setFromHash();
 if(setId){
  const returnButton=button("← Back to Sets",()=>goTheme(selected!=="All LEGO"?selected:data.find(x=>x.number===setId)?.theme||"Complete Catalog"),"lego-back-to-themes");
