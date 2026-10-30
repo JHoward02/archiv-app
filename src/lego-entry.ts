@@ -21,7 +21,7 @@ const app=document.querySelector<HTMLElement>("#app")!;
 let data:SetRow[]=[];
 const url=new URL("./lego-catalog.json",import.meta.url);
 async function load(){try{const r=await fetch(url);if(r.ok)data=await r.json()}catch{} render()}
-function e<K extends keyof HTMLElementTagNameMap>(tag:K,cls="",value=""){const n=document.createElement(tag);n.className=cls;if(value)n.textContent=value;return n}
+function e<K extends keyof HTMLElementTagNameMap>(tag:K,cls="",value=""){const n=document.createElement(tag);n.className=cls;if(value){const parts=value.split("LEGO®");if(parts.length===1)n.textContent=value;else{parts.forEach((part,i)=>{if(i){n.append(document.createTextNode("LEGO"));const mark=document.createElement("sup");mark.className="lego-registered";mark.textContent="®";n.append(mark)}if(part)n.append(document.createTextNode(part))})}}return n}
 function button(label:string,click:()=>void,cls=""){const b=e("button","lego-button "+cls,label);b.onclick=click;return b}
 function save(id:string,status:Status){if(saved[id]===status)delete saved[id];else saved[id]=status;localStorage.setItem(key,JSON.stringify(saved));render()}
 function render(){app.replaceChildren();const shell=e("div","lego-shell");app.append(shell);
