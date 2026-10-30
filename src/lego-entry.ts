@@ -107,6 +107,30 @@ function renderInventory(parent:HTMLElement,setNumber:string){
   draw();
  }).catch(()=>{if(section.isConnected)message.textContent="Parts inventory is currently unavailable. Please try again later."});
 }
+// EPN tracking parameters follow eBay's published link specification.
+// A search-results link does not imply a verified listing, price, or availability.
+const EPN_CAMPAIGN="5339235740";
+function ebaySetSearch(row:SetRow){
+ const u=new URL("https://www.ebay.com/sch/i.html");
+ u.searchParams.set("_nkw","LEGO "+row.number+" "+row.name);
+ u.searchParams.set("mkevt","1");
+ u.searchParams.set("mkcid","1");
+ u.searchParams.set("mkrid","711-53200-19255-0");
+ u.searchParams.set("campid",EPN_CAMPAIGN);
+ u.searchParams.set("toolid","10001");
+ return u.toString();
+}
+function renderEbaySection(parent:HTMLElement,row:SetRow){
+ const section=e("section","archiv-ebay-shopping");
+ section.append(e("p","archiv-eyebrow","FIND YOUR NEXT SET"),e("h2","","Shop this set"));
+ section.append(e("p","archiv-ebay-description","Search eBay for LEGO® "+row.number+". Explore seller listings for new, used, and retired sets."));
+ const search=e("a","archiv-ebay-action","Find on eBay ↗");
+ search.href=ebaySetSearch(row);search.target="_blank";search.rel="noopener noreferrer sponsored";
+ search.setAttribute("aria-label","Search eBay listings for "+row.name+" (affiliate link)");
+ section.append(search);
+ section.append(e("p","archiv-ebay-disclosure","Affiliate disclosure: Archív may earn a commission if you purchase through this link, at no extra cost to you. eBay listings, prices and availability are not verified by Archív."));
+ parent.append(section);
+}
 function renderSetDetail(shell:HTMLElement,id:string){
  const row=data.find(x=>x.number===id);
  const wrap=e("main","lego-set-detail");
@@ -147,6 +171,7 @@ function renderSetDetail(shell:HTMLElement,id:string){
  if(!owned){const pending=e("div","lego-shop-pending");pending.append(e("strong","","Find a seller"),e("small","","Affiliate purchase offers are not connected yet."));details.append(pending)}
 
  hero.append(figure,details);wrap.append(hero);
+ renderEbaySection(wrap,row);
  renderInventory(wrap,row.number);
  wrap.append(e("p","lego-detail-credit","Set information and imagery sourced from Rebrickable. Product images are owned by their respective rights holders."));
  shell.append(wrap);
