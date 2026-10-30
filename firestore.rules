@@ -4,6 +4,28 @@ service cloud.firestore {
     function owner(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
+    // Admin membership can only be provisioned from Firebase Console/Admin SDK.
+    match /adminAccess/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid;
+      allow list, create, update, delete: if false;
+    }
+    function isReportingAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/adminAccess/$(request.auth.uid))
+        && get(/databases/$(database)/documents/adminAccess/$(request.auth.uid)).data.enabled == true;
+    }
+    // Only aggregated, non-identity collector metrics are shared with the owner.
+    match /collectorSummaries/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid || isReportingAdmin();
+      allow list: if isReportingAdmin();
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['owned','wishlist','themes','affiliateClicks','lastActive'])
+        && request.resource.data.owned is int && request.resource.data.owned >= 0
+        && request.resource.data.wishlist is int && request.resource.data.wishlist >= 0
+        && request.resource.data.themes is map
+        && (!('affiliateClicks' in request.resource.data) || request.resource.data.affiliateClicks is int);
+      allow delete: if false;
+    }
     match /users/{userId}/account/deletion {
       allow read: if owner(userId);
       allow create: if owner(userId)
