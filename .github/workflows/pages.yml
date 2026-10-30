@@ -54,7 +54,7 @@ jobs:
           # removing independent preview directories or the rollback branch.
           # Keep the production release pinned while new shopping features are tested.
           # The preview above always builds from the latest LEGO staging branch.
-          # Refresh staging preview after approved theme-card layout changes.
+          # Rebuild preview with optional Firebase Google sign-in and cloud LEGO records.
           git -C "$RUNNER_TEMP/archiv-lego-preview" restore --source=b38ae779d5b322a667405116d6b9b90cce96eaba -- src/lego-entry.ts src/lego-styles.css
           npm --prefix "$RUNNER_TEMP/archiv-lego-preview" run build:web
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/
