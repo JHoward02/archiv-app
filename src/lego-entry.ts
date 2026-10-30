@@ -37,6 +37,60 @@ async function load(){try{const [setsResponse,themeResponse]=await Promise.all([
 function e<K extends keyof HTMLElementTagNameMap>(tag:K,cls="",value=""){const n=document.createElement(tag);n.className=cls;if(value){const parts=value.split("LEGO®");if(parts.length===1)n.textContent=value;else{parts.forEach((part,i)=>{if(i){n.append(document.createTextNode("LEGO"));const mark=document.createElement("sup");mark.className="lego-registered";mark.textContent="®";n.append(mark)}if(part)n.append(document.createTextNode(part))})}}return n}
 function button(label:string,click:()=>void,cls=""){const b=e("button","lego-button "+cls,label);b.onclick=click;return b}
 function save(id:string,status:Status){if(saved[id]===status)delete saved[id];else saved[id]=status;localStorage.setItem(key,JSON.stringify(saved));render()}
+type PartLine={id:string;name:string;color:string;quantity:number;image:string};
+type Inventory={parts:PartLine[];minifigs:PartLine[];spares:PartLine[]};
+const inventoryCache=new Map<number,Record<string,Inventory>>();
+function inventoryBucket(id:string){let h=0;for(const c of id)h=(h*31+c.charCodeAt(0))>>>0;return h%128}
+async function loadInventory(id:string):Promise<Inventory|null>{
+ const bucket=inventoryBucket(id);
+ if(!inventoryCache.has(bucket)){const response=await fetch(import.meta.env.BASE_URL+"lego-parts/"+bucket+".json");if(!response.ok)throw Error("Inventory unavailable");inventoryCache.set(bucket,await response.json())}
+ return inventoryCache.get(bucket)?.[id]||null;
+}
+function renderInventory(parent:HTMLElement,setNumber:string){
+ const section=e("section","archiv-inventory");section.append(e("div","archiv-inventory-heading"));
+ const heading=section.firstElementChild as HTMLElement;
+ heading.append(e("p","archiv-eyebrow","YOUR SET, PIECE BY PIECE"),e("h2","","Parts inventory"));
+ const message=e("p","archiv-inventory-loading","Loading the set inventory…");section.append(message);parent.append(section);
+ void loadInventory(setNumber).then(inv=>{
+  if(!section.isConnected)return;
+  message.remove();
+  if(!inv){section.append(e("p","archiv-empty-inventory","A parts inventory hasn't been published for this set yet."));return}
+  const key="archiv-parts-checked:"+setNumber;let checks:Record<string,boolean>={};
+  try{checks=JSON.parse(localStorage.getItem(key)||"{}")}catch{}
+  let query="",color="All colors",showChecklist=false;
+  const tools=e("div","archiv-parts-toolbar");
+  const searchBox=e("input") as HTMLInputElement;searchBox.type="search";searchBox.placeholder="Find a piece or number";searchBox.setAttribute("aria-label","Search pieces");tools.append(searchBox);
+  const colorSelect=e("select") as HTMLSelectElement;colorSelect.setAttribute("aria-label","Filter by color");
+  const allColors=[...new Set([...inv.parts,...inv.spares].map(p=>p.color))].sort();
+  for(const c of ["All colors",...allColors]){const opt=e("option","",c);opt.value=c;colorSelect.append(opt)}tools.append(colorSelect);
+  const checkButton=button("Track pieces",()=>{showChecklist=!showChecklist;checkButton.textContent=showChecklist?"Hide checklist":"Track pieces";draw()},"archiv-check-toggle");tools.append(checkButton);
+  section.append(tools);
+  const progress=e("p","archiv-parts-progress");section.append(progress);
+  const lists=e("div","archiv-parts-lists");section.append(lists);
+  function draw(){
+   lists.replaceChildren();
+   const total=[...inv.parts,...inv.minifigs,...inv.spares];const checked=total.filter((p,i)=>checks[(i<inv.parts.length?"parts":i<inv.parts.length+inv.minifigs.length?"minifigs":"spares")+":"+p.id+":"+p.color]).length;
+   progress.textContent=showChecklist?checked+" of "+total.length+" part types checked":total.reduce((n,p)=>n+p.quantity,0).toLocaleString()+" pieces across "+total.length.toLocaleString()+" inventory entries";
+   for(const [kind,title,items] of [["parts","Building pieces",inv.parts],["minifigs","Minifigures",inv.minifigs],["spares","Extra & spare pieces",inv.spares]] as const){
+    const panel=e("section","archiv-parts-panel");const details=e("details","archiv-parts-section");details.open=true;
+    const sum=e("summary","archiv-parts-section-head");sum.append(e("span","",title),e("span","archiv-parts-pill",items.length+" types · "+items.reduce((n,p)=>n+p.quantity,0)+" pieces"));details.append(sum);
+    const matched=items.filter(p=>(kind==="minifigs"||color==="All colors"||p.color===color)&&[p.id,p.name,p.color].join(" ").toLowerCase().includes(query));
+    const grid=e("div","archiv-parts-grid");
+    for(const p of matched){const entry=e("article","archiv-part-card");const pic=e("div","archiv-part-photo");
+      if(p.image){const img=e("img");img.src=p.image;img.alt=p.name;img.loading="lazy";img.onerror=()=>{img.remove();pic.append(e("span","archiv-part-placeholder","Image unavailable"))};pic.append(img)}else pic.append(e("span","archiv-part-placeholder","Image unavailable"));
+      entry.append(pic,e("strong","archiv-part-quantity",p.quantity+" ×"),e("p","archiv-part-name",p.name),e("p","archiv-part-meta",p.id+(p.color?" · "+p.color:"")));
+      if(showChecklist){const id=kind+":"+p.id+":"+p.color;const line=e("label","archiv-part-check");const tick=e("input") as HTMLInputElement;tick.type="checkbox";tick.checked=!!checks[id];tick.onchange=()=>{checks[id]=tick.checked;localStorage.setItem(key,JSON.stringify(checks));draw()};line.append(tick,document.createTextNode("Accounted for"));entry.append(line);if(checks[id])entry.classList.add("archiv-part-checked")}
+      grid.append(entry);
+    }
+    if(!matched.length)details.append(e("p","archiv-parts-no-match",items.length?"No pieces match this filter.":"No entries for this set."));
+    details.append(grid);panel.append(details);lists.append(panel);
+   }
+  }
+  searchBox.oninput=()=>{query=searchBox.value.toLowerCase().trim();draw()};
+  colorSelect.onchange=()=>{color=colorSelect.value;draw()};
+  draw();
+ }).catch(()=>{if(section.isConnected)message.textContent="Parts inventory is currently unavailable. Please try again later."});
+}
 function renderSetDetail(shell:HTMLElement,id:string){
  const row=data.find(x=>x.number===id);
  const wrap=e("main","lego-set-detail");
@@ -77,6 +131,7 @@ function renderSetDetail(shell:HTMLElement,id:string){
  if(!owned){const pending=e("div","lego-shop-pending");pending.append(e("strong","","Find a seller"),e("small","","Affiliate purchase offers are not connected yet."));details.append(pending)}
 
  hero.append(figure,details);wrap.append(hero);
+ renderInventory(wrap,row.number);
  wrap.append(e("p","lego-detail-credit","Set information and imagery sourced from Rebrickable. Product images are owned by their respective rights holders."));
  shell.append(wrap);
 }
