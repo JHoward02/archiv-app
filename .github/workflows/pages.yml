@@ -63,6 +63,7 @@ jobs:
           # Stage per-user activity and daily reporting; production pin unchanged.
           # Preview readable activity and registration totals.
           # Preview Firebase free-plan account reporting without callable functions.
+          # Refresh theme header account and back-button alignment in staging.
           git -C "$RUNNER_TEMP/archiv-lego-preview" restore --source=d18f6a439f497ddea1a731c63969ff517738ba40 -- src/lego-entry.ts src/lego-styles.css
           npm --prefix "$RUNNER_TEMP/archiv-lego-preview" run build:web
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/
