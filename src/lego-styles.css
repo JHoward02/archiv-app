@@ -309,3 +309,19 @@
 /* Signed-in Google profile image replaces the hamburger trigger. */
 .lego-account-avatar{display:block;width:36px;height:36px;border-radius:50%;object-fit:cover}
 .lego-account-toggle:has(.lego-account-avatar){border-radius:50%;padding:3px;overflow:hidden}
+
+/* Private reporting dashboard, available only to an approved Firebase administrator. */
+.lego-admin{margin:34px 0 60px;min-height:400px}
+.lego-admin h1{font:normal clamp(31px,4vw,46px) Georgia,serif;margin:0 0 16px}
+.lego-admin h2{margin-top:34px}
+.lego-admin-note{color:#6d6255;line-height:1.55;max-width:750px}
+.lego-admin-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:14px;margin:24px 0}
+.lego-admin-card{background:#fffdf8;border:1px solid #d9cebf;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:9px}
+.lego-admin-card strong{font-size:32px;color:#08243b}
+.lego-admin-card span{font-size:13px;color:#6d6255}
+.lego-admin-themes{background:#fffdf8;border:1px solid #d9cebf;border-radius:12px;padding:20px;margin:15px 0 26px}
+.lego-admin-theme{display:grid;grid-template-columns:minmax(110px,180px) 1fr 55px;gap:12px;align-items:center;padding:8px 0}
+.lego-admin-track{height:13px;border-radius:9px;background:#efe7dc;overflow:hidden}
+.lego-admin-bar{height:100%;background:#e68c24;border-radius:9px}
+.lego-admin-theme strong{text-align:right}
+@media(max-width:640px){.lego-admin-theme{grid-template-columns:95px 1fr 40px;font-size:12px}}
