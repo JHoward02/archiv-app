@@ -59,7 +59,7 @@ jobs:
           # Refresh staging preview for Google sign-in and sign-up button presentation.
           # Refresh LEGO staging preview with expandable account menu.
           # Refresh staging with Google profile image account toggle.
-          git -C "$RUNNER_TEMP/archiv-lego-preview" restore --source=aa8670776a0a7377e1499e148ea214b39d923d9f -- src/lego-entry.ts src/lego-styles.css
+          git -C "$RUNNER_TEMP/archiv-lego-preview" restore --source=d18f6a439f497ddea1a731c63969ff517738ba40 -- src/lego-entry.ts src/lego-styles.css
           npm --prefix "$RUNNER_TEMP/archiv-lego-preview" run build:web
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/
       - uses: actions/configure-pages@v5
