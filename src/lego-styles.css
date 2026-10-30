@@ -273,3 +273,11 @@
 
 /* One clear affiliate disclosure at the bottom of each theme catalog. */
 .lego-theme-affiliate-disclosure{margin:18px 4px 24px;color:#75695a;font-size:12px;line-height:1.5;text-align:center}
+
+/* Public LEGO browsing with optional cloud profile controls. */
+.lego-account-controls{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-left:auto}
+.lego-account-label{font-size:13px;font-weight:650;color:#62594e;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lego-account-button{background:#08243b;color:#fffdf8;border-color:#08243b}
+.lego-account-button:hover{background:#174665;color:#fff}
+.lego-account-message{border:1px solid #e4cbaa;background:#fff9ed;border-radius:10px;padding:11px 15px;color:#78511e;font-size:13px}
+@media(max-width:640px){.lego-account-controls{margin:14px 0 0;justify-content:flex-start}}
