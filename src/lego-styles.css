@@ -254,3 +254,7 @@
 .archiv-ebay-action:hover,.archiv-ebay-action:focus-visible{background:#174665;color:#fff}
 .archiv-ebay-disclosure{font-size:12px;color:#75695a;line-height:1.5;margin:14px 0 0}
 @media(max-width:640px){.archiv-ebay-shopping{padding:17px}}
+
+.archiv-ebay-inline{display:flex;flex-direction:column;align-items:center;gap:6px;padding:13px 12px}
+.archiv-ebay-inline-link{color:#08243b;font-weight:800;font-size:16px;text-decoration:underline;text-underline-offset:3px}
+.archiv-ebay-inline-disclosure{font-size:11px;color:#7c6955;line-height:1.45;margin:4px 0 0;text-align:center}
