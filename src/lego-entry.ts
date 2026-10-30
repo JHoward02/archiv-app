@@ -57,7 +57,7 @@ async function reportAffiliateClick(){
 }
 document.addEventListener("click",ev=>{
  const el=ev.target;if(!(el instanceof Element))return;
- const a=el.closest("a[href]");if(!a)return;
+ const a=el.closest("a[href]");if(!(a instanceof HTMLAnchorElement))return;
  try{const host=new URL(a.href).hostname;if(host==="ebay.com"||host.endsWith(".ebay.com"))void reportAffiliateClick()}catch{}
 },true);
 
