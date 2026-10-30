@@ -199,3 +199,13 @@
 .lego-set-open:focus-visible{outline:3px solid #f59a23;outline-offset:-3px}
 .lego-set-open:hover .lego-set-photo{transform:scale(1.025)}
 .lego-set-photo{transition:filter .2s ease,transform .2s ease}
+
+/* Data-backed set photo gallery; no invented image variants. */
+.lego-detail-figure{flex-direction:column;gap:13px}
+.lego-gallery-main{width:100%;max-height:480px;object-fit:contain}
+.lego-gallery-arrows{display:flex;gap:10px;justify-content:center}
+.lego-gallery-controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.lego-gallery-thumb{width:68px;height:62px;padding:4px;background:white;border:2px solid #d9cebf;border-radius:8px;cursor:pointer}
+.lego-gallery-thumb.active{border-color:#08243b}
+.lego-gallery-thumb img{width:100%;height:100%;object-fit:contain}
+.lego-gallery-count,.lego-gallery-single{font-size:12px;color:#70665a;text-align:center;margin:0}
