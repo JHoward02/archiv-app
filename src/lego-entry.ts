@@ -27,8 +27,8 @@ function save(id:string,status:Status){if(saved[id]===status)delete saved[id];el
 function render(){app.replaceChildren();const shell=e("div","lego-shell");app.append(shell);
 const header=e("header","lego-header");
 const logo=e("a","lego-logo");logo.href="#/";logo.setAttribute("aria-label","Archív home");
-const art=e("img");art.src=import.meta.env.BASE_URL+"logo4";art.alt="Archív";logo.append(art);
-const caption=e("div","lego-tagline","YOUR COLLECTION LIVES HERE");logo.append(caption);header.append(logo);
+const art=e("img");art.src=import.meta.env.BASE_URL+"archiv-lego-logo.png";art.alt="Archív. Your collection lives here.";art.onerror=()=>{art.onerror=null;art.src=import.meta.env.BASE_URL+"logo4"};logo.append(art);
+header.append(logo);
 const nav=e("nav","lego-topnav");nav.append(button("Explore your Archív",()=>{filter="all";selected="All LEGO";render()},filter==="all"?"active":""),button("Your Archív",()=>{filter="saved";render()},filter==="saved"?"active":""));header.append(nav);shell.append(header);
 const title=e("section","lego-intro");title.append(e("p","lego-eyebrow","ARCHÍV 2.0 · LEGO COLLECTIONS"));title.append(e("h1","",filter==="saved"?"Your LEGO collection":"Explore LEGO collections"));title.append(e("p","",filter==="saved"?"See the sets you own and the ones on your wishlist.":"Discover sets across LEGO themes, track what you own, and find what you're missing."));shell.append(title);
 const t=e("div","lego-theme-grid");themes.slice(1).forEach(n=>{const b=button("",()=>{selected=n;filter="all";page=0;render()},"lego-theme "+(selected===n?"current":""));const picture=e("img","lego-theme-art");picture.src=setImage(tileSets[n]);picture.alt="LEGO "+n+" set photograph sourced from Rebrickable";picture.loading="lazy";picture.onerror=()=>{picture.style.display="none"};picture.loading="lazy";b.append(picture,e("span","lego-theme-name",n));t.append(b)});shell.append(t);
