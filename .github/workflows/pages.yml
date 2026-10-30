@@ -46,6 +46,9 @@ jobs:
           npm --prefix "$RUNNER_TEMP/archiv-lego-preview" run build:web
           mkdir -p dist-web/lego-preview
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/lego-preview/
+          # Promote the verified LEGO build to the production root, without
+          # removing independent preview directories or the rollback branch.
+          cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/
       - uses: actions/configure-pages@v5
         with:
           enablement: true
