@@ -1,6 +1,7 @@
 import "./lego-styles.css";
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, type User } from "firebase/auth";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { collection, doc, getFirestore, onSnapshot, setDoc, deleteDoc, getDoc, getDocs, addDoc, increment, serverTimestamp, type Unsubscribe } from "firebase/firestore";
 type SetRow={number:string;name:string;year:number;theme:string;parts:number;image?:string;images?:string[]};
 type Status="owned"|"wishlist";
@@ -19,6 +20,7 @@ let stopCollection:Unsubscribe|null=null,authGeneration=0;
 type Activity={uid:string;type:string;setNumber?:string;theme?:string;at:string};
 type Profile={uid:string;name?:string;email?:string;firstSeen?:string;lastSeen?:string};
 let profiles:Profile[]=[],events:Activity[]=[],chosenUid="";
+let exactRegisteredCount:number|null=null,registeredCountError="";
 let adminEnabled=false,adminStatus="Checking access…",adminRows:Array<{owned?:number;wishlist?:number;themes?:Record<string,number>;affiliateClicks?:number}>=[],adminLoading=false,adminError="";
 async function checkAdmin(user:User|null,gen:number){
  adminEnabled=false;adminRows=[];adminStatus="Checking access…";
@@ -34,7 +36,8 @@ async function checkAdmin(user:User|null,gen:number){
 }
 async function loadAdmin(){
  if(!adminEnabled||!legoDb)return;
- adminLoading=true;adminError="";render();
+ adminLoading=true;adminError="";registeredCountError="";render();
+ try{const response=await httpsCallable<void,{count:number}>(getFunctions(firebaseApp!,"us-central1"),"archivRegisteredUsers")();exactRegisteredCount=response.data.count}catch{exactRegisteredCount=null;registeredCountError="Exact Firebase Authentication total unavailable until the secure reporting function is deployed."}
  try{
   const [summaries,people]=await Promise.all([getDocs(collection(legoDb,"collectorSummaries")),getDocs(collection(legoDb,"collectorProfiles"))]);
   adminRows=summaries.docs.map(d=>d.data());
@@ -322,6 +325,8 @@ if(location.hash==="#/admin"){
   for(const [label,total] of totals){const card=e("div","lego-admin-card");card.append(e("strong","",total.toLocaleString()),e("span","",label));cards.append(card)}
   main.append(cards);
   const registry=e("div","lego-admin-card");registry.append(e("strong","",profiles.length.toLocaleString()),e("span","","Accounts seen since registration tracking began"));main.append(registry);
+  const authCard=e("div","lego-admin-card");authCard.append(e("strong","",exactRegisteredCount===null?"Not connected":exactRegisteredCount.toLocaleString()),e("span","","Total registered Firebase Authentication accounts"));main.append(authCard);
+  if(registeredCountError)main.append(e("p","lego-admin-note",registeredCountError));
   main.append(e("h2","","Daily activity (last 14 days)"));
   const trend=e("div","lego-admin-themes");
   for(let d=13;d>=0;d--){
