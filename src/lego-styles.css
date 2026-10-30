@@ -18,3 +18,29 @@
 @media(max-width:640px){.lego-logo{width:100%}}
 
 .lego-registered{font-size:.48em;line-height:0;vertical-align:super;position:relative;top:-.04em;font-family:Arial,sans-serif;font-weight:600;margin-left:.03em}
+
+/* Brick tile v2: modeled as a single molded shell, not studs pasted on cards. */
+.lego-theme-grid{gap:23px 17px;padding-top:15px}
+.lego-theme{
+  --brick:#bc473a;--brick-dark:#88372f;--brick-light:#e06a58;
+  position:relative;overflow:visible;isolation:isolate;
+  background:var(--brick);border:0;border-radius:7px 7px 11px 11px;
+  box-shadow:inset 2px 2px 0 #ffffff35,inset -4px -4px 0 #00000019,0 5px 0 var(--brick-dark),0 12px 18px -13px #08243b77;
+  padding:15px 13px 12px;min-width:0;
+  transition:transform .16s ease,box-shadow .16s ease;
+}
+.lego-theme:nth-child(2){--brick:#456c9d;--brick-dark:#2d476b;--brick-light:#7197c6}
+.lego-theme:nth-child(3){--brick:#d6a23f;--brick-dark:#a17a2d;--brick-light:#e9c36a}
+.lego-theme:nth-child(4){--brick:#426d6a;--brick-dark:#294d4a;--brick-light:#72a6a1}
+.lego-theme:nth-child(5){--brick:#a46c4e;--brick-dark:#754c39;--brick-light:#ce9571}
+.lego-theme:nth-child(6){--brick:#667b9a;--brick-dark:#425574;--brick-light:#99acca}
+.lego-brick-studs{position:absolute;top:-13px;left:16px;right:16px;height:16px;display:flex;justify-content:space-around;gap:10px;pointer-events:none}
+.lego-brick-stud{position:relative;display:block;flex:0 1 47px;max-width:47px;height:16px;background:linear-gradient(90deg,var(--brick-dark),var(--brick-light) 28%,var(--brick) 78%);border-radius:50% 50% 5px 5px/47% 47% 3px 3px;box-shadow:inset 0 2px 1px #ffffff4a,0 -1px 0 var(--brick-dark)}
+.lego-brick-stud::before{content:"";position:absolute;inset:-2px 0 9px;background:var(--brick-light);border-radius:50%;box-shadow:inset 0 1px 1px #ffffff50}
+.lego-brick-window{display:flex;align-items:center;justify-content:center;width:100%;background:#fffdf8;border:2px solid #ffffffa8;border-radius:5px;box-shadow:inset 0 2px 6px #08243b1c,0 2px 1px #00000018;overflow:hidden}
+.lego-theme-art{border-radius:0;width:100%;object-fit:contain;padding:6px;background:#fffdf8}
+.lego-theme-name{padding:11px 4px 3px;color:#fffdf8;font:600 21px Georgia,serif;text-shadow:0 1px 1px #00000036;border:0}
+.lego-theme:hover{transform:translateY(-3px);box-shadow:inset 2px 2px 0 #ffffff35,inset -4px -4px 0 #00000019,0 8px 0 var(--brick-dark),0 14px 20px -12px #08243b77}
+.lego-theme.current{outline:3px solid #08243b;outline-offset:4px;background:var(--brick)}
+.lego-theme:focus-visible{outline:3px solid #08243b;outline-offset:5px}
+@media(max-width:640px){.lego-theme-grid{gap:22px 11px}.lego-theme{padding:11px 8px 9px}.lego-brick-studs{left:9px;right:9px;top:-10px;height:12px;gap:5px}.lego-brick-stud{height:12px;max-width:35px}.lego-brick-stud::before{bottom:7px}.lego-theme-name{font-size:16px;padding:9px 3px 2px}.lego-theme-art{padding:4px}}
