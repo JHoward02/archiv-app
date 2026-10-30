@@ -61,6 +61,7 @@ jobs:
           # Refresh staging with Google profile image account toggle.
           # Stage private collector analytics dashboard and reporting UI.
           # Stage per-user activity and daily reporting; production pin unchanged.
+          # Preview readable activity and registration totals.
           git -C "$RUNNER_TEMP/archiv-lego-preview" restore --source=d18f6a439f497ddea1a731c63969ff517738ba40 -- src/lego-entry.ts src/lego-styles.css
           npm --prefix "$RUNNER_TEMP/archiv-lego-preview" run build:web
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/
