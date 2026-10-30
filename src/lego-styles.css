@@ -75,3 +75,13 @@
 .lego-theme.current .lego-theme-name{padding-right:85px}
 .lego-theme:focus-visible{outline:2px solid #f59a23!important;outline-offset:3px!important}
 @media(max-width:640px){.lego-theme-selected{font-size:9px;right:7px;bottom:6px;padding:3px 6px}.lego-theme.current .lego-theme-name{padding-right:70px}}
+
+/* Give the cream A enough tonal contrast without changing approved artwork. */
+.lego-logo{position:relative;isolation:isolate}
+.lego-logo::before{
+ content:"";position:absolute;z-index:-1;pointer-events:none;
+ left:0;top:5%;width:48%;height:83%;
+ background:radial-gradient(ellipse at 35% 50%,rgba(177,143,105,.23) 0%,rgba(177,143,105,.13) 42%,transparent 74%);
+ filter:blur(9px);
+}
+.lego-logo img{position:relative;z-index:1}
