@@ -57,7 +57,7 @@ function renderInventory(parent:HTMLElement,setNumber:string){
   if(!inv){section.append(e("p","archiv-empty-inventory","A parts inventory hasn't been published for this set yet."));return}
   const key="archiv-parts-checked:"+setNumber;let checks:Record<string,boolean>={};
   try{checks=JSON.parse(localStorage.getItem(key)||"{}")}catch{}
-  let query="",color="All colors",showChecklist=false,showAllBuilding=false;
+  let query="",color="All colors",showChecklist=false,showAllBuilding=false,showAllSpares=false;
   const tools=e("div","archiv-parts-toolbar");
   const searchBox=e("input") as HTMLInputElement;searchBox.type="search";searchBox.placeholder="Find a piece or number";searchBox.setAttribute("aria-label","Search pieces");tools.append(searchBox);
   const colorSelect=e("select") as HTMLSelectElement;colorSelect.setAttribute("aria-label","Filter by color");
@@ -84,17 +84,18 @@ function renderInventory(parent:HTMLElement,setNumber:string){
     }
     if(!matched.length)details.append(e("p","archiv-parts-no-match",items.length?"No pieces match this filter.":"No entries for this set."));
     details.append(grid);
-    if(kind==="parts"&&matched.length){const updateLimit=()=>{
+    if((kind==="parts"||kind==="spares")&&matched.length){const updateLimit=()=>{
       const cards=[...grid.children] as HTMLElement[];
       cards.forEach(card=>{card.hidden=false});
       const offsets=cards.map(card=>card.offsetTop);
       const rows=[...new Set(offsets)].sort((a,b)=>a-b);
-      const lastVisibleRow=rows[2]??Infinity;
-      cards.forEach((card,i)=>{card.hidden=!showAllBuilding&&offsets[i]>lastVisibleRow});
-      toggle.hidden=rows.length<=3;
-      toggle.textContent=showAllBuilding?"See Less":"See More";
+      const maxRows=kind==="spares"?2:3;
+      const lastVisibleRow=rows[maxRows-1]??Infinity;
+      cards.forEach((card,i)=>{card.hidden=!(kind==="spares"?showAllSpares:showAllBuilding)&&offsets[i]>lastVisibleRow});
+      toggle.hidden=rows.length<=maxRows;
+      toggle.textContent=(kind==="spares"?showAllSpares:showAllBuilding)?"See Less":"See More";
     };
-    const toggle=button("See More",()=>{showAllBuilding=!showAllBuilding;updateLimit()},"archiv-parts-more");
+    const toggle=button("See More",()=>{if(kind==="spares")showAllSpares=!showAllSpares;else showAllBuilding=!showAllBuilding;updateLimit()},"archiv-parts-more");
     details.append(toggle);
     requestAnimationFrame(()=>{if(grid.isConnected)updateLimit()});
     }
