@@ -11,3 +11,8 @@
 .lego-theme-art{object-fit:contain;background:#fffdf8;padding:10px;aspect-ratio:440/232}
 .lego-product-image{width:106px;height:84px;flex:none;object-fit:contain;background:#fff;border-radius:9px}
 @media(max-width:640px){.lego-product-image{width:100%;height:150px}}
+
+/* Approved LEGO-style logo already contains the tagline. Preserve its full transparent composition. */
+.lego-logo{width:min(560px,100%)}
+.lego-logo img{height:auto;max-height:none;width:100%;object-fit:contain;object-position:left center}
+@media(max-width:640px){.lego-logo{width:100%}}
