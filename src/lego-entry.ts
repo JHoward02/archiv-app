@@ -1,7 +1,10 @@
 import "./lego-styles.css";
 type SetRow={number:string;name:string;year:number;theme:string;parts:number;image?:string};
 type Status="owned"|"wishlist";
-const themes=["All LEGO","Speed Champions","Star Wars","Technic","City","Icons","Architecture","Complete Catalog"];
+const featured=["Speed Champions","Star Wars","Technic","City","Icons","Architecture"];
+let themes=["All LEGO",...featured,"Complete Catalog"];
+type ThemeInfo={name:string;count:number;image:string};
+let extraThemes:ThemeInfo[]=[];
 const key="archiv-lego-v1";
 // Rebrickable set-image URLs supplied in the downloaded CSV catalog.
 // Do not scrape or bulk-download images; display with source attribution.
@@ -25,7 +28,8 @@ try{saved=JSON.parse(localStorage.getItem(key)||"{}")}catch{}
 const app=document.querySelector<HTMLElement>("#app")!;
 let data:SetRow[]=[];
 const url=new URL("./lego-catalog.json",import.meta.url);
-async function load(){try{const r=await fetch(url);if(r.ok)data=await r.json()}catch{} render()}
+const themeUrl=new URL("./lego-themes.json",import.meta.url);
+async function load(){try{const [setsResponse,themeResponse]=await Promise.all([fetch(url),fetch(themeUrl)]);if(setsResponse.ok)data=await setsResponse.json();if(themeResponse.ok){extraThemes=await themeResponse.json();themes=["All LEGO",...featured,...extraThemes.map(t=>t.name).filter(n=>!featured.includes(n)),"Complete Catalog"];}}catch{} selected=themeFromHash();render()}
 function e<K extends keyof HTMLElementTagNameMap>(tag:K,cls="",value=""){const n=document.createElement(tag);n.className=cls;if(value){const parts=value.split("LEGO®");if(parts.length===1)n.textContent=value;else{parts.forEach((part,i)=>{if(i){n.append(document.createTextNode("LEGO"));const mark=document.createElement("sup");mark.className="lego-registered";mark.textContent="®";n.append(mark)}if(part)n.append(document.createTextNode(part))})}}return n}
 function button(label:string,click:()=>void,cls=""){const b=e("button","lego-button "+cls,label);b.onclick=click;return b}
 function save(id:string,status:Status){if(saved[id]===status)delete saved[id];else saved[id]=status;localStorage.setItem(key,JSON.stringify(saved));render()}
@@ -35,9 +39,15 @@ const logo=e("a","lego-logo");logo.href="#/";logo.onclick=(event)=>{event.preven
 const art=e("img");art.src=import.meta.env.BASE_URL+"archiv-lego-logo.png";art.alt="Archív. Your collection lives here.";art.onerror=()=>{art.onerror=null;art.src=import.meta.env.BASE_URL+"logo4"};logo.append(art);
 header.append(logo);
 shell.append(header);
-function themeTile(n:string){const b=button("",()=>goTheme(n),"lego-theme");b.dataset.theme=n.toLowerCase().replace(/\s+/g,"-");const studs=e("span","lego-brick-studs");studs.setAttribute("aria-hidden","true");for(let i=0;i<4;i++)studs.append(e("span","lego-brick-stud"));b.append(studs);const picture=e("img","lego-theme-art");picture.src=setImage(tileSets[n]);picture.alt="LEGO® "+n+" set photograph sourced from Rebrickable";picture.loading="lazy";picture.onerror=()=>{picture.style.display="none"};const frame=e("span","lego-brick-window");frame.append(picture);b.append(frame,e("span","lego-theme-name",n));return b}
+function themeTile(n:string){const b=button("",()=>goTheme(n),"lego-theme");b.dataset.theme=n.toLowerCase().replace(/\s+/g,"-");const palette=["#527c8c","#866f9f","#a76d65","#497e6c","#c29553","#4f6897","#8d8065","#8c618b"];if(!featured.includes(n)&&n!=="Complete Catalog"){const i=Math.max(0,extraThemes.findIndex(t=>t.name===n));b.style.setProperty("--brick",palette[i%palette.length]);b.style.setProperty("--brick-dark",["#355968","#5d4b75","#784a46","#30584c","#8c6b35","#344968","#625b46","#664665"][i%palette.length]);b.style.setProperty("--brick-light",["#7fa2af","#ab96c4","#c8958a","#78a68d","#e0bc78","#7d90b8","#afa387","#b48caf"][i%palette.length])}const studs=e("span","lego-brick-studs");studs.setAttribute("aria-hidden","true");for(let i=0;i<4;i++)studs.append(e("span","lego-brick-stud"));b.append(studs);const picture=e("img","lego-theme-art");picture.src=extraThemes.find(t=>t.name===n)?.image||setImage(tileSets[n]||"10307-1");picture.alt="LEGO® "+n+" set photograph sourced from Rebrickable";picture.loading="lazy";picture.onerror=()=>{picture.style.display="none"};const frame=e("span","lego-brick-window");frame.append(picture);b.append(frame,e("span","lego-theme-name",n));return b}
 if(selected==="All LEGO"){
-const t=e("div","lego-theme-grid lego-home-themes");themes.slice(1).forEach(n=>t.append(themeTile(n)));shell.append(t);
+const t=e("div","lego-theme-grid lego-home-themes");featured.forEach(n=>t.append(themeTile(n)));shell.append(t);
+const more=e("section","lego-more-themes");more.append(e("h2","","More LEGO® themes"));
+const field=e("input","lego-theme-search") as HTMLInputElement;field.type="search";field.placeholder="Find a LEGO® theme";field.setAttribute("aria-label","Find a LEGO theme");more.append(field);
+const count=e("p","lego-theme-count");more.append(count);
+const grid=e("div","lego-theme-grid lego-all-theme-grid");more.append(grid);
+function showThemes(){const query=field.value.trim().toLowerCase();grid.replaceChildren();const options=themes.filter(n=>!featured.includes(n)&&n!=="All LEGO"&&n.toLowerCase().includes(query));count.textContent=options.length+" themes";options.forEach(n=>grid.append(themeTile(n)))}
+field.oninput=showThemes;showThemes();shell.append(more);
 }else{
 header.classList.add("lego-theme-header");const feature=e("div","lego-featured-theme");feature.append(themeTile(selected));header.append(feature);const back=button("← Back to Themes",()=>goTheme("All LEGO"),"lego-back-to-themes");back.setAttribute("aria-label","Back to all LEGO themes");header.append(back);
 }
