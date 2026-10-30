@@ -38,7 +38,7 @@ function themeTile(n:string){const b=button("",()=>goTheme(n),"lego-theme");b.da
 if(selected==="All LEGO"){
 const t=e("div","lego-theme-grid lego-home-themes");themes.slice(1).forEach(n=>t.append(themeTile(n)));shell.append(t);
 }else{
-header.classList.add("lego-theme-header");const feature=e("div","lego-featured-theme");feature.append(themeTile(selected));header.append(feature);
+header.classList.add("lego-theme-header");const feature=e("div","lego-featured-theme");feature.append(themeTile(selected));header.append(feature);const back=button("← Back to Themes",()=>goTheme("All LEGO"),"lego-back-to-themes");back.setAttribute("aria-label","Back to all LEGO themes");header.append(back);
 }
 const footer=e("footer","lego-footer");
 const footerLinks=e("nav","lego-footer-links");footerLinks.setAttribute("aria-label","Site information");
