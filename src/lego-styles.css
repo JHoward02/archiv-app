@@ -85,3 +85,11 @@
  filter:blur(9px);
 }
 .lego-logo img{position:relative;z-index:1}
+
+/* Site copyright and policy navigation */
+.lego-footer{margin:40px auto 0;padding:28px 12px 12px;border-top:1px solid #d9cebf}
+.lego-footer-links{display:flex;gap:10px 24px;flex-wrap:wrap;justify-content:center;margin-bottom:16px}
+.lego-footer-links a{color:#08243b;text-decoration:none;font-weight:650;font-size:13px}
+.lego-footer-links a:hover,.lego-footer-links a:focus-visible{text-decoration:underline}
+.lego-copyright{font-weight:650;margin:7px 0}
+.lego-footer-disclaimer{max-width:760px;margin:8px auto;color:#746b60;line-height:1.6}
