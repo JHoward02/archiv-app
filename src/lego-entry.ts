@@ -57,7 +57,7 @@ function renderInventory(parent:HTMLElement,setNumber:string){
   if(!inv){section.append(e("p","archiv-empty-inventory","A parts inventory hasn't been published for this set yet."));return}
   const key="archiv-parts-checked:"+setNumber;let checks:Record<string,boolean>={};
   try{checks=JSON.parse(localStorage.getItem(key)||"{}")}catch{}
-  let query="",color="All colors",showChecklist=false;
+  let query="",color="All colors",showChecklist=false,showAllBuilding=false;
   const tools=e("div","archiv-parts-toolbar");
   const searchBox=e("input") as HTMLInputElement;searchBox.type="search";searchBox.placeholder="Find a piece or number";searchBox.setAttribute("aria-label","Search pieces");tools.append(searchBox);
   const colorSelect=e("select") as HTMLSelectElement;colorSelect.setAttribute("aria-label","Filter by color");
@@ -71,7 +71,7 @@ function renderInventory(parent:HTMLElement,setNumber:string){
    lists.replaceChildren();
    const total=[...inv.parts,...inv.minifigs,...inv.spares];const checked=total.filter((p,i)=>checks[(i<inv.parts.length?"parts":i<inv.parts.length+inv.minifigs.length?"minifigs":"spares")+":"+p.id+":"+p.color]).length;
    progress.textContent=showChecklist?checked+" of "+total.length+" part types checked":total.reduce((n,p)=>n+p.quantity,0).toLocaleString()+" pieces across "+total.length.toLocaleString()+" inventory entries";
-   for(const [kind,title,items] of [["parts","Building pieces",inv.parts],["minifigs","Minifigures",inv.minifigs],["spares","Extra & spare pieces",inv.spares]] as const){
+   for(const [kind,title,items] of [["minifigs","Minifigures",inv.minifigs],["spares","Extra & spare pieces",inv.spares],["parts","Building pieces",inv.parts]] as const){
     const panel=e("section","archiv-parts-panel");const details=e("details","archiv-parts-section");details.open=true;
     const sum=e("summary","archiv-parts-section-head");sum.append(e("span","",title),e("span","archiv-parts-pill",items.length+" types · "+items.reduce((n,p)=>n+p.quantity,0)+" pieces"));details.append(sum);
     const matched=items.filter(p=>(kind==="minifigs"||color==="All colors"||p.color===color)&&[p.id,p.name,p.color].join(" ").toLowerCase().includes(query));
@@ -83,7 +83,19 @@ function renderInventory(parent:HTMLElement,setNumber:string){
       grid.append(entry);
     }
     if(!matched.length)details.append(e("p","archiv-parts-no-match",items.length?"No pieces match this filter.":"No entries for this set."));
-    details.append(grid);panel.append(details);lists.append(panel);
+    details.append(grid);
+    if(kind==="parts"&&matched.length){const updateLimit=()=>{
+      const columns=Math.max(1,Math.floor((grid.clientWidth+12)/157));
+      const limit=columns*3;
+      [...grid.children].forEach((card,i)=>{(card as HTMLElement).hidden=!showAllBuilding&&i>=limit});
+      toggle.hidden=matched.length<=limit;
+      toggle.textContent=showAllBuilding?"See Less":"See More";
+    };
+    const toggle=button("See More",()=>{showAllBuilding=!showAllBuilding;updateLimit()},"archiv-parts-more");
+    details.append(toggle);
+    requestAnimationFrame(()=>{if(grid.isConnected)updateLimit()});
+    }
+    panel.append(details);lists.append(panel);
    }
   }
   searchBox.oninput=()=>{query=searchBox.value.toLowerCase().trim();draw()};
