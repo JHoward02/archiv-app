@@ -34,7 +34,7 @@ const logo=e("a","lego-logo");logo.href="#/";logo.onclick=(event)=>{event.preven
 const art=e("img");art.src=import.meta.env.BASE_URL+"archiv-lego-logo.png";art.alt="Archív. Your collection lives here.";art.onerror=()=>{art.onerror=null;art.src=import.meta.env.BASE_URL+"logo4"};logo.append(art);
 header.append(logo);
 shell.append(header);
-function themeTile(n:string){const b=button("",()=>goTheme(n),"lego-theme");const studs=e("span","lego-brick-studs");studs.setAttribute("aria-hidden","true");for(let i=0;i<4;i++)studs.append(e("span","lego-brick-stud"));b.append(studs);const picture=e("img","lego-theme-art");picture.src=setImage(tileSets[n]);picture.alt="LEGO® "+n+" set photograph sourced from Rebrickable";picture.loading="lazy";picture.onerror=()=>{picture.style.display="none"};const frame=e("span","lego-brick-window");frame.append(picture);b.append(frame,e("span","lego-theme-name",n));return b}
+function themeTile(n:string){const b=button("",()=>goTheme(n),"lego-theme");b.dataset.theme=n.toLowerCase().replace(/\s+/g,"-");const studs=e("span","lego-brick-studs");studs.setAttribute("aria-hidden","true");for(let i=0;i<4;i++)studs.append(e("span","lego-brick-stud"));b.append(studs);const picture=e("img","lego-theme-art");picture.src=setImage(tileSets[n]);picture.alt="LEGO® "+n+" set photograph sourced from Rebrickable";picture.loading="lazy";picture.onerror=()=>{picture.style.display="none"};const frame=e("span","lego-brick-window");frame.append(picture);b.append(frame,e("span","lego-theme-name",n));return b}
 if(selected==="All LEGO"){
 const t=e("div","lego-theme-grid lego-home-themes");themes.slice(1).forEach(n=>t.append(themeTile(n)));shell.append(t);
 }else{
