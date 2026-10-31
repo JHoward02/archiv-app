@@ -28,7 +28,7 @@ export function createCollectorProfile(
  registeredAt:string
 ){
  return {
-  name:firstNameFromDisplayName(displayName),
+  name:displayName?.trim()||"Collector",
   email:email||"",
   firstSeen:registeredAt,
   lastSeen:registeredAt,
