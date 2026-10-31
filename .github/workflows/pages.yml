@@ -128,6 +128,10 @@ jobs:
           path: ./dist-web
 
   deploy:
+    # Staging branches generate a preview build artifact only. The github-pages
+    # environment permits main alone; never attempt to publish or overwrite
+    # the production root from staging without an owner-approved main run.
+    if: github.ref == 'refs/heads/main'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
