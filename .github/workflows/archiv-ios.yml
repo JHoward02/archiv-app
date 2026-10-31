@@ -96,8 +96,11 @@ jobs:
           marker='# Add your Pods here'
           assert marker in s, 'Could not find CocoaPods plugin insertion point'
           s=s.replace(marker, marker+"\n  pod 'CapacitorFirebaseAuthentication/Google', :path => '../../node_modules/@capacitor-firebase/authentication'")
-          s += """
-          post_install do |installer|
+          # Capacitor's default Podfile already contains a post_install hook.
+          # Extend it rather than creating another (CocoaPods disallows two).
+          post_install='post_install do |installer|'
+          assert post_install in s, 'Capacitor CocoaPods post_install hook was not found'
+          signing_override="""post_install do |installer|
             installer.pods_project.targets.each do |target|
               if target.respond_to?(:product_type) && target.product_type == 'com.apple.product-type.bundle'
                 target.build_configurations.each do |configuration|
@@ -105,8 +108,8 @@ jobs:
                 end
               end
             end
-          end
           """
+          s=s.replace(post_install, signing_override, 1)
           podfile.write_text(s)
           PY
           fi
