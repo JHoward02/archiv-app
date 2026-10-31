@@ -49,6 +49,8 @@ jobs:
           echo "Preview source: $PREVIEW_SHA"
           grep -q '/src/lego-entry.ts' "$RUNNER_TEMP/archiv-lego-preview/index.html"
           test -s "$RUNNER_TEMP/archiv-lego-preview/src/auth-signup-decision.ts"
+          # Stop preview publication if the LEGO-specific logo asset is missing again.
+          test -s "$RUNNER_TEMP/archiv-lego-preview/public/archiv-lego-logo.png"
           npm --prefix "$RUNNER_TEMP/archiv-lego-preview" ci
           # The web-only auth candidate deliberately excludes unrelated native/import tooling.
           # Import catalog data using the separately vetted staging importer, not staged UI.
