@@ -81,7 +81,10 @@ jobs:
           # Capacitor generates Groovy Gradle files; Google Services must be applied
           # explicitly to generate native Firebase OAuth client resources.
           sed -i "/classpath 'com.android.tools.build:gradle:/a\\        classpath 'com.google.gms:google-services:4.5.0'" android/build.gradle
-          printf '\\napply plugin: "com.google.gms.google-services"\\n' >> android/app/build.gradle
+          cat >> android/app/build.gradle <<'EOF'
+
+          apply plugin: 'com.google.gms.google-services'
+          EOF
 
       - name: Configure reusable Android test signing certificate
         env:
