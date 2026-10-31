@@ -78,11 +78,12 @@ jobs:
             echo "::warning::Firebase Android app has not been registered. Native Google sign-in requires google-services.json and a registered Android SHA-1."
           fi
 
-      - name: Prepare zoomed-out A-frame launcher icon
+      - name: Prepare approved navy-and-gold brick launcher icon
         run: |
           python3 -m pip install --user pillow
           cd android-test
           python3 generate_icons.py
+          python3 -c 'from PIL import Image; p=Image.open("app/src/main/res/mipmap-xxxhdpi/ic_launcher.png"); assert p.size == (192,192); print("Validated native launcher image: ",p.size)'
           cd ..
           # Remove Capacitor template adaptive icons so Android uses the user's A-frame art.
           rm -rf android/app/src/main/res/mipmap-anydpi-v26
