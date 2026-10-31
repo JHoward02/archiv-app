@@ -374,3 +374,52 @@
     z-index:30;
   }
 }
+
+
+/* Collector profile: private account page and reversible communication preferences. */
+.archiv-profile{width:min(1040px,calc(100% - 28px));margin:20px auto 64px;color:#08243b}
+.archiv-profile-back{margin:0 0 22px}
+.archiv-profile-hero{margin:0 0 24px}
+.archiv-profile-kicker{display:block;font-size:12px;letter-spacing:.16em;font-weight:850;color:#9d6429}
+.archiv-profile-hero h1{font:normal clamp(38px,6vw,64px)/1.08 Georgia,serif;letter-spacing:-.025em;margin:12px 0}
+.archiv-profile-intro{max-width:660px;font-size:16px;line-height:1.65;color:#63594c;margin:8px 0 0}
+.archiv-profile-panel{border:1px solid #ded4c5;background:#fffdf8;border-radius:18px;padding:clamp(20px,4vw,34px);margin:0 0 20px;box-shadow:0 8px 25px #102b4210}
+.archiv-profile-panel h2,.archiv-profile-danger h2{font:normal clamp(24px,4vw,31px) Georgia,serif;margin:0 0 15px;line-height:1.3}
+.archiv-profile-identity{display:flex;gap:16px;align-items:center;margin-bottom:26px}
+.archiv-profile-identity h2{margin:0 0 5px;font-size:29px}
+.archiv-profile-identity p{margin:0;overflow-wrap:anywhere;color:#6c625a}
+.archiv-profile-avatar{width:72px;height:72px;object-fit:cover;border-radius:50%;box-shadow:0 0 0 3px #e5d3b6}
+.archiv-profile-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:28px}
+.archiv-profile-stat{border:1px solid #e6dbcd;background:#f5eee2;border-radius:13px;padding:18px 12px;min-width:0}
+.archiv-profile-stat strong{display:block;font-size:clamp(21px,3vw,31px);line-height:1.2;overflow-wrap:anywhere;color:#08243b}
+.archiv-profile-stat span{display:block;font-size:12px;line-height:1.4;margin-top:6px;color:#6e6255}
+.archiv-profile-facts{display:grid;grid-template-columns:1fr 1fr;gap:13px 20px;margin:0}
+.archiv-profile-facts div{border-top:1px solid #eae0d3;padding-top:12px;min-width:0}
+.archiv-profile-facts dt{font-size:12px;color:#786e62;margin-bottom:4px}
+.archiv-profile-facts dd{font-size:15px;font-weight:650;margin:0;overflow-wrap:anywhere}
+.archiv-profile-theme{margin:0 0 16px}
+.archiv-profile-theme:last-child{margin-bottom:0}
+.archiv-profile-theme-meta{display:flex;justify-content:space-between;gap:12px;margin-bottom:7px;font-size:14px}
+.archiv-profile-theme-meta strong{font-size:13px;white-space:nowrap}
+.archiv-profile-bar-track{height:11px;background:#e9dfd0;border-radius:99px;overflow:hidden}
+.archiv-profile-bar{display:block;height:100%;background:#d58738;border-radius:99px}
+.archiv-profile-muted{color:#6e6255;font-size:14px;line-height:1.6}
+.archiv-profile-optin{display:flex;align-items:center;gap:14px;padding:17px;border:1px solid #e6d8c7;border-radius:11px;background:#f7f1e9;cursor:pointer}
+.archiv-profile-optin input{width:22px;height:22px;accent-color:#1a634f;flex:none;cursor:pointer}
+.archiv-profile-optin input:disabled{opacity:.5;cursor:not-allowed}
+.archiv-profile-optin span{display:flex;flex-direction:column;gap:5px}
+.archiv-profile-optin strong{font-size:14px;line-height:1.5}
+.archiv-profile-optin small{font-size:13px;color:#716656}
+.archiv-profile-staging-note{color:#80591f;background:#fff5df;border:1px solid #e9d9ac;padding:11px 14px;border-radius:9px;font-size:13px;line-height:1.6;margin:14px 0 0}
+.archiv-profile-error{color:#963b32;padding:10px 0;font-size:13px}
+.archiv-profile-success{color:#20613a;padding:10px 0;font-size:13px}
+.archiv-profile-danger{border:1px solid #e2bbb3;border-radius:18px;padding:clamp(20px,4vw,32px);margin:44px 0 0;background:#fff9f6}
+.archiv-profile-danger h2{color:#80352b}
+.archiv-profile-danger>p{line-height:1.65;color:#6c514c}
+.archiv-profile-delete-trigger,.archiv-profile-delete-final{border-color:#8c4238!important;color:#8c4238!important;background:transparent!important}
+.archiv-profile-delete-trigger:hover,.archiv-profile-delete-final:hover:not(:disabled){color:#fff!important;background:#8c4238!important}
+.archiv-profile-confirm{padding:17px;margin-top:15px;border:1px solid #e6bbb5;border-radius:12px;background:#fffdfb;display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+.archiv-profile-confirm p{font-size:13px;color:#6f514b;line-height:1.6;margin:0}
+.archiv-profile-confirm input{width:100%;max-width:330px;padding:11px;border:1px solid #9c817c;border-radius:7px;background:white;color:#08243b;font:inherit}
+.archiv-profile-delete-final:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:650px){.archiv-profile-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.archiv-profile-facts{grid-template-columns:1fr}.archiv-profile-identity h2{font-size:23px}.archiv-profile-avatar{width:58px;height:58px}}
