@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createCollectorProfile, decideGoogleAuth } from "../src/auth-signup-decision";
+import { createCollectorProfile, decideGoogleAuth, signupBannerText } from "../src/auth-signup-decision";
 
 describe("explicit Archív registration",()=>{
  it("never admits a brand-new Google account through Sign in",()=>{
@@ -32,5 +32,11 @@ describe("explicit Archív registration",()=>{
   expect(profile.name).toBe("Collector");
   expect(profile.email).toBe("");
   expect(Object.keys(profile).sort()).toEqual(["communicationsOptIn","email","firstSeen","lastSeen","name"].sort());
+ });
+ it("shows a truthful registration banner even on a direct sign-up visit",()=>{
+  expect(signupBannerText(false)).toBe("New to Archív? Create your free collector account below.");
+ });
+ it("preserves the exact missing-account explanation after Sign in finds no account",()=>{
+  expect(signupBannerText(true)).toBe("No Archív account was found for that Google account. You can create one below.");
  });
 });
