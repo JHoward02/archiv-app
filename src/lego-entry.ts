@@ -1,7 +1,7 @@
 import "./lego-styles.css";
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth, GoogleAuthProvider, getAdditionalUserInfo, getRedirectResult, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, deleteUser, reauthenticateWithPopup, type User, type UserCredential } from "firebase/auth";
-import { decideGoogleAuth } from "./auth-signup-decision";
+import { createCollectorProfile, decideGoogleAuth } from "./auth-signup-decision";
 import { collection, doc, getFirestore, onSnapshot, setDoc, deleteDoc, getDoc, getDocs, addDoc, increment, serverTimestamp, updateDoc, writeBatch, type Unsubscribe } from "firebase/firestore";
 type SetRow={number:string;name:string;year:number;theme:string;parts:number;image?:string;images?:string[]};
 type Status="owned"|"wishlist";
@@ -17,13 +17,19 @@ const legoDb=firebaseApp?getFirestore(firebaseApp):null;
 const legoRecordPrefix="archiv-lego-set:";
 type GoogleAuthIntent="sign-in"|"sign-up";
 const redirectIntentKey="archiv-google-auth-intent";
+const redirectSignupConsentKey="archiv-google-signup-consent";
 function getStoredRedirectIntent():GoogleAuthIntent|null{
  try{const v=sessionStorage.getItem(redirectIntentKey);return v==="sign-in"||v==="sign-up"?v:null}catch{return null}
 }
 function storeRedirectIntent(intent:GoogleAuthIntent|null){
- try{if(intent)sessionStorage.setItem(redirectIntentKey,intent);else sessionStorage.removeItem(redirectIntentKey)}catch{}
+ try{
+  if(intent)sessionStorage.setItem(redirectIntentKey,intent);
+  else{sessionStorage.removeItem(redirectIntentKey);sessionStorage.removeItem(redirectSignupConsentKey)}
+ }catch{}
 }
 let authAttempt:GoogleAuthIntent|null=getStoredRedirectIntent();
+let signupCommunicationsOptIn=false;
+if(authAttempt==="sign-up")try{signupCommunicationsOptIn=sessionStorage.getItem(redirectSignupConsentKey)==="true"}catch{}
 let authBusy=authAttempt!==null,authNotice="";
 let currentUser:User|null=null,authReady=!legoAuth,collectionReady=!legoAuth,accountError="";
 let stopCollection:Unsubscribe|null=null,authGeneration=0;
@@ -125,9 +131,27 @@ async function acceptGoogleAuth(result:UserCredential,intent:GoogleAuthIntent){
    location.hash="#/sign-up";
    throw new Error("We couldn't clean up the temporary sign-in. Please contact getshelfiecollect@gmail.com before trying again. No collection data was saved.");
   }
+  signupCommunicationsOptIn=false;
   authNotice="No Archív account was found for that Google account. You can create one below.";
   location.hash="#/sign-up";
   return;
+ }
+ if(intent==="sign-up"&&decision==="created"){
+  // Save consent alongside all fields required by Firestore before enabling profile listeners.
+  try{
+   if(!legoDb)throw new Error("Cloud storage is unavailable");
+   await setDoc(doc(legoDb,"collectorProfiles",result.user.uid),
+     createCollectorProfile(result.user.displayName,result.user.email,signupCommunicationsOptIn,new Date().toISOString()),
+     {merge:true});
+  }catch{
+   let deleted=false;
+   try{await deleteUser(result.user);deleted=true}
+   catch{try{await signOut(legoAuth!)}catch{}}
+   location.hash="#/sign-up";
+   throw new Error(deleted
+     ?"Your account could not be created because its communication preference could not be saved. Please try again."
+     :"Registration could not finish or verify cleanup. Please contact getshelfiecollect@gmail.com before retrying.");
+  }
  }
  authNotice=intent==="sign-up"
   ?decision==="created"?"Your Archív account has been created. Welcome!":"You already have an Archív account. Welcome back!"
@@ -145,6 +169,7 @@ async function runGoogleAuth(intent:GoogleAuthIntent){
   catch(error){
    if((error as {code?:string}).code!=="auth/popup-blocked")throw error;
    storeRedirectIntent(intent);
+   if(intent==="sign-up")try{sessionStorage.setItem(redirectSignupConsentKey,String(signupCommunicationsOptIn))}catch{}
    await signInWithRedirect(legoAuth,new GoogleAuthProvider());
    redirected=true;
    return;
@@ -464,10 +489,18 @@ function renderSignup(shell:HTMLElement){
  const main=e("main","archiv-profile archiv-sign-up");
  main.append(button("← Back to Archív",()=>goTheme("All LEGO"),"archiv-profile-back"));
  const hero=e("section","archiv-profile-panel");
- hero.append(e("span","archiv-profile-kicker","JOIN ARCHÍV"),e("h1","","Create your Archív account"));
+ hero.append(e("span","archiv-profile-kicker","JOIN ARCHÍV"));
+ if(authNotice){const notice=e("p","archiv-auth-notice",authNotice);notice.setAttribute("role","status");hero.append(notice)}
+ hero.append(e("h1","","Create your Archív account"));
  hero.append(e("p","archiv-profile-intro","Create a free collector account to save your LEGO sets, keep a wishlist, and view your personal collection across devices."));
- if(authNotice)hero.append(e("p","archiv-auth-notice",authNotice));
  if(accountError)hero.append(e("p","archiv-profile-error",accountError));
+ const consent=e("label","archiv-profile-optin archiv-sign-up-optin");
+ const check=e("input") as HTMLInputElement;check.type="checkbox";check.checked=signupCommunicationsOptIn;check.disabled=authBusy;
+ const copy=e("span");
+ const consentStatus=e("small","",signupCommunicationsOptIn?"Opted in (optional)":"Not subscribed (optional)");
+ copy.append(e("strong","","Email me Archív news and product updates"),consentStatus);
+ check.onchange=()=>{signupCommunicationsOptIn=check.checked;consentStatus.textContent=check.checked?"Opted in (optional)":"Not subscribed (optional)"};
+ consent.append(check,copy);hero.append(consent);
  const signup=button(authBusy?"Connecting to Google…":"Create Archív account with Google",()=>{void signUpLego()},"archiv-sign-up-submit");
  signup.disabled=authBusy;hero.append(signup);
  const signIn=button("Already have an account? Sign in",()=>{void signInLego()},"archiv-sign-up-existing");
