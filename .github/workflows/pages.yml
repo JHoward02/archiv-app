@@ -39,6 +39,8 @@ jobs:
           cp -R "$RUNNER_TEMP/archiv-profile-preview/dist-web/." dist-web/profile-preview/
       # Collector profile remains pinned; preview now exercises separate Google Sign in and Sign up.
       # Staging retains its independent preview and unrelated native features remain excluded.
+      # Approved staging-only refresh: optional signup email preference and reordered registration notice.
+      # Production application remains pinned to the existing approved collector-profile release.
       - name: Build isolated LEGO preview
         run: |
           git fetch origin feature/auth-signin-signup-20261031
