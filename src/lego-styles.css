@@ -440,3 +440,7 @@
 
 /* Never substitute the pre-LEGO collectibles logo if the image cannot load. */
 .archiv-logo-fallback{display:block;color:#08243b;font:800 clamp(42px,7vw,88px)/1.15 Georgia,serif;letter-spacing:-.045em}
+
+/* Keep legal references visibly clickable inside the signup disclosure. */
+.archiv-sign-up .archiv-profile-muted a{color:#176553;text-decoration:underline;text-underline-offset:2px;font-weight:650}
+.archiv-sign-up .archiv-profile-muted a:hover,.archiv-sign-up .archiv-profile-muted a:focus-visible{color:#08243b}
