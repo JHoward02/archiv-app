@@ -12,9 +12,10 @@ const firebaseConfig={apiKey:import.meta.env.VITE_FIREBASE_API_KEY,authDomain:im
 const firebaseReady=Object.values(firebaseConfig).every(Boolean);
 const firebaseApp=firebaseReady?(getApps()[0]??initializeApp(firebaseConfig)):null;
 // The packaged Android app uses a Capacitor WebView, not a browser tab.
-type NativeBridge={isNativePlatform?:()=>boolean;nativePromise?:(plugin:string,method:string,options:object)=>Promise<{credential?:{idToken?:string}}>};
+type NativeBridge={isNativePlatform?:()=>boolean;getPlatform?:()=>string;nativePromise?:(plugin:string,method:string,options:object)=>Promise<{credential?:{idToken?:string}}>};
 const nativeBridge=(window as Window&{Capacitor?:NativeBridge}).Capacitor;
 const isNativeAndroid=nativeBridge?.isNativePlatform?.()===true;
+const isNativeIos=nativeBridge?.getPlatform?.()==="ios";
 const legoAuth=firebaseApp?(isNativeAndroid?initializeAuth(firebaseApp,{persistence:indexedDBLocalPersistence}):getAuth(firebaseApp)):null;
 const legoDb=firebaseApp?getFirestore(firebaseApp):null;
 const legoRecordPrefix="archiv-lego-set:";
@@ -113,6 +114,12 @@ document.addEventListener("click",event=>{
 },true);
 
 async function signInLego(){
+  // iOS native Google sign-in needs its own Firebase Apple app registration.
+  // Do not call a missing native plugin in unsigned catalog-preview builds.
+  if(isNativeIos&&import.meta.env.VITE_IOS_FIREBASE_READY!=="true"){
+    accountError="iPhone Google sign-in needs the iOS Firebase setup. Register app.archiv.collector in Firebase, then upload GoogleService-Info.plist for the next build.";
+    render();return;
+  }
  if(!legoAuth){accountError="Cloud sign-in is not configured.";render();return}
  try{
   accountError="";
