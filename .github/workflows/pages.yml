@@ -2,7 +2,7 @@ name: Deploy Collector Scan to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, archiv-2-lego-staging]
   workflow_dispatch:
 
 permissions:
@@ -19,6 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -34,6 +37,55 @@ jobs:
           npm --prefix "$RUNNER_TEMP/archiv-profile-preview" run build:web
           mkdir -p dist-web/profile-preview
           cp -R "$RUNNER_TEMP/archiv-profile-preview/dist-web/." dist-web/profile-preview/
+      - name: Build isolated LEGO preview
+        run: |
+          git fetch origin archiv-2-lego-staging
+          git worktree add "$RUNNER_TEMP/archiv-lego-preview" origin/archiv-2-lego-staging
+          PREVIEW_SHA=$(git -C "$RUNNER_TEMP/archiv-lego-preview" rev-parse HEAD)
+          echo "Preview source: $PREVIEW_SHA"
+          npm --prefix "$RUNNER_TEMP/archiv-lego-preview" ci
+          mkdir -p "$RUNNER_TEMP/archiv-lego-preview/data"
+          curl --fail --location --retry 3 --silent --show-error "https://cdn.rebrickable.com/media/downloads/sets.csv.gz" -o "$RUNNER_TEMP/archiv-lego-preview/data/sets.csv.gz"
+          curl --fail --location --retry 3 --silent --show-error "https://cdn.rebrickable.com/media/downloads/themes.csv.gz" -o "$RUNNER_TEMP/archiv-lego-preview/data/themes.csv.gz"
+          for name in colors parts minifigs inventories inventory_parts inventory_minifigs; do
+            curl --fail --location --retry 3 --silent --show-error "https://cdn.rebrickable.com/media/downloads/${name}.csv.gz" -o "$RUNNER_TEMP/archiv-lego-preview/data/${name}.csv.gz"
+          done
+          node "$RUNNER_TEMP/archiv-lego-preview/scripts/import-rebrickable.mjs"
+          node --max-old-space-size=6144 "$RUNNER_TEMP/archiv-lego-preview/scripts/import-lego-parts.mjs"
+          npm --prefix "$RUNNER_TEMP/archiv-lego-preview" run build:web
+          mkdir -p dist-web/lego-preview
+          cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/lego-preview/
+          printf '{"source_commit":"%s","branch":"archiv-2-lego-staging"}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
+          # Promote the verified LEGO build to the production root, without
+          # removing independent preview directories or the rollback branch.
+          # Keep the production release pinned while new shopping features are tested.
+          # The preview above always builds from the latest LEGO staging branch.
+          # Rebuild preview with optional Firebase Google sign-in and cloud LEGO records.
+          # Retry staging preview via newest push; Pages concurrency cancels superseded runs.
+          # Refresh staging preview for Google sign-in and sign-up button presentation.
+          # Refresh LEGO staging preview with expandable account menu.
+          # Refresh staging with Google profile image account toggle.
+          # Stage private collector analytics dashboard and reporting UI.
+          # Stage per-user activity and daily reporting; production pin unchanged.
+          # Preview readable activity and registration totals.
+          # Preview Firebase free-plan account reporting without callable functions.
+          # Refresh theme header account and back-button alignment in staging.
+          # Refresh product detail header controls alignment in staging.
+          # Reserve a dedicated navigation lane above the theme tile.
+          # Preview mobile homepage avatar anchored to upper-right of logo.
+          # Preview theme set-list page without redundant featured theme brick.
+          # Production stays on its pre-policy-change source snapshot until approved.
+          # Do not copy unapproved staging files into the production root.
+          git worktree add "$RUNNER_TEMP/archiv-lego-production" 7ad5c81340e72b69821b14a9f616ed65ea48cb3e^
+          npm --prefix "$RUNNER_TEMP/archiv-lego-production" ci
+          mkdir -p "$RUNNER_TEMP/archiv-lego-production/public/data"
+          cp -R "$RUNNER_TEMP/archiv-lego-preview/public/data/." "$RUNNER_TEMP/archiv-lego-production/public/data/" 2>/dev/null || true
+          git -C "$RUNNER_TEMP/archiv-lego-production" restore --source=0f3d4dfe26532378475595acdd8c25850f5e45db -- src/lego-entry.ts src/lego-styles.css
+          npm --prefix "$RUNNER_TEMP/archiv-lego-production" run build:web
+          cp -R "$RUNNER_TEMP/archiv-lego-production/dist-web/." dist-web/
+          # Reassert exact preview output after production copy, including legal pages.
+          cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/lego-preview/
+          printf '{"source_commit":"%s","branch":"archiv-2-lego-staging"}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
       - uses: actions/configure-pages@v5
         with:
           enablement: true
