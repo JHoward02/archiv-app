@@ -58,17 +58,21 @@ jobs:
         run: |
           npm install --no-save --legacy-peer-deps --no-audit --no-fund \
             @capacitor/core@7.6.10 @capacitor/cli@7.6.10 @capacitor/android@7.6.10 \
-            @capacitor/browser@7.0.5 @capacitor-firebase/authentication@7.5.0
+            @capacitor/browser@7.0.5 @capacitor/app@7.1.0 @capacitor-firebase/authentication@7.5.0
 
       - name: Register native plugins in the isolated build manifest
         run: |
-          npm pkg set "dependencies.@capacitor/core=7.6.10" "dependencies.@capacitor/android=7.6.10" "dependencies.@capacitor/browser=7.0.5" "dependencies.@capacitor-firebase/authentication=7.5.0" "devDependencies.@capacitor/cli=7.6.10"
+          npm pkg set "dependencies.@capacitor/core=7.6.10" "dependencies.@capacitor/android=7.6.10" "dependencies.@capacitor/browser=7.0.5" "dependencies.@capacitor/app=7.1.0" "dependencies.@capacitor-firebase/authentication=7.5.0" "devDependencies.@capacitor/cli=7.6.10"
           # GitHub Actions checkout is never committed back; web dependencies stay unchanged.
 
       - name: Check TypeScript and package the Archív web interface
         run: |
+          # Only the native Android build imports the hardware Back handler.
+          cp android-native/back-button.ts src/android-back-button.ts
+          sed -i '1i import "./android-back-button";' src/lego-entry.ts
           # Existing theme catalog code has unrelated strict TS warnings; Vite transpiles it.
           npm run build:web
+          grep -Rql 'backButton' dist-web/assets || { echo "::error::Android Back handler missing from native bundle"; exit 1; }
           test -f dist-web/index.html
           test -f dist-web/lego-parts/0.json
 
@@ -80,7 +84,7 @@ jobs:
           # Apply real device window insets to the native content view.
           cp android-native/MainActivity.java android/app/src/main/java/app/archiv/collector/MainActivity.java
           grep -q 'WindowInsetsCompat.Type.systemBars()' android/app/src/main/java/app/archiv/collector/MainActivity.java
-          node -e 'const fs=require("fs");const plugins=JSON.parse(fs.readFileSync("android/app/src/main/assets/capacitor.plugins.json","utf8")); console.log("Native plugins:",plugins); if(!JSON.stringify(plugins).includes("FirebaseAuthentication") || !JSON.stringify(plugins).includes("Browser")) process.exit(1);'
+          node -e 'const fs=require("fs");const plugins=JSON.parse(fs.readFileSync("android/app/src/main/assets/capacitor.plugins.json","utf8")); console.log("Native plugins:",plugins); if(!JSON.stringify(plugins).includes("FirebaseAuthentication") || !JSON.stringify(plugins).includes("Browser") || !JSON.stringify(plugins).includes("\"App\"")) process.exit(1);'
           # Include the Android Google provider and credentials manager when configured.
           printf '\n' >> android/variables.gradle
           cat >> android/variables.gradle <<'EOF'
