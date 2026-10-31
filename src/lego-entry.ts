@@ -14,9 +14,9 @@ const firebaseApp=firebaseReady?(getApps()[0]??initializeApp(firebaseConfig)):nu
 // The packaged Android app uses a Capacitor WebView, not a browser tab.
 type NativeBridge={isNativePlatform?:()=>boolean;getPlatform?:()=>string;nativePromise?:(plugin:string,method:string,options:object)=>Promise<{credential?:{idToken?:string}}>};
 const nativeBridge=(window as Window&{Capacitor?:NativeBridge}).Capacitor;
-const isNativeAndroid=nativeBridge?.isNativePlatform?.()===true;
+const isNativeApp=nativeBridge?.isNativePlatform?.()===true;
 const isNativeIos=nativeBridge?.getPlatform?.()==="ios";
-const legoAuth=firebaseApp?(isNativeAndroid?initializeAuth(firebaseApp,{persistence:indexedDBLocalPersistence}):getAuth(firebaseApp)):null;
+const legoAuth=firebaseApp?(isNativeApp?initializeAuth(firebaseApp,{persistence:indexedDBLocalPersistence}):getAuth(firebaseApp)):null;
 const legoDb=firebaseApp?getFirestore(firebaseApp):null;
 const legoRecordPrefix="archiv-lego-set:";
 let currentUser:User|null=null,authReady=!legoAuth,collectionReady=!legoAuth,accountError="";
@@ -100,7 +100,7 @@ document.addEventListener("click",ev=>{
 // In the packaged app, open only external seller/attribution URLs in Android's
 // browser. Internal collection navigation remains in the embedded app.
 document.addEventListener("click",event=>{
- if(!isNativeAndroid||!nativeBridge?.nativePromise||event.defaultPrevented)return;
+ if(!isNativeApp||!nativeBridge?.nativePromise||event.defaultPrevented)return;
  const target=event.target;
  if(!(target instanceof Element))return;
  const link=target.closest("a[href]");
@@ -123,26 +123,26 @@ async function signInLego(){
  if(!legoAuth){accountError="Cloud sign-in is not configured.";render();return}
  try{
   accountError="";
-  if(isNativeAndroid){
-   if(!nativeBridge?.nativePromise)throw new Error("Android authentication bridge unavailable.");
+  if(isNativeApp){
+   if(!nativeBridge?.nativePromise)throw new Error("Native authentication bridge unavailable.");
    // Requires this APK's package and signing SHA-1 registered in Firebase.
    const result=await nativeBridge.nativePromise("FirebaseAuthentication","signInWithGoogle",{});
    const idToken=result.credential?.idToken;
-   if(!idToken)throw new Error("Android Google sign-in did not provide an ID token.");
+   if(!idToken)throw new Error("Google sign-in did not provide an ID token.");
    await signInWithCredential(legoAuth,GoogleAuthProvider.credential(idToken));
   }else await signInWithPopup(legoAuth,new GoogleAuthProvider());
  }catch(error){
-  if(!isNativeAndroid&&(error as {code?:string}).code==="auth/popup-blocked"){
+  if(!isNativeApp&&(error as {code?:string}).code==="auth/popup-blocked"){
    await signInWithRedirect(legoAuth,new GoogleAuthProvider());return;
   }
   const message=error instanceof Error?error.message:"Sign-in failed.";
-  accountError=isNativeAndroid?"Native Google sign-in: "+message+". Android Firebase registration and SHA-1 may still need configuration.":message;render();
+  accountError=isNativeApp?"Native Google sign-in: "+message+". Check the device Firebase configuration and Google sign-in setup.":message;render();
  }
 }
 async function signOutLego(){
  if(!legoAuth)return;
  try{
-  if(isNativeAndroid&&nativeBridge?.nativePromise)await nativeBridge.nativePromise("FirebaseAuthentication","signOut",{});
+  if(isNativeApp&&nativeBridge?.nativePromise)await nativeBridge.nativePromise("FirebaseAuthentication","signOut",{});
   await signOut(legoAuth);
  }catch(error){accountError=error instanceof Error?error.message:"Sign-out failed.";render()}
 }
