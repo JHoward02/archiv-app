@@ -416,6 +416,8 @@ async function deleteOwnProfile(){
   await deleteUserDocuments(["activity"]);
   await deleteDoc(doc(legoDb,"collectorSummaries",user.uid));
   await deleteDoc(doc(legoDb,"collectorProfiles",user.uid));
+  // Self-revoke any admin membership before removing the authentication identity.
+  await deleteDoc(doc(legoDb,"adminAccess",user.uid));
   // Firebase Auth is deleted only after account records have been removed.
   await deleteUser(user);
   try{for(let i=localStorage.length-1;i>=0;i--){const key=localStorage.key(i);if(key?.startsWith("archiv-parts-checked:"))localStorage.removeItem(key)}}catch{}
