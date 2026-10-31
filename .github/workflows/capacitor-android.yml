@@ -64,6 +64,10 @@ jobs:
         run: |
           npx cap add android
           npx cap sync android
+          # Android 15+ draws behind status/navigation bars by default.
+          # Apply real device window insets to the native content view.
+          cp android-native/MainActivity.java android/app/src/main/java/app/archiv/collector/MainActivity.java
+          grep -q 'WindowInsetsCompat.Type.systemBars()' android/app/src/main/java/app/archiv/collector/MainActivity.java
           node -e 'const fs=require("fs");const plugins=JSON.parse(fs.readFileSync("android/app/src/main/assets/capacitor.plugins.json","utf8")); console.log("Native plugins:",plugins); if(!JSON.stringify(plugins).includes("FirebaseAuthentication") || !JSON.stringify(plugins).includes("Browser")) process.exit(1);'
           # Include the Android Google provider and credentials manager when configured.
           printf '\n' >> android/variables.gradle
