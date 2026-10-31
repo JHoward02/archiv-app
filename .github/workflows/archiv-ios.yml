@@ -1,0 +1,183 @@
+name: Build unsigned Archív iPhone IPA for sideload testing
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/archiv-ios.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  unsigned-iphone-ipa:
+    runs-on: macos-26
+    timeout-minutes: 90
+    steps:
+      - name: Check out Archív iOS staging source only
+        uses: actions/checkout@v4
+        with:
+          ref: archiv-2-lego-staging
+
+      - name: Configure Node and Python
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Confirm Xcode and CocoaPods
+        run: |
+          xcodebuild -version
+          pod --version
+
+      - name: Use the approved Archív LEGO catalog without another Rebrickable download
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p native-pages pages-archive
+          gh run download 41140359983 -R JHoward02/archiv-app -n github-pages -D pages-archive
+          tar -xf pages-archive/artifact.tar -C native-pages
+          node scripts/prepare-native-web.mjs
+
+      - name: Install web dependencies and Capacitor iOS 7
+        run: |
+          npm ci
+          npm install --no-save --legacy-peer-deps --no-audit --no-fund \
+            @capacitor/core@7.6.10 @capacitor/cli@7.6.10 @capacitor/ios@7.6.10 \
+            @capacitor/app@7.1.0 @capacitor/browser@7.0.5
+          npm pkg set "dependencies.@capacitor/core=7.6.10" \
+            "dependencies.@capacitor/ios=7.6.10" \
+            "dependencies.@capacitor/app=7.1.0" \
+            "dependencies.@capacitor/browser=7.0.5" \
+            "devDependencies.@capacitor/cli=7.6.10"
+          # Native Firebase auth is added only when an actual iOS Firebase app
+          # has been registered. Never substitute Android's config or fake a plist.
+          if [ -f ios-native/GoogleService-Info.plist ]; then
+            npm install --no-save --legacy-peer-deps --no-audit --no-fund @capacitor-firebase/authentication@7.5.0
+            npm pkg set "dependencies.@capacitor-firebase/authentication=7.5.0"
+            echo "VITE_IOS_FIREBASE_READY=true" >> "$GITHUB_ENV"
+            echo "Native iOS Firebase credentials provided."
+          else
+            echo "VITE_IOS_FIREBASE_READY=false" >> "$GITHUB_ENV"
+            echo "::notice::No iOS Firebase registration yet. Building a catalog-first IPA. Google sign-in is disabled until GoogleService-Info.plist is supplied."
+          fi
+
+      - name: Build the isolated iPhone web bundle with notch-safe layout
+        run: |
+          cp ios-native/ios-styles.css src/ios-styles.css
+          python3 - <<'PY'
+          from pathlib import Path
+          source=Path('src/lego-entry.ts')
+          source.write_text('import "./ios-styles.css";\n' + source.read_text())
+          html=Path('index.html')
+          content=html.read_text().replace('width=device-width, initial-scale=1.0', 'width=device-width, initial-scale=1.0, viewport-fit=cover')
+          html.write_text(content)
+          PY
+          npm run build:web
+          test -f dist-web/index.html
+          test -f dist-web/lego-parts/0.json
+          grep -q 'viewport-fit=cover' dist-web/index.html
+
+      - name: Generate iPhone native project
+        run: |
+          npx cap add ios
+          test -f ios/App/Podfile
+          test -d ios/App/App.xcodeproj
+          if [ -f ios-native/GoogleService-Info.plist ]; then
+            # Google's native iOS provider is an optional CocoaPods subspec.
+            python3 - <<'PY'
+          from pathlib import Path
+          podfile=Path('ios/App/Podfile')
+          s=podfile.read_text()
+          marker='# Add your Pods here'
+          assert marker in s, 'Could not find CocoaPods plugin insertion point'
+          s=s.replace(marker, marker+"\n  pod 'CapacitorFirebaseAuthentication/Google', :path => '../../node_modules/@capacitor-firebase/authentication'")
+          s += """
+          post_install do |installer|
+            installer.pods_project.targets.each do |target|
+              if target.respond_to?(:product_type) && target.product_type == 'com.apple.product-type.bundle'
+                target.build_configurations.each do |configuration|
+                  configuration.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+                end
+              end
+            end
+          end
+          """
+          podfile.write_text(s)
+          PY
+          fi
+          npx cap sync ios
+          test -f ios/App/App.xcworkspace/contents.xcworkspacedata
+
+      - name: Create the approved navy-and-gold Archív iPhone app icon
+        run: |
+          python3 -m pip install --quiet Pillow
+          python3 ios-native/make-icon.py
+          python3 - <<'PY'
+          from PIL import Image
+          im=Image.open('ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png')
+          assert im.size==(1024,1024) and im.mode=='RGB'
+          print('Verified 1024px RGB app icon')
+          PY
+
+      - name: Prepare native Firebase URL scheme when registered
+        run: |
+          if [ -f ios-native/GoogleService-Info.plist ]; then
+            plutil -lint ios-native/GoogleService-Info.plist
+            BUNDLE_ID=$(/usr/libexec/PlistBuddy -c 'Print :BUNDLE_ID' ios-native/GoogleService-Info.plist)
+            test "$BUNDLE_ID" = "app.archiv.collector"
+            REVERSED_ID=$(/usr/libexec/PlistBuddy -c 'Print :REVERSED_CLIENT_ID' ios-native/GoogleService-Info.plist)
+            test -n "$REVERSED_ID"
+            /usr/libexec/PlistBuddy -c 'Add :CFBundleURLTypes array' ios/App/App/Info.plist
+            /usr/libexec/PlistBuddy -c 'Add :CFBundleURLTypes:0 dict' ios/App/App/Info.plist
+            /usr/libexec/PlistBuddy -c 'Add :CFBundleURLTypes:0:CFBundleURLSchemes array' ios/App/App/Info.plist
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string $REVERSED_ID" ios/App/App/Info.plist
+            echo 'Configured native iPhone Google OAuth URL callback.'
+          fi
+
+      - name: Compile unsigned iPhone device app (arm64)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$PWD/ios-derived" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY='' \
+            build > xcodebuild.log 2>&1 || { tail -n 150 xcodebuild.log; exit 1; }
+          tail -n 12 xcodebuild.log
+          test -d ios-derived/Build/Products/Release-iphoneos/App.app
+
+      - name: Create unsigned sideload IPA for later personal Apple signing
+        run: |
+          set -euo pipefail
+          APP="ios-derived/Build/Products/Release-iphoneos/App.app"
+          if [ -f ios-native/GoogleService-Info.plist ]; then
+            cp ios-native/GoogleService-Info.plist "$APP/GoogleService-Info.plist"
+          fi
+          BUNDLE_ID=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist")
+          test "$BUNDLE_ID" = "app.archiv.collector"
+          test -f "$APP/Assets.car"
+          mkdir -p ios-package/Payload
+          cp -R "$APP" ios-package/Payload/App.app
+          (cd ios-package && zip -qr ../Archiv-iPhone-Unsigned.ipa Payload)
+          unzip -tq Archiv-iPhone-Unsigned.ipa | tail -n 1
+          test -s Archiv-iPhone-Unsigned.ipa
+          echo "Unsigned Archív iPhone IPA assembled. It must be signed by AltStore/Xcode to install on a device."
+          ls -lh Archiv-iPhone-Unsigned.ipa
+
+      - name: Upload unsigned iPhone sideload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: archiv-iphone-unsigned-ipa
+          path: Archiv-iPhone-Unsigned.ipa
+          if-no-files-found: error
+          retention-days: 30
