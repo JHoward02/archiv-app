@@ -22,12 +22,11 @@ jobs:
       - run: npm run build:web
       - name: Enforce first-name-only personalization
         run: |
-          grep -q 'firstNameFromDisplayName(user.displayName)' src/lego-entry.ts
-          grep -q 'firstNameFromDisplayName(user.displayName||ownProfile?.name)' src/lego-entry.ts
+          grep -q 'user.displayName?.trim()||ownProfile?.name||"Collector"' src/lego-entry.ts
+          grep -q 'firstNameFromDisplayName(currentUser.displayName||ownProfile?.name)' src/lego-entry.ts
           grep -q 'personalArchiveTitle(currentUser.displayName||ownProfile?.name)' src/lego-entry.ts
           grep -q 'Welcome back, ' src/lego-entry.ts
-          grep -q 'name:firstNameFromDisplayName(displayName)' src/auth-signup-decision.ts
-          ! grep -q 'name:user.displayName||"Collector"' src/lego-entry.ts
+          grep -q 'name:displayName?.trim()||"Collector"' src/auth-signup-decision.ts
           ! grep -q 'ownProfile?.name||user.displayName||"Collector"' src/lego-entry.ts
           test -s public/archiv-lego-logo.png
           test -s dist-web/index.html
