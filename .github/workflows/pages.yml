@@ -87,7 +87,10 @@ jobs:
           cp -R "$RUNNER_TEMP/archiv-lego-preview/public/lego-parts/." "$RUNNER_TEMP/archiv-lego-production/public/lego-parts/"
           # Fail the deployment rather than silently publishing the tiny seed catalog again.
           node -e 'const fs=require("fs");const root=process.argv[1];const sets=JSON.parse(fs.readFileSync(root+"/src/lego-catalog.json"));const themes=JSON.parse(fs.readFileSync(root+"/src/lego-themes.json"));const shards=fs.readdirSync(root+"/public/lego-parts").filter(x=>/^[0-9]+[.]json$/.test(x));if(sets.length<25000||themes.length<15||shards.length!==128)throw Error("Incomplete production catalog: "+sets.length+" sets, "+themes.length+" themes, "+shards.length+" inventory shards");console.log("Production catalog validated:",sets.length,"sets,",themes.length,"themes,",shards.length,"inventory shards")' "$RUNNER_TEMP/archiv-lego-production"
-          git -C "$RUNNER_TEMP/archiv-lego-production" restore --source=0f3d4dfe26532378475595acdd8c25850f5e45db -- src/lego-entry.ts src/lego-styles.css
+          # Fetch the deliberately pinned production-only disclosure hotfix.
+          # This keeps staging-only UI and features out of the production root.
+          git fetch origin hotfix/ebay-disclosure-production-20261031
+          git -C "$RUNNER_TEMP/archiv-lego-production" restore --source=cfd3562675c3503d466553918cd6a304256632fa -- src/lego-entry.ts src/lego-styles.css
           npm --prefix "$RUNNER_TEMP/archiv-lego-production" run build:web
           cp -R "$RUNNER_TEMP/archiv-lego-production/dist-web/." dist-web/
           # Reassert exact preview output after production copy, including legal pages.
