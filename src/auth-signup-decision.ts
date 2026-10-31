@@ -9,6 +9,17 @@ export function decideGoogleAuth(intent:GoogleAuthIntent,isNewUser:boolean|null)
  return "existing";
 }
 
+/** Never display or persist Google family names in collector-facing labels. */
+export function firstNameFromDisplayName(displayName:string|null|undefined):string{
+ const first=displayName?.trim().split(/\s+/u)[0]||"";
+ // Google display names are optional; do not guess from an email address.
+ return first||"Collector";
+}
+export function personalArchiveTitle(displayName:string|null|undefined):string{
+ const first=firstNameFromDisplayName(displayName);
+ return first==="Collector"?"Your Archív":first+"'s Archív";
+}
+
 /** Fields permitted by collectorProfiles/{uid} Firestore rules at registration. */
 export function createCollectorProfile(
  displayName:string|null,
@@ -17,7 +28,7 @@ export function createCollectorProfile(
  registeredAt:string
 ){
  return {
-  name:displayName||"Collector",
+  name:displayName?.trim()||"Collector",
   email:email||"",
   firstSeen:registeredAt,
   lastSeen:registeredAt,
