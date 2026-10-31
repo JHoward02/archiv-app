@@ -21,7 +21,7 @@ describe("explicit Archív registration",()=>{
  it("stores communicationsOptIn false for an unchecked sign-up",()=>{
   const profile=createCollectorProfile("Jane Collector","collector@example.com",false,"2026-10-31T21:00:00.000Z");
   expect(profile).toEqual({
-   name:"Jane",email:"collector@example.com",
+   name:"Jane Collector",email:"collector@example.com",
    firstSeen:"2026-10-31T21:00:00.000Z",lastSeen:"2026-10-31T21:00:00.000Z",
    communicationsOptIn:false
   });
