@@ -550,7 +550,7 @@ function renderProfile(shell:HTMLElement){
  const account=e("section","archiv-profile-panel archiv-profile-account");
  const identity=e("div","archiv-profile-identity");
  if(user.photoURL){const photo=e("img","archiv-profile-avatar") as HTMLImageElement;photo.src=user.photoURL;photo.alt="Google account profile picture";photo.referrerPolicy="no-referrer";identity.append(photo)}
- const who=e("div");who.append(e("h2","",firstNameFromDisplayName(user.displayName||ownProfile?.name)),e("p","",user.email||"No email address available"));identity.append(who);account.append(identity);
+ const who=e("div");who.append(e("h2","",user.displayName?.trim()||ownProfile?.name||"Collector"),e("p","",user.email||"No email address available"));identity.append(who);account.append(identity);
  const stats=e("div","archiv-profile-stats");
  const tiles:[string,string][]=[
   ["Sets owned",collectionReady?ownedIds.length.toLocaleString():"Loading…"],
