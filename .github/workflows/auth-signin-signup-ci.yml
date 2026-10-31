@@ -31,6 +31,10 @@ jobs:
           grep -q 'consentStatus' src/lego-entry.ts
           grep -q 'communicationsOptIn:communicationsOptIn===true' src/auth-signup-decision.ts
           grep -q 'auth-signup-decision.test.ts' <(find tests -name '*.test.ts')
+          test -s public/archiv-lego-logo.png
+          grep -q 'setSignupRequired(true)' src/lego-entry.ts
+          grep -q 'signupBannerText(wasSignupRequired())' src/lego-entry.ts
+          ! grep -q 'art.src=import.meta.env.BASE_URL+"logo4"' src/lego-entry.ts
           grep -q '/src/lego-entry.ts' index.html
           ! grep -q '/src/standalone.ts' index.html
           grep -q 'LEGO Collections' dist-web/index.html
