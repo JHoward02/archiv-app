@@ -410,7 +410,11 @@ async function deleteOwnProfile(){
   deletingAccount=true;profileInfo="Removing your collection and account data…";render();
   // A UID-only deletion marker blocks writes from other still-authenticated sessions.
   // The marker is intentionally retained to prevent stale sessions recreating records.
-  await setDoc(doc(legoDb,"users",user.uid,"account","deletion"),{deleting:true});
+  const marker=doc(legoDb,"users",user.uid,"account","deletion");
+  // A previous attempt might have created this immutable marker before failing.
+  // Resume deletion rather than trying to update the marker (which rules forbid).
+  const priorMarker=await getDoc(marker);
+  if(!priorMarker.exists())await setDoc(marker,{deleting:true});
   await deleteUserDocuments(["items"]);
   await deleteUserDocuments(["groups"]);
   await deleteUserDocuments(["activity"]);
