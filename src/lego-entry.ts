@@ -1,7 +1,7 @@
 import "./lego-styles.css";
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth, GoogleAuthProvider, getAdditionalUserInfo, getRedirectResult, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, deleteUser, reauthenticateWithPopup, type User, type UserCredential } from "firebase/auth";
-import { createCollectorProfile, decideGoogleAuth, signupBannerText } from "./auth-signup-decision";
+import { createCollectorProfile, decideGoogleAuth, firstNameFromDisplayName, personalArchiveTitle, signupBannerText } from "./auth-signup-decision";
 import { collection, doc, getFirestore, onSnapshot, setDoc, deleteDoc, getDoc, getDocs, addDoc, increment, serverTimestamp, updateDoc, writeBatch, type Unsubscribe } from "firebase/firestore";
 type SetRow={number:string;name:string;year:number;theme:string;parts:number;image?:string;images?:string[]};
 type Status="owned"|"wishlist";
@@ -83,7 +83,7 @@ async function registerCollector(user:User){
   const ref=doc(legoDb,"collectorProfiles",user.uid);
   const prior=await getDoc(ref);
   await setDoc(ref,{
-   name:user.displayName||"Collector",
+   name:firstNameFromDisplayName(user.displayName),
    email:user.email||"",
    firstSeen:prior.exists()?prior.data().firstSeen:new Date().toISOString(),
    lastSeen:new Date().toISOString()
@@ -533,7 +533,7 @@ function renderProfile(shell:HTMLElement){
  const goBack=button("← Back to Archív",()=>goTheme("All LEGO"),"archiv-profile-back");main.append(goBack);
  const top=e("div","archiv-profile-hero");
  const badge=e("span","archiv-profile-kicker","YOUR ARCHÍV");
- const heading=e("h1","","Collector profile");
+ const heading=e("h1","",currentUser?personalArchiveTitle(currentUser.displayName||ownProfile?.name):"Collector profile");
  top.append(badge,heading,e("p","archiv-profile-intro","Your collection at a glance, your account settings, and control of your data."));
  main.append(top);
  if(!currentUser){
@@ -550,7 +550,7 @@ function renderProfile(shell:HTMLElement){
  const account=e("section","archiv-profile-panel archiv-profile-account");
  const identity=e("div","archiv-profile-identity");
  if(user.photoURL){const photo=e("img","archiv-profile-avatar") as HTMLImageElement;photo.src=user.photoURL;photo.alt="Google account profile picture";photo.referrerPolicy="no-referrer";identity.append(photo)}
- const who=e("div");who.append(e("h2","",ownProfile?.name||user.displayName||"Collector"),e("p","",user.email||"No email address available"));identity.append(who);account.append(identity);
+ const who=e("div");who.append(e("h2","",firstNameFromDisplayName(user.displayName||ownProfile?.name)),e("p","",user.email||"No email address available"));identity.append(who);account.append(identity);
  const stats=e("div","archiv-profile-stats");
  const tiles:[string,string][]=[
   ["Sets owned",collectionReady?ownedIds.length.toLocaleString():"Loading…"],
@@ -660,14 +660,14 @@ if(location.hash==="#/admin"){
   main.append(e("h2","","Individual user activity"));
   const people=e("div","lego-admin-people");
   for(const person of profiles){
-   const pick=button(person.name||person.email||person.uid,()=>{chosenUid=person.uid;render()},"lego-admin-person");
+   const pick=button(firstNameFromDisplayName(person.name),()=>{chosenUid=person.uid;render()},"lego-admin-person");
    if(chosenUid===person.uid)pick.classList.add("active");
    people.append(pick);
   }main.append(people);
   const selectedPerson=profiles.find(p=>p.uid===chosenUid)||profiles[0];
   if(selectedPerson){
    const details=e("div","lego-admin-themes");
-   details.append(e("h3","",selectedPerson.name||"Collector"));
+   details.append(e("h3","",firstNameFromDisplayName(selectedPerson.name)));
    details.append(e("p","",selectedPerson.email||selectedPerson.uid));
    details.append(e("p","", "First seen: "+(selectedPerson.firstSeen||"Unknown")));
    const personalEvents=events.filter(x=>x.uid===selectedPerson.uid).sort((a,b)=>(b.at||"").localeCompare(a.at||"")).slice(0,50);
@@ -712,7 +712,11 @@ if(setId){
 }
 function themeTile(n:string){const b=button("",()=>goTheme(n),"lego-theme");b.dataset.theme=n.toLowerCase().replace(/\s+/g,"-");const palette=["#527c8c","#866f9f","#a76d65","#497e6c","#c29553","#4f6897","#8d8065","#8c618b"];if(!featured.includes(n)&&n!=="Complete Catalog"){const i=Math.max(0,extraThemes.findIndex(t=>t.name===n));b.style.setProperty("--brick",palette[i%palette.length]);b.style.setProperty("--brick-dark",["#355968","#5d4b75","#784a46","#30584c","#8c6b35","#344968","#625b46","#664665"][i%palette.length]);b.style.setProperty("--brick-light",["#7fa2af","#ab96c4","#c8958a","#78a68d","#e0bc78","#7d90b8","#afa387","#b48caf"][i%palette.length])}const studs=e("span","lego-brick-studs");studs.setAttribute("aria-hidden","true");for(let i=0;i<4;i++)studs.append(e("span","lego-brick-stud"));b.append(studs);const picture=e("img","lego-theme-art");picture.src=tileSets[n]?setImage(tileSets[n]):extraThemes.find(t=>t.name===n)?.image||setImage("10307-1");picture.alt="LEGO® "+n+" set photograph sourced from Rebrickable";picture.loading="lazy";picture.onerror=()=>{picture.style.display="none"};const frame=e("span","lego-brick-window");frame.append(picture);b.append(frame,e("span","lego-theme-name",n));return b}
 if(selected==="All LEGO"){
-const heading=e("h2","lego-popular-heading","Most Popular");shell.append(heading);
+ if(currentUser){
+  const first=firstNameFromDisplayName(currentUser.displayName||ownProfile?.name);
+  shell.append(e("p","archiv-personal-welcome",first==="Collector"?"Welcome back to Archív!":"Welcome back, "+first+"!"));
+ }
+ const heading=e("h2","lego-popular-heading","Most Popular");shell.append(heading);
 const t=e("div","lego-theme-grid lego-home-themes");featured.forEach(n=>t.append(themeTile(n)));shell.append(t);
 const more=e("section","lego-more-themes");more.append(e("h2","","More LEGO® themes"));
 const field=e("input","lego-theme-search") as HTMLInputElement;field.type="search";field.placeholder="Find a LEGO® theme";field.setAttribute("aria-label","Find a LEGO theme");more.append(field);
@@ -731,7 +735,9 @@ footer.append(footerLinks);
 footer.append(e("p","lego-copyright","© 2026 Archív. All rights reserved."));
 footer.append(e("p","lego-footer-disclaimer","LEGO® and the LEGO® logo are trademarks of the LEGO Group. Archív is an independent collector app and is not sponsored or endorsed by the LEGO Group."));
 if(selected!=="All LEGO"){
-const main=e("section","lego-main lego-catalog-section");main.append(e("h2","",selected));
+const main=e("section","lego-main lego-catalog-section");
+ if(currentUser)main.append(e("p","archiv-personal-collection-label",personalArchiveTitle(currentUser.displayName||ownProfile?.name)+" · "+selected));
+ main.append(e("h2","",selected));
 const controls=e("div","lego-controls");const input=e("input") as HTMLInputElement;input.placeholder="Search by set name, number, or year";input.value=search;input.setAttribute("aria-label","Search LEGO® sets");input.oninput=()=>{search=input.value;page=0;renderResults()};controls.append(input);
 const select=e("select") as HTMLSelectElement;for(const [v,l] of [["name","Name"],["year","Newest first"],["number","Set number"]]){const o=e("option") as HTMLOptionElement;o.value=v;o.textContent=l;select.append(o)}select.value=sort;select.onchange=()=>{sort=select.value;page=0;renderResults()};controls.append(select);main.append(controls);
 const summary=e("div","lego-summary");const results=e("div","lego-results");const pager=e("div","lego-pagination");main.append(summary,results,pager);
