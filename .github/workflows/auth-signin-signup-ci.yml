@@ -1,0 +1,30 @@
+name: Auth Sign-in and Sign-up Staging CI
+
+on:
+  push:
+    branches: [feature/auth-signin-signup-20261031]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build:web
+      - name: Validate sign-in and sign-up isolation
+        run: |
+          grep -q 'getAdditionalUserInfo' src/lego-entry.ts
+          grep -q 'await deleteUser(result.user)' src/lego-entry.ts
+          grep -q 'if(authAttempt)return' src/lego-entry.ts
+          grep -q 'Create Archív account with Google' src/lego-entry.ts
+          grep -q 'auth-signup-decision.test.ts' <(find tests -name '*.test.ts')
+          test -s dist-web/index.html
