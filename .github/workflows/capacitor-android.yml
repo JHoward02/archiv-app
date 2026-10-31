@@ -75,11 +75,45 @@ jobs:
           ext.rgcfaIncludeGoogle = true
           ext.androidxCredentialsVersion = '1.3.0'
           EOF
-          if [ -n "${{ secrets.ANDROID_GOOGLE_SERVICES_JSON_B64 }}" ]; then
-            echo "${{ secrets.ANDROID_GOOGLE_SERVICES_JSON_B64 }}" | base64 -d > android/app/google-services.json
-            echo "Firebase Android configuration provided."
+          # Firebase client configuration is non-secret and supplied by the owner.
+          cp android-native/google-services.json android/app/google-services.json
+          node -e 'const c=require("./android/app/google-services.json"); if(c.project_info.project_id!=="archiv-3f5df" || !c.client.some(x=>x.client_info.android_client_info.package_name==="app.archiv.collector"))process.exit(1); if(!c.client.some(x=>x.oauth_client?.some(o=>o.client_type===1)))console.log("WARNING: No Android OAuth client found: register signing SHA-1 in Firebase and refresh google-services.json");'
+          # Capacitor generates Groovy Gradle files; Google Services must be applied
+          # explicitly to generate native Firebase OAuth client resources.
+          sed -i "/classpath 'com.android.tools.build:gradle:/a\\        classpath 'com.google.gms:google-services:4.5.0'" android/build.gradle
+          printf '\\napply plugin: "com.google.gms.google-services"\\n' >> android/app/build.gradle
+
+      - name: Configure reusable Android test signing certificate
+        env:
+          ARCHIV_KEYSTORE_B64: ${{ secrets.ARCHIV_ANDROID_KEYSTORE_B64 }}
+          ARCHIV_KEYSTORE_PASSWORD: ${{ secrets.ARCHIV_ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$ARCHIV_KEYSTORE_B64" ] && [ -n "$ARCHIV_KEYSTORE_PASSWORD" ]; then
+            printf '%s' "$ARCHIV_KEYSTORE_B64" | base64 -d > android/app/archiv-test-signing.p12
+            cat >> android/app/build.gradle <<'EOF'
+
+          android {
+              signingConfigs {
+                  archivTesting {
+                      storeFile file("archiv-test-signing.p12")
+                      storePassword System.getenv("ARCHIV_KEYSTORE_PASSWORD")
+                      keyAlias "archiv-test"
+                      keyPassword System.getenv("ARCHIV_KEYSTORE_PASSWORD")
+                  }
+              }
+              buildTypes {
+                  debug {
+                      signingConfig signingConfigs.archivTesting
+                  }
+              }
+          }
+          EOF
+            echo "Using persistent Archív Android signing certificate."
+          elif [ -n "$ARCHIV_KEYSTORE_B64" ] || [ -n "$ARCHIV_KEYSTORE_PASSWORD" ]; then
+            echo "::error::Both signing secrets must be configured together."
+            exit 1
           else
-            echo "::warning::Firebase Android app has not been registered. Native Google sign-in requires google-services.json and a registered Android SHA-1."
+            echo "::warning::Persistent Android signing secrets not configured. Debug signing fingerprint will change, so native Google sign-in is not ready."
           fi
 
       - name: Prepare approved navy-and-gold brick launcher icon
@@ -95,11 +129,19 @@ jobs:
 
       - name: Build locally packaged Android test APK
         working-directory: android
+        env:
+          ARCHIV_KEYSTORE_PASSWORD: ${{ secrets.ARCHIV_ANDROID_KEYSTORE_PASSWORD }}
         run: ./gradlew --no-daemon assembleDebug
 
-      - name: Show signing fingerprint for Firebase Android setup
+      - name: Report fingerprint of the actual APK signing certificate
+        env:
+          ARCHIV_KEYSTORE_PASSWORD: ${{ secrets.ARCHIV_ANDROID_KEYSTORE_PASSWORD }}
         run: |
-          keytool -list -v -keystore "$HOME/.android/debug.keystore" -alias androiddebugkey -storepass android -keypass android | grep -E 'SHA1:|SHA256:' || true
+          if [ -f android/app/archiv-test-signing.p12 ]; then
+            keytool -list -v -keystore android/app/archiv-test-signing.p12 -storepass "$ARCHIV_KEYSTORE_PASSWORD" -alias archiv-test | grep -E 'SHA1:|SHA256:'
+          else
+            keytool -list -v -keystore "$HOME/.android/debug.keystore" -alias androiddebugkey -storepass android -keypass android | grep -E 'SHA1:|SHA256:' || true
+          fi
 
       - name: Publish installable native APK
         uses: actions/upload-artifact@v4
