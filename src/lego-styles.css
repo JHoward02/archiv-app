@@ -433,3 +433,7 @@
 .archiv-sign-up-existing{display:block;max-width:100%;white-space:normal}
 .archiv-sign-up .archiv-profile-muted{margin-top:24px}
 .archiv-auth-notice{border:1px solid #c9d9bc;background:#f0f8ed;color:#27562d;padding:13px 16px;margin:16px auto;border-radius:10px;line-height:1.6;max-width:1040px}
+
+/* Opt-in at registration is optional, unchecked, and uses the same field as My profile. */
+.archiv-sign-up-optin{margin:16px 0 6px}
+.archiv-sign-up .archiv-auth-notice{margin:14px 0 18px}
