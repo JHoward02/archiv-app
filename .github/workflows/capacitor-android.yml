@@ -165,7 +165,7 @@ jobs:
           APK_SIGNER="$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -name apksigner -type f | sort -V | tail -n 1)"
           test -n "$APK_SIGNER"
           "$APK_SIGNER" verify --verbose "$APK" > /dev/null
-          SIGNER_SHA1="$("$APK_SIGNER" verify --print-certs "$APK" | sed -n 's/^Signer #1 certificate SHA-1 digest: //p' | tr -d ':\r' | tr '[:upper:]' '[:lower:]')"
+          SIGNER_SHA1="$("$APK_SIGNER" verify --print-certs "$APK" | sed -n 's/.*certificate SHA-1 digest: //p' | tr -d ':\r' | tr '[:upper:]' '[:lower:]')"
           if [ "$SIGNER_SHA1" != "02fd087799122a19d5fd8ca287aa2de9f09e0b9e" ]; then
             echo "::error::APK signing certificate SHA-1 does not match Firebase."
             exit 1
