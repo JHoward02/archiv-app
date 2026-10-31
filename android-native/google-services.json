@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "226810242425-1is2obpt28doqo19qfdskkt9pv5ga6ur.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "app.archiv.collector",
+            "certificate_hash": "02fd087799122a19d5fd8ca287aa2de9f09e0b9e"
+          }
+        },
+        {
           "client_id": "226810242425-idqur9rb8l56op89qq8n3qb0mqf22v5l.apps.googleusercontent.com",
           "client_type": 3
         }
