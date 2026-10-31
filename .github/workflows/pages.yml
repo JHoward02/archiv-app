@@ -107,27 +107,35 @@ jobs:
           cp -R "$RUNNER_TEMP/archiv-lego-preview/public/lego-parts/." "$RUNNER_TEMP/archiv-lego-production/public/lego-parts/"
           # Fail the deployment rather than silently publishing the tiny seed catalog again.
           node -e 'const fs=require("fs");const root=process.argv[1];const sets=JSON.parse(fs.readFileSync(root+"/src/lego-catalog.json"));const themes=JSON.parse(fs.readFileSync(root+"/src/lego-themes.json"));const shards=fs.readdirSync(root+"/public/lego-parts").filter(x=>/^[0-9]+[.]json$/.test(x));if(sets.length<25000||themes.length<15||shards.length!==128)throw Error("Incomplete production catalog: "+sets.length+" sets, "+themes.length+" themes, "+shards.length+" inventory shards");console.log("Production catalog validated:",sets.length,"sets,",themes.length,"themes,",shards.length,"inventory shards")' "$RUNNER_TEMP/archiv-lego-production"
-          # Fetch and verify the immutable, CI-tested web-only Profile release.
-          # Never copy unrelated source files from the LEGO staging branch.
-          git fetch origin release/collector-profile-web-20261031
-          RELEASE_SHA="997b04bbbba91821f375156519b36038321eed23"
+          # Fetch the exact auth/registration candidate tested on the public preview.
+          # Do not promote unrelated native application features or stage-specific code.
+          git fetch origin feature/auth-signin-signup-20261031
+          RELEASE_SHA="d2b2c93f30b5d4f48ae625becd30af79987d139d"
           test "$(git rev-parse FETCH_HEAD)" = "$RELEASE_SHA"
-          git -C "$RUNNER_TEMP/archiv-lego-production" restore --source="$RELEASE_SHA" -- src/lego-entry.ts src/lego-styles.css
+          # The production base worktree already has the correct LEGO entrypoint.
+          # Restore all new auth source AND its LEGO branding asset together.
+          git -C "$RUNNER_TEMP/archiv-lego-production" restore --source="$RELEASE_SHA" -- src/lego-entry.ts src/lego-styles.css src/auth-signup-decision.ts public/archiv-lego-logo.png
+          test -s "$RUNNER_TEMP/archiv-lego-production/public/archiv-lego-logo.png"
+          grep -q 'privacy.href=import.meta.env.BASE_URL+"privacy.html"' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
+          grep -q 'terms.href=import.meta.env.BASE_URL+"terms.html"' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
           VITE_PROFILE_BACKEND_READY=true npm --prefix "$RUNNER_TEMP/archiv-lego-production" run build:web
           cp -R "$RUNNER_TEMP/archiv-lego-production/dist-web/." dist-web/
-          # Reassert the isolated preview after production copy.
+          # Keep the independently built staging preview after production copy.
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/lego-preview/
           printf '{"source_commit":"%s","branch":"feature/auth-signin-signup-20261031"}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
-          # Legal policies must match the exact approved Profile release, not moving staging.
-          git show "$RELEASE_SHA:public/privacy.html" > dist-web/privacy.html
-          git show "$RELEASE_SHA:public/terms.html" > dist-web/terms.html
+          # Legal policies were previously approved and must remain unchanged.
+          git fetch origin release/collector-profile-web-20261031
+          POLICY_SHA="997b04bbbba91821f375156519b36038321eed23"
+          test "$(git rev-parse FETCH_HEAD)" = "$POLICY_SHA"
+          git show "$POLICY_SHA:public/privacy.html" > dist-web/privacy.html
+          git show "$POLICY_SHA:public/terms.html" > dist-web/terms.html
           test -s dist-web/privacy.html
           test -s dist-web/terms.html
           grep -q 'Delete your Archív account yourself' dist-web/privacy.html
           grep -q 'Delete profile' dist-web/terms.html
           grep -q 'not currently an approved LEGO.com affiliate' dist-web/terms.html
-          # Record explicit production application source provenance.
-          printf '{"source_commit":"%s","branch":"release/collector-profile-web-20261031","profile_backend_ready":true}\n' "$RELEASE_SHA" > dist-web/build-info.json
+          # Record immutable release provenance for post-deploy verification.
+          printf '{"source_commit":"%s","branch":"feature/auth-signin-signup-20261031","profile_backend_ready":true,"legal_source_commit":"%s"}\n' "$RELEASE_SHA" "$POLICY_SHA" > dist-web/build-info.json
           # Retire the unused Impact impression/conversion script on the pinned
           # root site. It loads before user interaction and the new policy must
           # describe actual tracking practices accurately.
