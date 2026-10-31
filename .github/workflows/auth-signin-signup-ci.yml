@@ -34,6 +34,12 @@ jobs:
           test -s public/archiv-lego-logo.png
           grep -q 'setSignupRequired(true)' src/lego-entry.ts
           grep -q 'signupBannerText(wasSignupRequired())' src/lego-entry.ts
+          grep -q 'privacy.href=import.meta.env.BASE_URL+"privacy.html"' src/lego-entry.ts
+          grep -q 'terms.href=import.meta.env.BASE_URL+"terms.html"' src/lego-entry.ts
+          test -s public/privacy.html
+          test -s public/terms.html
+          test -s dist-web/privacy.html
+          test -s dist-web/terms.html
           ! grep -q 'art.src=import.meta.env.BASE_URL+"logo4"' src/lego-entry.ts
           grep -q '/src/lego-entry.ts' index.html
           ! grep -q '/src/standalone.ts' index.html
