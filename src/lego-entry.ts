@@ -1,7 +1,7 @@
 import "./lego-styles.css";
 import { initializeApp, getApps } from "firebase/app";
-import { getAuth, initializeAuth, indexedDBLocalPersistence, GoogleAuthProvider, onAuthStateChanged, signInWithCredential, signInWithPopup, signInWithRedirect, signOut, type User } from "firebase/auth";
-import { collection, doc, getFirestore, onSnapshot, setDoc, deleteDoc, getDoc, getDocs, addDoc, increment, serverTimestamp, type Unsubscribe } from "firebase/firestore";
+import { getAuth, initializeAuth, indexedDBLocalPersistence, GoogleAuthProvider, onAuthStateChanged, signInWithCredential, signInWithPopup, signInWithRedirect, signOut, deleteUser, reauthenticateWithPopup, reauthenticateWithCredential, type User } from "firebase/auth";
+import { collection, doc, getFirestore, onSnapshot, setDoc, deleteDoc, getDoc, getDocs, addDoc, increment, serverTimestamp, updateDoc, writeBatch, type Unsubscribe } from "firebase/firestore";
 type SetRow={number:string;name:string;year:number;theme:string;parts:number;image?:string;images?:string[]};
 type Status="owned"|"wishlist";
 const featured=["City","Pokemon","Star Wars","Technic","Botanicals","Icons"];
@@ -22,7 +22,11 @@ const legoRecordPrefix="archiv-lego-set:";
 let currentUser:User|null=null,authReady=!legoAuth,collectionReady=!legoAuth,accountError="";
 let stopCollection:Unsubscribe|null=null,authGeneration=0;
 type Activity={uid:string;type:string;setNumber?:string;theme?:string;at:string};
-type Profile={uid:string;name?:string;email?:string;firstSeen?:string;lastSeen?:string};
+type Profile={uid:string;name?:string;email?:string;firstSeen?:string;lastSeen?:string;communicationsOptIn?:boolean};
+// Data-erasing profile actions stay off until the shared Firebase rules are approved and deployed.
+const PROFILE_BACKEND_READY=import.meta.env.VITE_PROFILE_BACKEND_READY==="true";
+let ownProfile:Profile|null=null,ownProfileLoaded=false,profileBusy=false,profileError="",profileInfo="",deleteConfirmOpen=false,deleteConfirmText="",deletingAccount=false;
+let stopOwnProfile:Unsubscribe|null=null;
 let profiles:Profile[]=[],events:Activity[]=[],chosenUid="";
 let adminEnabled=false,adminStatus="Checking access…",adminRows:Array<{owned?:number;wishlist?:number;themes?:Record<string,number>;affiliateClicks?:number}>=[],adminLoading=false,adminError="";
 async function checkAdmin(user:User|null,gen:number){
@@ -54,6 +58,7 @@ async function loadAdmin(){
  adminLoading=false;render();
 }
 async function registerCollector(user:User){
+ if(deletingAccount)return;
  if(!legoDb)return;
  try{
   const ref=doc(legoDb,"collectorProfiles",user.uid);
@@ -67,13 +72,13 @@ async function registerCollector(user:User){
  }catch(err){console.warn("Registration reporting unavailable",err)}
 }
 async function recordActivity(type:string,setNumber?:string,theme?:string){
- if(!currentUser||!legoDb)return;
+ if(deletingAccount||!currentUser||!legoDb)return;
  try{await addDoc(collection(legoDb,"users",currentUser.uid,"activity"),{
   type,at:new Date().toISOString(),...(setNumber?{setNumber}:{}),...(theme?{theme}:{})
  })}catch(err){console.warn("Activity event unavailable",err)}
 }
 async function reportCollector(user:User,items:Record<string,Status>){
- if(!legoDb)return;
+ if(deletingAccount||!legoDb)return;
  const themes:Record<string,number>={};
  for(const [id,status] of Object.entries(items)){
   if(status!=="owned")continue;
@@ -87,7 +92,7 @@ async function reportCollector(user:User,items:Record<string,Status>){
  },{merge:true})}catch(err){console.warn("Analytics summary unavailable",err)}
 }
 async function reportAffiliateClick(){
- if(!currentUser||!legoDb)return;
+ if(deletingAccount||!currentUser||!legoDb)return;
  try{await setDoc(doc(legoDb,"collectorSummaries",currentUser.uid),{affiliateClicks:increment(1),lastActive:serverTimestamp()},{merge:true});void recordActivity("affiliate_click")}
  catch(err){console.warn("Click reporting unavailable",err)}
 }
@@ -165,19 +170,25 @@ let selected="All LEGO",search="",sort="name",page=0;
 function setFromHash(){const m=location.hash.match(/^#\/set\/(.+)$/);return m?decodeURIComponent(m[1]):null}
 function goSet(id:string){location.hash="#/set/"+encodeURIComponent(id);render()}
 function themeFromHash(){const slug=decodeURIComponent(location.hash.replace(/^#\/?/,""));return themes.slice(1).find(n=>n.toLowerCase().replace(/\s+/g,"-")===slug)||"All LEGO"}
+function goProfile(){profileError="";profileInfo="";deleteConfirmOpen=false;deleteConfirmText="";location.hash="#/profile";render()}
 selected=themeFromHash();
 // Remember the displayed route, not merely the selected theme. Android/browser Back
 // can return to the same theme from a set or admin page without changing selected.
 let displayedRouteHash=location.hash;
 function goTheme(n:string){selected=n;search="";page=0;location.hash=n==="All LEGO"?"#/":"#/"+encodeURIComponent(n.toLowerCase().replace(/\s+/g,"-"));render()}
-window.addEventListener("hashchange",()=>{if(location.hash==="#/admin"){if(adminEnabled)void loadAdmin();else render();return}if(setFromHash()){render();return}const next=themeFromHash();if(next!==selected){selected=next;search="";page=0}if(displayedRouteHash!==location.hash)render()});
+window.addEventListener("hashchange",()=>{if(location.hash==="#/profile"){render();return}if(location.hash==="#/admin"){if(adminEnabled)void loadAdmin();else render();return}if(setFromHash()){render();return}const next=themeFromHash();if(next!==selected){selected=next;search="";page=0}if(displayedRouteHash!==location.hash)render()});
 let saved:Record<string,Status>={};
 if(legoAuth&&legoDb)onAuthStateChanged(legoAuth,user=>{
- const generation=++authGeneration;stopCollection?.();stopCollection=null;currentUser=user;saved={};authReady=true;collectionReady=!user;accountError="";render();
+ const generation=++authGeneration;stopCollection?.();stopCollection=null;stopOwnProfile?.();stopOwnProfile=null;currentUser=user;saved={};ownProfile=null;ownProfileLoaded=!user;profileError="";profileInfo="";deleteConfirmOpen=false;deleteConfirmText="";authReady=true;collectionReady=!user;accountError="";render();
  void checkAdmin(user,generation);
  if(!user)return;
  const uid=user.uid;
  void registerCollector(user);
+ stopOwnProfile=onSnapshot(doc(legoDb!,"collectorProfiles",uid),snapshot=>{
+  if(generation!==authGeneration)return;
+  ownProfile=snapshot.exists()?({uid,...snapshot.data()} as Profile):null;
+  ownProfileLoaded=true;if(location.hash==="#/profile")render();
+ },error=>{if(generation!==authGeneration)return;ownProfileLoaded=false;profileError="Could not load profile: "+error.message;if(location.hash==="#/profile")render()});
  stopCollection=onSnapshot(collection(legoDb!,"users",uid,"items"),snapshot=>{
   if(generation!==authGeneration)return;
   const next:Record<string,Status>={};
@@ -193,6 +204,7 @@ async function load(){try{const [setsResponse,themeResponse]=await Promise.all([
 function e<K extends keyof HTMLElementTagNameMap>(tag:K,cls="",value=""){const n=document.createElement(tag);n.className=cls;if(value){const parts=value.split("LEGO®");if(parts.length===1)n.textContent=value;else{parts.forEach((part,i)=>{if(i){n.append(document.createTextNode("LEGO"));const mark=document.createElement("sup");mark.className="lego-registered";mark.textContent="®";n.append(mark)}if(part)n.append(document.createTextNode(part))})}}return n}
 function button(label:string,click:()=>void,cls=""){const b=e("button","lego-button "+cls,label);b.onclick=click;return b}
 async function save(id:string,status:Status){
+ if(deletingAccount)return;
  if(!currentUser){accountError="Sign in with Google to track owned sets and your wishlist across devices.";render();return}
  if(!collectionReady||!legoDb){accountError="Your collection is still loading. Try again.";render();return}
  const userId=currentUser.uid,ref=doc(legoDb,"users",userId,"items",legoRecordPrefix+id);
@@ -343,6 +355,158 @@ function renderSetDetail(shell:HTMLElement,id:string){
  
  shell.append(wrap);
 }
+
+function profileDate(value?:string){
+ const d=value?new Date(value):null;return d&&!Number.isNaN(d.getTime())?d.toLocaleDateString(undefined,{month:"long",day:"numeric",year:"numeric"}):"Not available";
+}
+function membershipLength(value?:string){
+ const started=value?new Date(value).getTime():NaN;if(!Number.isFinite(started))return "Not available";
+ const days=Math.max(0,Math.floor((Date.now()-started)/86400000));
+ if(days<1)return "Joined today";
+ if(days<30)return days+" day"+(days===1?"":"s");
+ const months=Math.floor(days/30.44);
+ if(months<12)return months+" month"+(months===1?"":"s");
+ const years=Math.floor(months/12),extra=months%12;
+ return years+" year"+(years===1?"":"s")+(extra?" "+extra+" month"+(extra===1?"":"s"):"");
+}
+async function updateCommunicationsOptIn(value:boolean){
+ if(!PROFILE_BACKEND_READY||!legoDb||!currentUser||!ownProfileLoaded||profileBusy||deletingAccount)return;
+ profileBusy=true;profileError="";profileInfo="";render();
+ try{
+  // A profile document is registered on first login; update only the consent field.
+  await updateDoc(doc(legoDb,"collectorProfiles",currentUser.uid),{communicationsOptIn:value});
+  profileInfo=value?"You're now opted in to occasional Archív email updates.":"You've opted out of Archív email updates.";
+ }catch(error){profileError="Could not save your preference: "+(error instanceof Error?error.message:"Unknown error")}
+ finally{profileBusy=false;if(location.hash==="#/profile")render()}
+}
+async function reauthenticateForDeletion(user:User){
+ if(isNativeApp){
+  if(!nativeBridge?.nativePromise)throw new Error("Native sign-in is unavailable; contact support for deletion.");
+  const result=await nativeBridge.nativePromise("FirebaseAuthentication","signInWithGoogle",{});
+  const idToken=result.credential?.idToken;
+  if(!idToken)throw new Error("Google sign-in did not return a confirmation token.");
+  await reauthenticateWithCredential(user,GoogleAuthProvider.credential(idToken));
+ }else{
+  await reauthenticateWithPopup(user,new GoogleAuthProvider());
+ }
+}
+async function deleteUserDocuments(path:string[]){
+ if(!legoDb||!currentUser)throw Error("The account is no longer signed in.");
+ const docs=await getDocs(collection(legoDb,"users",currentUser.uid,...path));
+ // Firestore batches are intentionally small to avoid oversized requests.
+ for(let i=0;i<docs.docs.length;i+=200){
+  const batch=writeBatch(legoDb);
+  for(const item of docs.docs.slice(i,i+200))batch.delete(item.ref);
+  await batch.commit();
+ }
+}
+async function deleteOwnProfile(){
+ const user=currentUser;
+ if(!PROFILE_BACKEND_READY||!user||!legoDb||deleteConfirmText!=="DELETE"||profileBusy||deletingAccount)return;
+ profileBusy=true;profileError="";profileInfo="";render();
+ try{
+  // Verify fresh account ownership BEFORE making any irreversible data changes.
+  await reauthenticateForDeletion(user);
+  deletingAccount=true;profileInfo="Removing your collection and account data…";render();
+  // A UID-only deletion marker blocks writes from other still-authenticated sessions.
+  // The marker is intentionally retained to prevent stale sessions recreating records.
+  await setDoc(doc(legoDb,"users",user.uid,"account","deletion"),{deleting:true});
+  await deleteUserDocuments(["items"]);
+  await deleteUserDocuments(["groups"]);
+  await deleteUserDocuments(["activity"]);
+  await deleteDoc(doc(legoDb,"collectorSummaries",user.uid));
+  await deleteDoc(doc(legoDb,"collectorProfiles",user.uid));
+  // Firebase Auth is deleted only after account records have been removed.
+  await deleteUser(user);
+  try{for(let i=localStorage.length-1;i>=0;i--){const key=localStorage.key(i);if(key?.startsWith("archiv-parts-checked:"))localStorage.removeItem(key)}}catch{}
+  if(isNativeApp&&nativeBridge?.nativePromise)void nativeBridge.nativePromise("FirebaseAuthentication","signOut",{}).catch(()=>{});
+  deletingAccount=false;deleteConfirmOpen=false;deleteConfirmText="";ownProfile=null;profileInfo="";
+  goTheme("All LEGO");
+ }catch(error){
+  deletingAccount=false;
+  profileError="Deletion could not finish: "+(error instanceof Error?error.message:"Unknown error")+". Your account may be partially cleared. Please retry or contact getshelfiecollect@gmail.com.";
+ }finally{profileBusy=false;if(location.hash==="#/profile")render()}
+}
+function renderProfile(shell:HTMLElement){
+ const main=e("main","archiv-profile");
+ const goBack=button("← Back to Archív",()=>goTheme("All LEGO"),"archiv-profile-back");main.append(goBack);
+ const top=e("div","archiv-profile-hero");
+ const badge=e("span","archiv-profile-kicker","YOUR ARCHÍV");
+ const heading=e("h1","","Collector profile");
+ top.append(badge,heading,e("p","archiv-profile-intro","Your collection at a glance, your account settings, and control of your data."));
+ main.append(top);
+ if(!currentUser){
+  const section=e("section","archiv-profile-panel");
+  section.append(e("h2","","Sign in to view your profile"),e("p","","Your profile is private. Sign in with Google to see your collection statistics and account details."));
+  section.append(button("Sign in with Google",()=>{void signInLego()}));main.append(section);shell.append(main);return;
+ }
+ const user=currentUser;
+ const firstSeen=ownProfile?.firstSeen||user.metadata.creationTime;
+ const ownedIds=Object.keys(saved).filter(id=>saved[id]==="owned");
+ const wishlisted=Object.values(saved).filter(status=>status==="wishlist").length;
+ const counts=new Map<string,number>();let pieces=0;
+ for(const id of ownedIds){const row=data.find(set=>set.number===id);if(!row)continue;counts.set(row.theme,(counts.get(row.theme)||0)+1);pieces+=row.parts||0}
+ const account=e("section","archiv-profile-panel archiv-profile-account");
+ const identity=e("div","archiv-profile-identity");
+ if(user.photoURL){const photo=e("img","archiv-profile-avatar") as HTMLImageElement;photo.src=user.photoURL;photo.alt="Google account profile picture";photo.referrerPolicy="no-referrer";identity.append(photo)}
+ const who=e("div");who.append(e("h2","",ownProfile?.name||user.displayName||"Collector"),e("p","",user.email||"No email address available"));identity.append(who);account.append(identity);
+ const stats=e("div","archiv-profile-stats");
+ const tiles:[string,string][]=[
+  ["Sets owned",collectionReady?ownedIds.length.toLocaleString():"Loading…"],
+  ["Themes collected",collectionReady?counts.size.toLocaleString():"Loading…"],
+  ["On your wishlist",collectionReady?wishlisted.toLocaleString():"Loading…"],
+  ["Pieces in owned sets",collectionReady?pieces.toLocaleString():"Loading…"]
+ ];
+ for(const [label,value] of tiles){const tile=e("div","archiv-profile-stat");tile.append(e("strong","",value),e("span","",label));stats.append(tile)}
+ account.append(stats);
+ const facts=e("dl","archiv-profile-facts");
+ for(const [label,value] of [["Member since",profileDate(firstSeen)],["Membership length",membershipLength(firstSeen)],["Last sign-in",profileDate(user.metadata.lastSignInTime)],["Email address",user.email||"Not available"]]){
+  const pair=e("div");pair.append(e("dt","",label),e("dd","",value));facts.append(pair);
+ }
+ account.append(facts);main.append(account);
+ const themesPanel=e("section","archiv-profile-panel");
+ themesPanel.append(e("h2","","Most collected themes"));
+ const sorted=[...counts].sort((a,b)=>b[1]-a[1]).slice(0,5);
+ if(!collectionReady)themesPanel.append(e("p","archiv-profile-muted","Loading your collection…"));
+ else if(!sorted.length)themesPanel.append(e("p","archiv-profile-muted","Once you mark sets as owned, your most collected themes will appear here."));
+ else{
+  const chart=e("div","archiv-profile-chart");const max=sorted[0][1];
+  for(const [name,n] of sorted){const line=e("div","archiv-profile-theme");const top=e("div","archiv-profile-theme-meta");
+   top.append(e("span","",name),e("strong","",n+" set"+(n===1?"":"s")));line.append(top);
+   const track=e("div","archiv-profile-bar-track");const fill=e("span","archiv-profile-bar");fill.style.width=(100*n/max)+"%";track.append(fill);line.append(track);chart.append(line)}
+  themesPanel.append(chart);
+ }
+ main.append(themesPanel);
+ const preferences=e("section","archiv-profile-panel");preferences.append(e("h2","","Communication preferences"));
+ preferences.append(e("p","archiv-profile-muted","Choose whether you'd like occasional updates from Archív. We won't subscribe you automatically."));
+ const option=e("label","archiv-profile-optin");
+ const toggle=e("input") as HTMLInputElement;toggle.type="checkbox";toggle.checked=ownProfile?.communicationsOptIn===true;
+ toggle.disabled=!PROFILE_BACKEND_READY||!ownProfileLoaded||profileBusy;toggle.onchange=()=>void updateCommunicationsOptIn(toggle.checked);
+ const copy=e("span");copy.append(e("strong","","Email me Archív news and product updates"),e("small","",toggle.checked?"Opted in":"Not subscribed"));
+ option.append(toggle,copy);preferences.append(option);
+ if(!PROFILE_BACKEND_READY)preferences.append(e("p","archiv-profile-staging-note","Preview only: preference saving will be enabled after the shared Firebase security changes are approved."));
+ if(profileError)preferences.append(e("p","archiv-profile-error",profileError));
+ if(profileInfo)preferences.append(e("p","archiv-profile-success",profileInfo));
+ main.append(preferences);
+ const danger=e("section","archiv-profile-danger");
+ danger.append(e("h2","","Delete your profile"));
+ danger.append(e("p","","Permanently delete your Archív login, saved sets, wishlist, collection activity and profile. This cannot be undone. Your Google account and eBay account will not be deleted."));
+ const trigger=button(deleteConfirmOpen?"Cancel deletion":"Delete profile",()=>{deleteConfirmOpen=!deleteConfirmOpen;deleteConfirmText="";profileError="";render()},"archiv-profile-delete-trigger");
+ danger.append(trigger);
+ if(deleteConfirmOpen){
+  const confirm=e("div","archiv-profile-confirm");confirm.append(e("strong","","Confirm permanent deletion"));
+  confirm.append(e("p","","To confirm, sign in again with Google and type DELETE below. This will permanently erase your Archív collection records. A minimal account identifier may be retained to prevent deleted records being recreated from an old session."));
+  const field=e("input") as HTMLInputElement;field.type="text";field.placeholder="Type DELETE";field.autocomplete="off";field.value=deleteConfirmText;
+  field.oninput=()=>{deleteConfirmText=field.value;final.disabled=deleteConfirmText!=="DELETE"||!PROFILE_BACKEND_READY||profileBusy};
+  confirm.append(field);
+  const final=button(profileBusy?"Deleting…":"Permanently delete my Archív profile",()=>void deleteOwnProfile(),"archiv-profile-delete-final");
+  final.disabled=deleteConfirmText!=="DELETE"||!PROFILE_BACKEND_READY||profileBusy;confirm.append(final);
+  if(!PROFILE_BACKEND_READY)confirm.append(e("p","archiv-profile-staging-note","Final deletion is disabled in this preview. Firebase security changes must be approved and deployed first."));
+  danger.append(confirm);
+ }
+ main.append(danger);
+ shell.append(main);
+}
 function render(){displayedRouteHash=location.hash;app.replaceChildren();const shell=e("div","lego-shell");app.append(shell);
 const header=e("header","lego-header");
 const logo=e("a","lego-logo");logo.href="#/";logo.onclick=(event)=>{event.preventDefault();goTheme("All LEGO")};logo.setAttribute("aria-label","Archív home");
@@ -354,7 +518,7 @@ if(currentUser?.photoURL){const avatar=e("img","lego-account-avatar") as HTMLIma
 account.append(toggle);
 const menu=e("div","lego-account-dropdown");
 if(!authReady)menu.append(e("span","lego-account-label","Checking sign-in…"));
-else if(currentUser){if(adminEnabled)menu.append(button("Admin dashboard",()=>{account.open=false;location.hash="#/admin";void loadAdmin()},"lego-account-button"));menu.append(button("Sign out",()=>{account.open=false;void signOutLego()},"lego-account-button"))}
+else if(currentUser){menu.append(button("My profile",()=>{account.open=false;goProfile()},"lego-account-button"));if(adminEnabled)menu.append(button("Admin dashboard",()=>{account.open=false;location.hash="#/admin";void loadAdmin()},"lego-account-button"));menu.append(button("Sign out",()=>{account.open=false;void signOutLego()},"lego-account-button"))}
 else {
  const googleMark=()=>{const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");svg.setAttribute("viewBox","0 0 48 48");svg.setAttribute("aria-hidden","true");svg.classList.add("gsi-material-button-icon");for(const [fill,d] of [["#EA4335","M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"],["#4285F4","M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"],["#FBBC05","M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"],["#34A853","M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"]] ){const p=document.createElementNS("http://www.w3.org/2000/svg","path");p.setAttribute("fill",fill);p.setAttribute("d",d);svg.append(p)}return svg};
 
@@ -365,6 +529,7 @@ header.append(account);
 shell.append(header);
 if(accountError)shell.append(e("p","lego-account-message",accountError));
 if(currentUser&&!collectionReady)shell.append(e("p","lego-account-message","Loading your saved collection…"));
+if(location.hash==="#/profile"){renderProfile(shell);const foot=e("footer","lego-footer");const nav=e("nav","lego-footer-links");for(const [label,file] of [["Contact","contact.html"],["Attribution","attribution.html"],["Terms of Use","terms.html"],["Privacy","privacy.html"]]){const link=e("a","",label);link.href=import.meta.env.BASE_URL+file;nav.append(link)}foot.append(nav,e("p","lego-copyright","© 2026 Archív. All rights reserved."));shell.append(foot);return}
 if(location.hash==="#/admin"){
  const main=e("main","lego-admin");
  main.append(e("h1","","Archív analytics"));
