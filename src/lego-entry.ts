@@ -159,8 +159,11 @@ function setFromHash(){const m=location.hash.match(/^#\/set\/(.+)$/);return m?de
 function goSet(id:string){location.hash="#/set/"+encodeURIComponent(id);render()}
 function themeFromHash(){const slug=decodeURIComponent(location.hash.replace(/^#\/?/,""));return themes.slice(1).find(n=>n.toLowerCase().replace(/\s+/g,"-")===slug)||"All LEGO"}
 selected=themeFromHash();
+// Remember the displayed route, not merely the selected theme. Android/browser Back
+// can return to the same theme from a set or admin page without changing selected.
+let displayedRouteHash=location.hash;
 function goTheme(n:string){selected=n;search="";page=0;location.hash=n==="All LEGO"?"#/":"#/"+encodeURIComponent(n.toLowerCase().replace(/\s+/g,"-"));render()}
-window.addEventListener("hashchange",()=>{if(location.hash==="#/admin"){if(adminEnabled)void loadAdmin();else render();return}if(setFromHash()){render();return}const next=themeFromHash();if(next!==selected){selected=next;search="";page=0;render()}});
+window.addEventListener("hashchange",()=>{if(location.hash==="#/admin"){if(adminEnabled)void loadAdmin();else render();return}if(setFromHash()){render();return}const next=themeFromHash();if(next!==selected){selected=next;search="";page=0}if(displayedRouteHash!==location.hash)render()});
 let saved:Record<string,Status>={};
 if(legoAuth&&legoDb)onAuthStateChanged(legoAuth,user=>{
  const generation=++authGeneration;stopCollection?.();stopCollection=null;currentUser=user;saved={};authReady=true;collectionReady=!user;accountError="";render();
@@ -333,7 +336,7 @@ function renderSetDetail(shell:HTMLElement,id:string){
  
  shell.append(wrap);
 }
-function render(){app.replaceChildren();const shell=e("div","lego-shell");app.append(shell);
+function render(){displayedRouteHash=location.hash;app.replaceChildren();const shell=e("div","lego-shell");app.append(shell);
 const header=e("header","lego-header");
 const logo=e("a","lego-logo");logo.href="#/";logo.onclick=(event)=>{event.preventDefault();goTheme("All LEGO")};logo.setAttribute("aria-label","Archív home");
 const art=e("img");art.src=import.meta.env.BASE_URL+"archiv-lego-logo.png";art.alt="Archív. Your collection lives here.";art.onerror=()=>{art.onerror=null;art.src=import.meta.env.BASE_URL+"logo4"};logo.append(art);
