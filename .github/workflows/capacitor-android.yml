@@ -84,7 +84,7 @@ jobs:
           # Apply real device window insets to the native content view.
           cp android-native/MainActivity.java android/app/src/main/java/app/archiv/collector/MainActivity.java
           grep -q 'WindowInsetsCompat.Type.systemBars()' android/app/src/main/java/app/archiv/collector/MainActivity.java
-          node -e 'const fs=require("fs");const plugins=JSON.parse(fs.readFileSync("android/app/src/main/assets/capacitor.plugins.json","utf8")); console.log("Native plugins:",plugins); if(!JSON.stringify(plugins).includes("FirebaseAuthentication") || !JSON.stringify(plugins).includes("Browser") || !JSON.stringify(plugins).includes("\"App\"")) process.exit(1);'
+          node -e 'const fs=require("fs");const plugins=JSON.parse(fs.readFileSync("android/app/src/main/assets/capacitor.plugins.json","utf8")); console.log("Native plugins:",plugins); if(!JSON.stringify(plugins).includes("FirebaseAuthentication") || !JSON.stringify(plugins).includes("Browser") || !plugins.some(p=>p.pkg==="@capacitor/app")) process.exit(1);'
           # Include the Android Google provider and credentials manager when configured.
           printf '\n' >> android/variables.gradle
           cat >> android/variables.gradle <<'EOF'
