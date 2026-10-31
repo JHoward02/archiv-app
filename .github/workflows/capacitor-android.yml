@@ -19,6 +19,7 @@ jobs:
         with:
           ref: archiv-2-lego-staging
 
+      # Rebuild after owner configured the permanent Android signing secrets.
       - name: Confirm private Android release credentials are configured
         env:
           ARCHIV_KEYSTORE_B64: ${{ secrets.ARCHIV_ANDROID_KEYSTORE_B64 }}
