@@ -443,7 +443,7 @@ function renderProfile(shell:HTMLElement){
   section.append(button("Sign in with Google",()=>{void signInLego()}));main.append(section);shell.append(main);return;
  }
  const user=currentUser;
- const firstSeen=ownProfile?.firstSeen||user.metadata.creationTime;
+ const firstSeen=user.metadata.creationTime||ownProfile?.firstSeen;
  const ownedIds=Object.keys(saved).filter(id=>saved[id]==="owned");
  const wishlisted=Object.values(saved).filter(status=>status==="wishlist").length;
  const counts=new Map<string,number>();let pieces=0;
