@@ -7,7 +7,9 @@ service cloud.firestore {
     // Admin membership can only be provisioned from Firebase Console/Admin SDK.
     match /adminAccess/{uid} {
       allow get: if request.auth != null && request.auth.uid == uid;
-      allow list, create, update, delete: if false;
+      allow list, create, update: if false;
+      // Users may revoke their own admin grant when deleting their account.
+      allow delete: if owner(uid);
     }
     // A minimal UID-only marker prevents deleted profiles from being recreated by
     // other signed-in browser sessions. It is retained after self-deletion.
