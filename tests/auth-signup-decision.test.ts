@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decideGoogleAuth } from "../src/auth-signup-decision";
+import { createCollectorProfile, decideGoogleAuth } from "../src/auth-signup-decision";
 
 describe("explicit Archív registration",()=>{
  it("never admits a brand-new Google account through Sign in",()=>{
@@ -17,5 +17,20 @@ describe("explicit Archív registration",()=>{
  it("refuses sign-in if Firebase does not return new/existing status",()=>{
   expect(decideGoogleAuth("sign-in",null)).toBe("unknown");
   expect(decideGoogleAuth("sign-up",null)).toBe("unknown");
+ });
+ it("stores communicationsOptIn false for an unchecked sign-up",()=>{
+  const profile=createCollectorProfile("Jane Collector","collector@example.com",false,"2026-10-31T21:00:00.000Z");
+  expect(profile).toEqual({
+   name:"Jane Collector",email:"collector@example.com",
+   firstSeen:"2026-10-31T21:00:00.000Z",lastSeen:"2026-10-31T21:00:00.000Z",
+   communicationsOptIn:false
+  });
+ });
+ it("stores true only after choosing optional email updates",()=>{
+  const profile=createCollectorProfile(null,null,true,"2026-10-31T21:00:00.000Z");
+  expect(profile.communicationsOptIn).toBe(true);
+  expect(profile.name).toBe("Collector");
+  expect(profile.email).toBe("");
+  expect(Object.keys(profile).sort()).toEqual(["communicationsOptIn","email","firstSeen","lastSeen","name"].sort());
  });
 });
