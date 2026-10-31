@@ -46,14 +46,22 @@ jobs:
           PREVIEW_SHA=$(git -C "$RUNNER_TEMP/archiv-lego-preview" rev-parse HEAD)
           echo "Preview source: $PREVIEW_SHA"
           npm --prefix "$RUNNER_TEMP/archiv-lego-preview" ci
-          mkdir -p "$RUNNER_TEMP/archiv-lego-preview/data"
-          curl --fail --location --retry 3 --silent --show-error "https://cdn.rebrickable.com/media/downloads/sets.csv.gz" -o "$RUNNER_TEMP/archiv-lego-preview/data/sets.csv.gz"
-          curl --fail --location --retry 3 --silent --show-error "https://cdn.rebrickable.com/media/downloads/themes.csv.gz" -o "$RUNNER_TEMP/archiv-lego-preview/data/themes.csv.gz"
+          # The web-only auth candidate deliberately excludes unrelated native/import tooling.
+          # Import catalog data using the separately vetted staging importer, not staged UI.
+          git fetch origin archiv-2-lego-staging
+          git worktree add "$RUNNER_TEMP/archiv-data-source" origin/archiv-2-lego-staging
+          mkdir -p "$RUNNER_TEMP/archiv-data-source/data"
+          curl --fail --location --retry 3 --silent --show-error "https://cdn.rebrickable.com/media/downloads/sets.csv.gz" -o "$RUNNER_TEMP/archiv-data-source/data/sets.csv.gz"
+          curl --fail --location --retry 3 --silent --show-error "https://cdn.rebrickable.com/media/downloads/themes.csv.gz" -o "$RUNNER_TEMP/archiv-data-source/data/themes.csv.gz"
           for name in colors parts minifigs inventories inventory_parts inventory_minifigs; do
-            curl --fail --location --retry 3 --silent --show-error "https://cdn.rebrickable.com/media/downloads/${name}.csv.gz" -o "$RUNNER_TEMP/archiv-lego-preview/data/${name}.csv.gz"
+            curl --fail --location --retry 3 --silent --show-error "https://cdn.rebrickable.com/media/downloads/${name}.csv.gz" -o "$RUNNER_TEMP/archiv-data-source/data/${name}.csv.gz"
           done
-          node "$RUNNER_TEMP/archiv-lego-preview/scripts/import-rebrickable.mjs"
-          node --max-old-space-size=6144 "$RUNNER_TEMP/archiv-lego-preview/scripts/import-lego-parts.mjs"
+          node "$RUNNER_TEMP/archiv-data-source/scripts/import-rebrickable.mjs"
+          node --max-old-space-size=6144 "$RUNNER_TEMP/archiv-data-source/scripts/import-lego-parts.mjs"
+          cp "$RUNNER_TEMP/archiv-data-source/src/lego-catalog.json" "$RUNNER_TEMP/archiv-lego-preview/src/lego-catalog.json"
+          cp "$RUNNER_TEMP/archiv-data-source/src/lego-themes.json" "$RUNNER_TEMP/archiv-lego-preview/src/lego-themes.json"
+          mkdir -p "$RUNNER_TEMP/archiv-lego-preview/public/lego-parts"
+          cp -R "$RUNNER_TEMP/archiv-data-source/public/lego-parts/." "$RUNNER_TEMP/archiv-lego-preview/public/lego-parts/"
           # Enable profile preferences and self-service deletion for the staging preview.
           # Production is compiled separately using the approved immutable release.
           VITE_PROFILE_BACKEND_READY=true npm --prefix "$RUNNER_TEMP/archiv-lego-preview" run build:web
