@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "226810242425",
+    "project_id": "archiv-3f5df",
+    "storage_bucket": "archiv-3f5df.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:226810242425:android:a220e03e2e34c8220dbba8",
+        "android_client_info": {
+          "package_name": "app.archiv.collector"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "226810242425-idqur9rb8l56op89qq8n3qb0mqf22v5l.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCyNm6naPT2-WErgfQnRL-Z1DqpuTzyueM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "226810242425-idqur9rb8l56op89qq8n3qb0mqf22v5l.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
