@@ -83,7 +83,7 @@ async function registerCollector(user:User){
   const ref=doc(legoDb,"collectorProfiles",user.uid);
   const prior=await getDoc(ref);
   await setDoc(ref,{
-   name:firstNameFromDisplayName(user.displayName),
+   name:user.displayName?.trim()||"Collector",
    email:user.email||"",
    firstSeen:prior.exists()?prior.data().firstSeen:new Date().toISOString(),
    lastSeen:new Date().toISOString()
