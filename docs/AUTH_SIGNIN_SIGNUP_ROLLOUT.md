@@ -24,3 +24,11 @@ Client-only Firebase Google OAuth creates a provisional Auth identity before a b
 - Do not delete production accounts or modify Firebase rules to test this.
 - Confirm preview points to this branch and production remains pinned to the approved Profile release.
 - Only deploy to production after final user approval.
+
+## Signup message position and marketing preference
+- The notice shown after an unregistered Google account attempts Sign in is displayed directly between the JOIN ARCHÍV kicker and the Create your Archív account heading.
+- Signup includes an **unchecked optional** 'Email me Archív news and product updates' checkbox, with Not subscribed shown when unchecked.
+- Only after an explicit newly-created sign-up does the app atomically persist name, email, firstSeen, lastSeen, and communicationsOptIn in collectorProfiles/{uid} under the already deployed owner-only rules. Existing accounts remain unchanged when they visit sign-up.
+- The checkbox value is preserved across popup-blocked redirect via sessionStorage and cleared after completion. The same Firestore field is editable later from My profile.
+- If the first-time Firestore profile write fails, the app attempts to delete the new Auth identity; failure is surfaced instead of silently losing the consent choice.
+- Authenticated end-to-end preference persistence still needs disposable-account verification in the real staging Firebase project. Staging and production share Firebase, so never use a real account for destructive signup/deletion tests.
