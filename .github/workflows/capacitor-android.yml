@@ -77,7 +77,7 @@ jobs:
           EOF
           # Firebase client configuration is non-secret and supplied by the owner.
           cp android-native/google-services.json android/app/google-services.json
-          node -e 'const c=require("./android/app/google-services.json"); if(c.project_info.project_id!=="archiv-3f5df" || !c.client.some(x=>x.client_info.android_client_info.package_name==="app.archiv.collector"))process.exit(1); if(!c.client.some(x=>x.oauth_client?.some(o=>o.client_type===1)))console.log("WARNING: No Android OAuth client found: register signing SHA-1 in Firebase and refresh google-services.json");'
+          node -e 'const c=require("./android/app/google-services.json"); const a=c.client.find(x=>x.client_info.android_client_info.package_name==="app.archiv.collector"); const expected="02fd087799122a19d5fd8ca287aa2de9f09e0b9e"; if(c.project_info.project_id!=="archiv-3f5df" || !a?.oauth_client?.some(o=>o.client_type===1 && o.android_info?.certificate_hash===expected)){console.error("Firebase Android OAuth registration must match Archív testing certificate");process.exit(1)} console.log("Verified Firebase Android OAuth SHA-1 registration")'
           # Capacitor generates Groovy Gradle files; Google Services must be applied
           # explicitly to generate native Firebase OAuth client resources.
           sed -i "/classpath 'com.android.tools.build:gradle:/a\\        classpath 'com.google.gms:google-services:4.5.0'" android/build.gradle
@@ -145,6 +145,21 @@ jobs:
           else
             keytool -list -v -keystore "$HOME/.android/debug.keystore" -alias androiddebugkey -storepass android -keypass android | grep -E 'SHA1:|SHA256:' || true
           fi
+
+      - name: Export Android SDK signing utility for offline certificate testing
+        run: |
+          TOOL=$(find "$ANDROID_HOME/build-tools" -path '*/lib/apksigner.jar' | sort -V | tail -n 1)
+          test -n "$TOOL"
+          mkdir -p signing-tools
+          cp "$TOOL" signing-tools/apksigner.jar
+          java -jar signing-tools/apksigner.jar --version
+
+      - name: Publish Android SDK signing utility
+        uses: actions/upload-artifact@v4
+        with:
+          name: archiv-apk-signing-utility
+          path: signing-tools/apksigner.jar
+          retention-days: 2
 
       - name: Publish installable native APK
         uses: actions/upload-artifact@v4
