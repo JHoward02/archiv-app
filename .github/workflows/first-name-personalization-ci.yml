@@ -1,0 +1,33 @@
+name: First Name Personalization CI
+on:
+  push:
+    branches:
+      - feature/first-name-personalization-20261031
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build:web
+      - name: Enforce first-name-only personalization
+        run: |
+          grep -q 'firstNameFromDisplayName(user.displayName)' src/lego-entry.ts
+          grep -q 'firstNameFromDisplayName(user.displayName||ownProfile?.name)' src/lego-entry.ts
+          grep -q 'personalArchiveTitle(currentUser.displayName||ownProfile?.name)' src/lego-entry.ts
+          grep -q 'Welcome back, ' src/lego-entry.ts
+          grep -q 'name:firstNameFromDisplayName(displayName)' src/auth-signup-decision.ts
+          ! grep -q 'name:user.displayName||"Collector"' src/lego-entry.ts
+          ! grep -q 'ownProfile?.name||user.displayName||"Collector"' src/lego-entry.ts
+          test -s public/archiv-lego-logo.png
+          test -s dist-web/index.html
