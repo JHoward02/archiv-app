@@ -1,0 +1,33 @@
+name: Collector Profile Release Candidate CI
+
+on:
+  push:
+    branches:
+      - release/collector-profile-web-20261031
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build:web
+      - name: Validate profile and legal changes
+        run: |
+          grep -q 'function renderProfile' src/lego-entry.ts
+          grep -q 'async function deleteOwnProfile' src/lego-entry.ts
+          grep -q 'communicationsOptIn' firestore.rules
+          grep -q 'Delete your Archív account yourself' public/privacy.html
+          grep -q 'Delete profile' public/terms.html
+          test -s dist-web/index.html
+          test -s dist-web/privacy.html
+          test -s dist-web/terms.html
