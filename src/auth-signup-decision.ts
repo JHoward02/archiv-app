@@ -24,3 +24,10 @@ export function createCollectorProfile(
   communicationsOptIn:communicationsOptIn===true
  };
 }
+
+/** A direct registration visit must never falsely claim Google was checked. */
+export function signupBannerText(missingAccountFromSignIn:boolean):string{
+ return missingAccountFromSignIn
+  ?"No Archív account was found for that Google account. You can create one below."
+  :"New to Archív? Create your free collector account below.";
+}
