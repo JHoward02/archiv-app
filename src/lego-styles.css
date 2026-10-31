@@ -444,3 +444,8 @@
 /* Keep legal references visibly clickable inside the signup disclosure. */
 .archiv-sign-up .archiv-profile-muted a{color:#176553;text-decoration:underline;text-underline-offset:2px;font-weight:650}
 .archiv-sign-up .archiv-profile-muted a:hover,.archiv-sign-up .archiv-profile-muted a:focus-visible{color:#08243b}
+
+/* Personal greetings and collection context: first name only, no surname. */
+.archiv-personal-welcome{margin:24px 0 8px;color:#08243b;font:normal clamp(25px,3.5vw,35px)/1.2 Georgia,serif}
+.archiv-personal-welcome+.lego-popular-heading{margin-top:12px}
+.archiv-personal-collection-label{color:#86633e;font-size:12px;font-weight:750;letter-spacing:.06em;margin:0 0 10px}
