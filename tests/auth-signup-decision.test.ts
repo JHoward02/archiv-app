@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createCollectorProfile, decideGoogleAuth, signupBannerText } from "../src/auth-signup-decision";
+import { createCollectorProfile, decideGoogleAuth, firstNameFromDisplayName, personalArchiveTitle, signupBannerText } from "../src/auth-signup-decision";
 
 describe("explicit Archív registration",()=>{
  it("never admits a brand-new Google account through Sign in",()=>{
@@ -21,7 +21,7 @@ describe("explicit Archív registration",()=>{
  it("stores communicationsOptIn false for an unchecked sign-up",()=>{
   const profile=createCollectorProfile("Jane Collector","collector@example.com",false,"2026-10-31T21:00:00.000Z");
   expect(profile).toEqual({
-   name:"Jane Collector",email:"collector@example.com",
+   name:"Jane",email:"collector@example.com",
    firstSeen:"2026-10-31T21:00:00.000Z",lastSeen:"2026-10-31T21:00:00.000Z",
    communicationsOptIn:false
   });
@@ -38,5 +38,23 @@ describe("explicit Archív registration",()=>{
  });
  it("preserves the exact missing-account explanation after Sign in finds no account",()=>{
   expect(signupBannerText(true)).toBe("No Archív account was found for that Google account. You can create one below.");
+ });
+
+ it("uses only a first name from a full Google display name",()=>{
+  expect(firstNameFromDisplayName("Jane Elizabeth Collector")).toBe("Jane");
+  expect(firstNameFromDisplayName("  John  Smith ")).toBe("John");
+  expect(firstNameFromDisplayName("Anne-Marie D'Angelo")).toBe("Anne-Marie");
+  expect(firstNameFromDisplayName("Zoë García")).toBe("Zoë");
+  expect(firstNameFromDisplayName("Chris")).toBe("Chris");
+ });
+ it("never guesses first name from an email when the Google name is unavailable",()=>{
+  expect(firstNameFromDisplayName(null)).toBe("Collector");
+  expect(firstNameFromDisplayName("  ")).toBe("Collector");
+  expect(personalArchiveTitle(null)).toBe("Your Archív");
+ });
+ it("creates personalized headings without displaying surname",()=>{
+  expect(personalArchiveTitle("John Smith")).toBe("John's Archív");
+  expect(personalArchiveTitle("Chris Jones")).toBe("Chris's Archív");
+  expect(personalArchiveTitle("Zoë García")).toBe("Zoë's Archív");
  });
 });
