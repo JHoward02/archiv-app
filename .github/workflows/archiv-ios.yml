@@ -112,6 +112,10 @@ jobs:
           s=s.replace(post_install, signing_override, 1)
           podfile.write_text(s)
           PY
+            # 'cap add ios' resolved Firebase before Google's optional pod was
+            # inserted. Discard the now-incompatible snapshot so CocoaPods can
+            # jointly resolve FirebaseAuth and GoogleSignIn (GTMSessionFetcher 3.x).
+            rm -f ios/App/Podfile.lock
           fi
           npx cap sync ios
           test -f ios/App/App.xcworkspace/contents.xcworkspacedata
