@@ -112,6 +112,11 @@ jobs:
           fi
           npx cap sync ios
           test -f ios/App/App.xcworkspace/contents.xcworkspacedata
+          if [ -f ios-native/GoogleService-Info.plist ]; then
+            grep -q 'CapacitorFirebaseAuthentication' ios/App/Podfile.lock
+            grep -q 'GoogleSignIn' ios/App/Podfile.lock
+            echo "Confirmed native Firebase and Google Sign-In CocoaPods are installed."
+          fi
 
       - name: Create the approved navy-and-gold Archív iPhone app icon
         run: |
@@ -132,10 +137,19 @@ jobs:
             test "$BUNDLE_ID" = "app.archiv.collector"
             REVERSED_ID=$(/usr/libexec/PlistBuddy -c 'Print :REVERSED_CLIENT_ID' ios-native/GoogleService-Info.plist)
             test -n "$REVERSED_ID"
-            /usr/libexec/PlistBuddy -c 'Add :CFBundleURLTypes array' ios/App/App/Info.plist
-            /usr/libexec/PlistBuddy -c 'Add :CFBundleURLTypes:0 dict' ios/App/App/Info.plist
-            /usr/libexec/PlistBuddy -c 'Add :CFBundleURLTypes:0:CFBundleURLSchemes array' ios/App/App/Info.plist
-            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string $REVERSED_ID" ios/App/App/Info.plist
+            python3 - <<'PY'
+            import plistlib
+            from pathlib import Path
+            config=plistlib.loads(Path('ios-native/GoogleService-Info.plist').read_bytes())
+            info_path=Path('ios/App/App/Info.plist')
+            info=plistlib.loads(info_path.read_bytes())
+            url_types=info.setdefault('CFBundleURLTypes', [])
+            scheme=config['REVERSED_CLIENT_ID']
+            if not any(scheme in item.get('CFBundleURLSchemes', []) for item in url_types):
+                url_types.append({'CFBundleURLSchemes':[scheme]})
+            info_path.write_bytes(plistlib.dumps(info))
+            print('Configured iOS native Google callback scheme:', scheme)
+            PY
             echo 'Configured native iPhone Google OAuth URL callback.'
           fi
 
@@ -162,6 +176,17 @@ jobs:
           APP="ios-derived/Build/Products/Release-iphoneos/App.app"
           if [ -f ios-native/GoogleService-Info.plist ]; then
             cp ios-native/GoogleService-Info.plist "$APP/GoogleService-Info.plist"
+            python3 - <<'PY'
+          import plistlib
+          from pathlib import Path
+          app=Path('ios-derived/Build/Products/Release-iphoneos/App.app')
+          firebase=plistlib.loads((app/'GoogleService-Info.plist').read_bytes())
+          info=plistlib.loads((app/'Info.plist').read_bytes())
+          assert firebase['PROJECT_ID']=='archiv-3f5df'
+          assert firebase['BUNDLE_ID']==info['CFBundleIdentifier']=='app.archiv.collector'
+          assert any(firebase['REVERSED_CLIENT_ID'] in u.get('CFBundleURLSchemes',[]) for u in info.get('CFBundleURLTypes',[]))
+          print('Verified embedded iOS Firebase configuration and callback scheme')
+          PY
           fi
           BUNDLE_ID=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist")
           test "$BUNDLE_ID" = "app.archiv.collector"
