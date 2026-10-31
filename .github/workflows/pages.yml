@@ -86,6 +86,30 @@ jobs:
           # Reassert exact preview output after production copy, including legal pages.
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/lego-preview/
           printf '{"source_commit":"%s","branch":"archiv-2-lego-staging"}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
+          # Narrow legal/privacy hotfix for the already-published catalog.
+          # DO NOT promote the staged app's features, UI, or auth changes.
+          cp "$RUNNER_TEMP/archiv-lego-preview/dist-web/privacy.html" dist-web/privacy.html
+          cp "$RUNNER_TEMP/archiv-lego-preview/dist-web/terms.html" dist-web/terms.html
+          test -s dist-web/privacy.html
+          test -s dist-web/terms.html
+          grep -q 'account deletion' dist-web/privacy.html
+          grep -q 'not currently an approved LEGO.com affiliate' dist-web/terms.html
+          # Retire the unused Impact impression/conversion script on the pinned
+          # root site. It loads before user interaction and the new policy must
+          # describe actual tracking practices accurately.
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('dist-web/index.html')
+          html=root.read_text()
+          scripts=re.findall(r'<script\\b[^>]*>[\\s\\S]*?</script>',html,flags=re.I)
+          impact=[x for x in scripts if 'utt.impactcdn.com' in x or 'impactStat' in x]
+          assert len(impact)==1, f'Expected one legacy Impact script; found {len(impact)}'
+          html=html.replace(impact[0],'')
+          assert 'utt.impactcdn.com' not in html
+          root.write_text(html)
+          print('Production root: updated only legal pages and removed legacy Impact tracking script')
+          PY
       - uses: actions/configure-pages@v5
         with:
           enablement: true
