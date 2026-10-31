@@ -26,6 +26,10 @@ jobs:
           grep -q 'await deleteUser(result.user)' src/lego-entry.ts
           grep -q 'if(authAttempt)return' src/lego-entry.ts
           grep -q 'Create Archív account with Google' src/lego-entry.ts
+          grep -q 'createCollectorProfile(result.user.displayName,result.user.email,signupCommunicationsOptIn' src/lego-entry.ts
+          grep -q 'archiv-sign-up-optin' src/lego-entry.ts
+          grep -q 'consentStatus' src/lego-entry.ts
+          grep -q 'communicationsOptIn:communicationsOptIn===true' src/auth-signup-decision.ts
           grep -q 'auth-signup-decision.test.ts' <(find tests -name '*.test.ts')
           grep -q '/src/lego-entry.ts' index.html
           ! grep -q '/src/standalone.ts' index.html
