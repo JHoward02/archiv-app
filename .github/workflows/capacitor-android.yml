@@ -19,6 +19,17 @@ jobs:
         with:
           ref: archiv-2-lego-staging
 
+      - name: Confirm private Android release credentials are configured
+        env:
+          ARCHIV_KEYSTORE_B64: ${{ secrets.ARCHIV_ANDROID_KEYSTORE_B64 }}
+          ARCHIV_KEYSTORE_PASSWORD: ${{ secrets.ARCHIV_ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -z "$ARCHIV_KEYSTORE_B64" ] || [ -z "$ARCHIV_KEYSTORE_PASSWORD" ]; then
+            echo "::error::Set ARCHIV_ANDROID_KEYSTORE_B64 and ARCHIV_ANDROID_KEYSTORE_PASSWORD in Settings > Secrets and variables > Actions before building an updatable Android APK."
+            exit 1
+          fi
+          echo "Release signing credentials are present."
+
       - name: Use Node 22
         uses: actions/setup-node@v4
         with:
