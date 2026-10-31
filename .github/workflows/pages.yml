@@ -92,7 +92,7 @@ jobs:
           cp "$RUNNER_TEMP/archiv-lego-preview/dist-web/terms.html" dist-web/terms.html
           test -s dist-web/privacy.html
           test -s dist-web/terms.html
-          grep -q 'account deletion' dist-web/privacy.html
+          grep -q 'To request access, correction, export, or deletion' dist-web/privacy.html
           grep -q 'not currently an approved LEGO.com affiliate' dist-web/terms.html
           # Retire the unused Impact impression/conversion script on the pinned
           # root site. It loads before user interaction and the new policy must
@@ -102,7 +102,7 @@ jobs:
           import re
           root=Path('dist-web/index.html')
           html=root.read_text()
-          scripts=re.findall(r'<script\\b[^>]*>[\\s\\S]*?</script>',html,flags=re.I)
+          scripts=re.findall(r'<script\b[^>]*>[\s\S]*?</script>',html,flags=re.I)
           impact=[x for x in scripts if 'utt.impactcdn.com' in x or 'impactStat' in x]
           assert len(impact)==1, f'Expected one legacy Impact script; found {len(impact)}'
           html=html.replace(impact[0],'')
