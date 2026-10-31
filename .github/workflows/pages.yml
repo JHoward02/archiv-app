@@ -54,7 +54,9 @@ jobs:
           done
           node "$RUNNER_TEMP/archiv-lego-preview/scripts/import-rebrickable.mjs"
           node --max-old-space-size=6144 "$RUNNER_TEMP/archiv-lego-preview/scripts/import-lego-parts.mjs"
-          npm --prefix "$RUNNER_TEMP/archiv-lego-preview" run build:web
+          # Enable profile preferences and self-service deletion for staging only.
+          # The production worktree is compiled separately without this flag.
+          VITE_PROFILE_BACKEND_READY=true npm --prefix "$RUNNER_TEMP/archiv-lego-preview" run build:web
           mkdir -p dist-web/lego-preview
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/lego-preview/
           printf '{"source_commit":"%s","branch":"archiv-2-lego-staging"}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
