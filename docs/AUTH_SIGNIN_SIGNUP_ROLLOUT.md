@@ -32,3 +32,11 @@ Client-only Firebase Google OAuth creates a provisional Auth identity before a b
 - The checkbox value is preserved across popup-blocked redirect via sessionStorage and cleared after completion. The same Firestore field is editable later from My profile.
 - If the first-time Firestore profile write fails, the app attempts to delete the new Auth identity; failure is surfaced instead of silently losing the consent choice.
 - Authenticated end-to-end preference persistence still needs disposable-account verification in the real staging Firebase project. Staging and production share Firebase, so never use a real account for destructive signup/deletion tests.
+
+## Corrected signup notice and LEGO branding
+- The registration page always shows a notice immediately between `JOIN ARCHÍV` and the heading. Direct sign-up visits show a truthful generic invitation; only a sign-in attempt with a newly provisioned Google identity shows the specific "No Archív account was found" message.
+- The specific notice state is stored for the current tab in `sessionStorage` and persists through reload. It clears after successful authentication or a fresh sign-in attempt.
+- The LEGO-specific logo is the existing `public/archiv-lego-logo.png` asset from `archiv-2-lego-staging`. It was omitted when the isolated branch was created, causing the image error fallback to load the old `logo4` (general-collectibles branding).
+- `public/archiv-lego-logo.png` is now included verbatim; if it fails to load again, the app falls back to the text Archív and never displays the unrelated old logo.
+- CI requires the LEGO logo asset and checks banner persistence. Validate the page in a real browser, not only via a CI build.
+- The unchecked optional email preference remains directly on the signup page, and is saved to `collectorProfiles/{uid}.communicationsOptIn` on explicit registration.
