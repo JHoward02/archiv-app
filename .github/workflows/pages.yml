@@ -37,8 +37,8 @@ jobs:
           npm --prefix "$RUNNER_TEMP/archiv-profile-preview" run build:web
           mkdir -p dist-web/profile-preview
           cp -R "$RUNNER_TEMP/archiv-profile-preview/dist-web/." dist-web/profile-preview/
-      # Approved staging-only refresh: collector profile preview (staging commit 448bcc072dcb8a3a35ad73ca3cbd554d4a1ee59e).
-      # Production application assets remain sourced from pinned cfd3562675c3503d466553918cd6a304256632fa.
+      # Collector profile released as an immutable web-only production snapshot.
+      # Staging retains its independent preview and unrelated native features remain excluded.
       - name: Build isolated LEGO preview
         run: |
           git fetch origin archiv-2-lego-staging
@@ -54,8 +54,8 @@ jobs:
           done
           node "$RUNNER_TEMP/archiv-lego-preview/scripts/import-rebrickable.mjs"
           node --max-old-space-size=6144 "$RUNNER_TEMP/archiv-lego-preview/scripts/import-lego-parts.mjs"
-          # Enable profile preferences and self-service deletion for staging only.
-          # The production worktree is compiled separately without this flag.
+          # Enable profile preferences and self-service deletion for the staging preview.
+          # Production is compiled separately using the approved immutable release.
           VITE_PROFILE_BACKEND_READY=true npm --prefix "$RUNNER_TEMP/archiv-lego-preview" run build:web
           mkdir -p dist-web/lego-preview
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/lego-preview/
@@ -91,23 +91,27 @@ jobs:
           cp -R "$RUNNER_TEMP/archiv-lego-preview/public/lego-parts/." "$RUNNER_TEMP/archiv-lego-production/public/lego-parts/"
           # Fail the deployment rather than silently publishing the tiny seed catalog again.
           node -e 'const fs=require("fs");const root=process.argv[1];const sets=JSON.parse(fs.readFileSync(root+"/src/lego-catalog.json"));const themes=JSON.parse(fs.readFileSync(root+"/src/lego-themes.json"));const shards=fs.readdirSync(root+"/public/lego-parts").filter(x=>/^[0-9]+[.]json$/.test(x));if(sets.length<25000||themes.length<15||shards.length!==128)throw Error("Incomplete production catalog: "+sets.length+" sets, "+themes.length+" themes, "+shards.length+" inventory shards");console.log("Production catalog validated:",sets.length,"sets,",themes.length,"themes,",shards.length,"inventory shards")' "$RUNNER_TEMP/archiv-lego-production"
-          # Fetch the deliberately pinned production-only disclosure hotfix.
-          # This keeps staging-only UI and features out of the production root.
-          git fetch origin hotfix/ebay-disclosure-production-20261031
-          git -C "$RUNNER_TEMP/archiv-lego-production" restore --source=cfd3562675c3503d466553918cd6a304256632fa -- src/lego-entry.ts src/lego-styles.css
-          npm --prefix "$RUNNER_TEMP/archiv-lego-production" run build:web
+          # Fetch and verify the immutable, CI-tested web-only Profile release.
+          # Never copy unrelated source files from the LEGO staging branch.
+          git fetch origin release/collector-profile-web-20261031
+          RELEASE_SHA="997b04bbbba91821f375156519b36038321eed23"
+          test "$(git rev-parse FETCH_HEAD)" = "$RELEASE_SHA"
+          git -C "$RUNNER_TEMP/archiv-lego-production" restore --source="$RELEASE_SHA" -- src/lego-entry.ts src/lego-styles.css
+          VITE_PROFILE_BACKEND_READY=true npm --prefix "$RUNNER_TEMP/archiv-lego-production" run build:web
           cp -R "$RUNNER_TEMP/archiv-lego-production/dist-web/." dist-web/
-          # Reassert exact preview output after production copy, including legal pages.
+          # Reassert the isolated preview after production copy.
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/lego-preview/
           printf '{"source_commit":"%s","branch":"archiv-2-lego-staging"}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
-          # Narrow legal/privacy hotfix for the already-published catalog.
-          # DO NOT promote the staged app's features, UI, or auth changes.
-          cp "$RUNNER_TEMP/archiv-lego-preview/dist-web/privacy.html" dist-web/privacy.html
-          cp "$RUNNER_TEMP/archiv-lego-preview/dist-web/terms.html" dist-web/terms.html
+          # Legal policies must match the exact approved Profile release, not moving staging.
+          git show "$RELEASE_SHA:public/privacy.html" > dist-web/privacy.html
+          git show "$RELEASE_SHA:public/terms.html" > dist-web/terms.html
           test -s dist-web/privacy.html
           test -s dist-web/terms.html
-          grep -q 'To request access, correction, export, or deletion' dist-web/privacy.html
+          grep -q 'Delete your Archív account yourself' dist-web/privacy.html
+          grep -q 'Delete profile' dist-web/terms.html
           grep -q 'not currently an approved LEGO.com affiliate' dist-web/terms.html
+          # Record explicit production application source provenance.
+          printf '{"source_commit":"%s","branch":"release/collector-profile-web-20261031","profile_backend_ready":true}\n' "$RELEASE_SHA" > dist-web/build-info.json
           # Retire the unused Impact impression/conversion script on the pinned
           # root site. It loads before user interaction and the new policy must
           # describe actual tracking practices accurately.
@@ -122,7 +126,7 @@ jobs:
           html=html.replace(impact[0],'')
           assert 'utt.impactcdn.com' not in html
           root.write_text(html)
-          print('Production root: updated only legal pages and removed legacy Impact tracking script')
+          print('Production root: approved collector profile and policies; legacy Impact tracking script removed')
           PY
       - uses: actions/configure-pages@v5
         with:

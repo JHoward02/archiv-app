@@ -1,26 +1,52 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Privacy · Archív</title><style>body{margin:0;background:#f4efe6;color:#08243b;font:16px/1.65 system-ui,sans-serif}main{max-width:740px;margin:40px auto;padding:0 24px 48px}h1,h2{font-family:Georgia,serif;line-height:1.2}h1{font-size:44px}h2{font-size:25px;margin-top:32px}a{color:#08243b;text-underline-offset:3px}.date{color:#6f6a62}</style></head><body><main>
-<a href="./">← Back to Archív</a>
-<h1>Your things. Your privacy.</h1>
-<p class="date">Privacy policy · Updated October 4, 2026</p>
-<p>This policy describes the standalone Archív app, where you sign in with Google and save your collection to your account.</p>
-<h2>What we store</h2>
-<p>Google sign-in supplies an account identifier, name, email address, and, when available, a profile photo. Firebase Authentication manages your sign-in. Archív does not receive your Google password.</p>
-<p>Your saved collection can include item titles, types, descriptions, source links, images, condition, grades, quantities, purchase prices, estimated values, notes, favorites, groups, and record timestamps. Photos you upload are resized and stored with your collection records in Cloud Firestore.</p>
-<h2>Why we use it</h2>
-<p>We use this information to identify your account, show your collection, and keep it synchronized across devices. Your shelves are not published as a public profile. Access rules restrict collection access to the signed-in owner; the app operator and infrastructure providers may access data when administering, supporting, or securing the service.</p>
-<h2>Services that process information</h2>
-<p>Google Firebase provides authentication and cloud storage for collection records. GitHub Pages hosts the app. Search queries may be sent to the selected catalog provider, and loading external images or following source links contacts those services. Vinyl search passes through the app's Cloudflare Worker to Discogs. These services receive connection information such as an IP address and handle it under their own policies.</p>
-<p>The current app does not integrate Firebase Analytics or advertising trackers. Your browser retains authentication information so you can stay signed in. Sign out on shared devices.</p>
-<h2>Catalog proposals are public</h2>
-<p>Saving an item to your shelf is private to your account. If you separately choose to propose an item to the shared catalog, Archív opens a prefilled GitHub issue for you to review and submit. Submitted issues and any attachments are public. Do not include private notes or personal information. Removing your Archív account does not remove separately submitted GitHub issues.</p>
-<h2>Take a copy with you</h2>
-<p>Open Your profile and choose Export your Archív to download your saved items, groups, notes, and uploaded photos as a JSON file. Catalog images remain external links. The download is prepared in your browser from your cloud records. Keep it somewhere private, especially if your notes or purchase details are sensitive. You can choose Restore your Archív to upload the records in a valid export to your signed-in account. Restore adds missing records and skips matching identifiers.</p>
-<h2>Keeping and deleting your data</h2>
-<p>Collection records remain while you use your account, until you remove them or delete your account. To delete your account, open Your profile, select Delete account, type DELETE, and confirm your identity with Google. Archív removes your items, groups, notes, and uploaded photos before deleting your Firebase sign-in account. This does not delete your Google account.</p>
-<p>If deletion is interrupted, changes to that account are blocked and you can sign in again to finish deletion. A minimal deletion marker associated with the old random account identifier remains to prevent stale sessions from recreating records. It contains no name, email, or collection content. Infrastructure providers may retain operational logs or backups under their own retention practices.</p>
-<h2>Questions or requests</h2>
-<p>Contact <a href="mailto:getshelfiecollect@gmail.com">getshelfiecollect@gmail.com</a> with privacy questions or if you need help accessing or deleting your information. Do not send passwords or sign-in codes.</p>
-<h2>Changes</h2>
-<p>We will update this page when the app's data practices change.</p>
-</main></body></html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4efe6">
+<meta name="description" content="How Archív collects, uses, stores, and deletes information in its independent LEGO set collection app.">
+<title>Privacy Policy | Archív</title>
+<style>
+:root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#08243b;background:#f4efe6}*{box-sizing:border-box}body{margin:0;line-height:1.7}
+header,footer{max-width:850px;margin:auto;padding:22px 24px}header a,main a{color:#85501f}header a{font-weight:650;text-decoration:none}
+main{max-width:810px;margin:12px auto 36px;padding:28px 40px 45px;background:#fffdf8;border:1px solid #ded4c5;border-radius:18px}
+h1,h2{font-family:Georgia,serif;font-weight:400;line-height:1.25}h1{font-size:clamp(32px,5vw,44px);margin:5px 0 12px}h2{font-size:25px;margin:29px 0 8px}
+p,li{margin:0 0 12px}ul{padding-left:24px}.meta{color:#6c625a;font-size:14px}footer{font-size:13px;color:#746b60;text-align:center;border-top:1px solid #ded4c5}
+@media(max-width:640px){main{margin:8px 12px 24px;padding:23px 21px 35px}header{padding:16px 20px}}
+</style>
+</head>
+<body>
+<header><a href="./">← Back to Archív</a></header>
+<main>
+<h1>Privacy Policy</h1>
+<p class="meta">Archív · Last updated October 31, 2026</p>
+<p>Archív is an independently operated app for browsing LEGO® set information, tracking sets you own, maintaining a wishlist, and following links to other sellers. This policy covers the Archív website and its companion Android and iOS test applications. Archív is not affiliated with or endorsed by the LEGO Group. We are responsible for our own data practices, not LEGO's.</p>
+<h2>1. Information we collect</h2>
+<p><strong>Without an account:</strong> Visitors can browse the catalog without signing in. Web hosting, requests for images or catalogs, and external sites may receive technical information such as IP address, browser type, and request details. Archív does not require your name or email to browse.</p>
+<p><strong>With a Google account:</strong> Firebase Authentication gives Archív your unique account identifier, name, email address, and available profile photo. We do not receive your Google password. We store your owned and wishlisted LEGO set identifiers and related details, including selection timestamps, in Cloud Firestore.</p>
+<p><strong>Account and usage reporting:</strong> Archív also stores account profile details and first/recent sign-in dates, counts of owned and wishlisted sets, owned themes, and activity events such as an owned/wishlist change (set number, theme, action, date and time). For signed-in users, clicks on eBay shopping links may be recorded with the account identifier and time. These events are not proof of a purchase. If you choose to opt in to occasional Archív news and product updates, we store that choice as an account-associated boolean; otherwise the preference is treated as off.</p>
+<p><strong>Local browser or device storage:</strong> Firebase sign-in uses device or browser storage to keep you authenticated. For set inventories you choose to track, Archív saves part-checklist selections in local browser or app storage, not in Firebase. This checklist is separate from cloud-saved Owned and Wishlist selections, does not synchronize across devices, and can be erased when local site/app data is cleared.</p>
+<h2>2. How we use information</h2>
+<p>We use this information to authenticate users, save and synchronize owned and wishlisted sets, display collection status, operate and secure the service, provide support, and maintain private activity and collection reporting. Your saved collection and activity are not published as a public profile.</p>
+<p>Authorized Archív administrators can access account profiles, collection summaries, and activity reports to operate the service. Other collectors do not receive access to your private records. Hosting and cloud-service providers may process technical and account information to provide the service.</p>
+<h2>3. Hosting, images and third parties</h2>
+<p>GitHub Pages hosts the public website. Google Firebase provides authentication and Cloud Firestore storage. LEGO set information is drawn from Rebrickable datasets, and product images and source references may be loaded from Rebrickable or other image hosts. These hosts can receive technical request information when content loads.</p>
+<p>Archív may link to eBay through the eBay Partner Network and receive a commission if a qualifying purchase occurs. When you visit eBay or another third-party site, that site may set cookies, process your information, and apply its own terms and privacy policy. Archív does not receive your payment card information or verify your marketplace purchases.</p>
+<h2>4. Cookies, analytics and affiliate tracking</h2>
+<p>Archív uses Firebase authentication storage and local checklist storage as described above. When signed in, clicking an eBay shopping link can create an account-associated click event in Cloud Firestore for private administrative reporting. It records link interactions, not purchases, and guest clicks are not stored in this reporting feature. The current published Archív website does not intentionally load a standalone Impact advertising/affiliate analytics script. It does not use Firebase Analytics. Third-party destinations and embedded external images may independently use cookies or similar technologies subject to their own policies. You can control cookies and local storage through your browser and device settings, but clearing sign-in storage may log you out.</p>
+<h2>5. Account and data retention</h2>
+<p>We generally retain your account information, collection selections, communications preference, and associated activity while your account is active. We do not currently apply a separate automatic expiration period to these records. You can manage your communications preference in <strong>My profile</strong> after signing in. This optional setting is off unless you actively enable it. It records whether you would like to receive occasional Archív news and product updates; the preference does not itself send email, and Archív does not currently operate a marketing email system.</p>
+<p><strong>Delete your Archív account yourself:</strong> On the Archív website, sign in and open <strong>My profile</strong>, choose <strong>Delete profile</strong>, type <strong>DELETE</strong>, and confirm your identity by signing in with Google again. Deletion removes your Archív Firebase Authentication account, cloud-saved Owned and Wishlist records, groups if any, account profile and communications preference, collection summaries, and recorded account activity, including associated eBay link clicks. This action cannot be undone. It does not delete your Google account or eBay account.</p>
+<p>To help prevent an old signed-in session from recreating deleted data, Archív retains a minimal deletion marker containing a Firebase account identifier and a deletion flag, without your name, email address, or collection contents. Checklist selections saved locally on the device where you delete your account are cleared, but local checklist data on other devices is not synchronized and must be cleared through those devices' browser or app storage.</p>
+<p>If a deletion is interrupted, some account information may have been removed already. You can retry the deletion process while the account still exists or contact us for help. Infrastructure providers may retain operational logs or backups under their policies, and certain records may be retained when legally required.</p>
+<p><strong>For access, correction, export, or deletion assistance, email <a href="mailto:getshelfiecollect@gmail.com?subject=Arch%C3%ADv%20privacy%20request">getshelfiecollect@gmail.com</a>.</strong> Archív does not currently offer a self-service data export in this LEGO interface. We may need to verify that a request comes from the account owner before acting on personal information.</p>
+<p>Deleting Archív records does not delete your Google account or third-party eBay account. Providers may retain certain technical logs or backups under their own policies or where retention is legally required. Please contact us if you need help exercising privacy rights applicable to your location.</p>
+<h2>6. Children</h2>
+<p>Archív is a general collection-management service and is not directed at children under 13. We do not knowingly seek to create accounts for children under 13. If you believe a child under 13 provided personal information, contact us so we can review and address the information.</p>
+<h2>7. Security and changes</h2>
+<p>We use Firebase authentication and database access controls to restrict access to account collections and reporting. No internet-based service can guarantee perfect security. We may update this policy if the app, service providers, or information practices change, and will revise the updated date when we do.</p>
+<h2>8. Contact</h2>
+<p>For privacy questions or requests, contact <a href="mailto:getshelfiecollect@gmail.com">getshelfiecollect@gmail.com</a>. Do not send passwords or verification codes. For use of the Service, see our <a href="./terms.html">Terms of Use</a> and <a href="./contact.html">Contact</a> page.</p>
+</main>
+<footer>© 2026 Archív. Independent collection-management app. Not sponsored or endorsed by the LEGO Group.</footer>
+</body>
+</html>

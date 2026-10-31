@@ -1,0 +1,425 @@
+:root{font-family:Inter,system-ui,sans-serif;color:#08243b;background:#f4efe6}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 90% 0%,#f59a231a,transparent 28%),#f4efe6}.lego-shell{max-width:1080px;margin:auto;padding:20px 24px 100px}.lego-header{display:flex;align-items:end;justify-content:space-between;gap:22px;flex-wrap:wrap}.lego-logo{display:block;width:min(520px,100%);text-decoration:none;text-align:left}.lego-logo img{display:block;width:100%;max-height:145px;object-fit:contain;object-position:left}.lego-tagline{color:#a26226;font-size:11px;font-weight:750;letter-spacing:.29em;text-align:center;margin-top:-14px}.lego-topnav{display:flex;gap:5px;border:1px solid #d9cebf;border-radius:30px;padding:4px;background:#fffdf8}.lego-button{cursor:pointer;border:1px solid #d9cebf;border-radius:10px;background:#fffdf8;color:#08243b;font-weight:700;min-height:40px;padding:8px 13px}.lego-button:hover{border-color:#f59a23}.lego-topnav .lego-button{border:0;border-radius:24px}.lego-topnav .active,.lego-actions .on{background:#08243b;color:white;border-color:#08243b}.lego-intro{margin:36px 0 28px}.lego-intro h1{font:normal clamp(34px,5vw,55px) Georgia,serif;margin:8px 0;color:#08243b}.lego-intro p{color:#6f6a62;max-width:690px}.lego-eyebrow{letter-spacing:.14em;font-size:11px;font-weight:750!important;color:#a26226!important}.lego-theme-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:32px}.lego-theme{min-height:85px;text-align:left;font:normal 23px Georgia,serif;padding:16px 20px;background:#fffdf8;box-shadow:0 18px 48px -30px #22191060}.lego-theme.current{outline:2px solid #f59a23;background:#fff8eb}.lego-main,.lego-affiliate{background:#fffdf8;border:1px solid #d9cebf;border-radius:19px;padding:25px;margin:22px 0}.lego-main h2,.lego-affiliate h2{font:normal 30px Georgia,serif;margin:0 0 18px}.lego-controls{display:flex;gap:10px}.lego-controls input,.lego-controls select{min-height:48px;padding:10px;border:1px solid #d9cebf;border-radius:9px;background:white;color:#08243b;font:inherit}.lego-controls input{flex:1;min-width:0}.lego-summary{font-size:13px;color:#6f6a62;margin:16px 0}.lego-results{display:grid;gap:10px}.lego-card{display:flex;justify-content:space-between;align-items:center;gap:18px;border:1px solid #e4dbce;border-radius:12px;padding:16px}.lego-card h3{margin:5px 0;font-size:17px}.lego-number,.lego-detail{font-size:12px;color:#6f6a62;margin:0}.lego-actions{display:flex;gap:6px;flex-wrap:wrap}.lego-pagination{display:flex;justify-content:center;gap:10px;margin-top:20px}.lego-affiliate{background:#eee7dc}.lego-affiliate .disabled{opacity:.64;cursor:not-allowed;pointer-events:none}.lego-footer{color:#6f6a62;font-size:12px;text-align:center}.lego-empty{padding:30px;color:#6f6a62;text-align:center}@media(max-width:640px){.lego-shell{padding:12px 14px 80px}.lego-logo{width:100%}.lego-header{display:block}.lego-topnav{margin-top:15px;justify-content:center}.lego-theme-grid{grid-template-columns:repeat(2,1fr)}.lego-theme{font-size:19px;min-height:74px}.lego-controls{flex-direction:column}.lego-card{align-items:stretch;flex-direction:column}.lego-intro{margin:24px 0}.lego-main{padding:15px}}
+/* Original Archív category tiles with original non-branded concept artwork. */
+.lego-theme-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.lego-theme{overflow:hidden;display:flex;flex-direction:column;align-items:stretch;padding:0;text-align:left;min-height:0;border-radius:16px;background:#fffdf8}
+.lego-theme-art{display:block;width:100%;height:auto;aspect-ratio:440/232;object-fit:cover;background:#ede5d9}
+.lego-theme-name{display:block;font:normal 23px Georgia,serif;padding:15px 17px 18px}
+.lego-theme.current{outline:3px solid #f59a23}
+@media(max-width:640px){.lego-theme-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.lego-theme-name{font-size:17px;padding:12px}.lego-theme-art{aspect-ratio:440/232}}
+
+/* Authentic catalog images, displayed from Rebrickable image URLs */
+.lego-theme-art{object-fit:contain;background:#fffdf8;padding:10px;aspect-ratio:440/232}
+.lego-product-image{width:106px;height:84px;flex:none;object-fit:contain;background:#fff;border-radius:9px}
+@media(max-width:640px){.lego-product-image{width:100%;height:150px}}
+
+/* Approved LEGO-style logo already contains the tagline. Preserve its full transparent composition. */
+.lego-logo{width:min(560px,100%)}
+.lego-logo img{height:auto;max-height:none;width:100%;object-fit:contain;object-position:left center}
+@media(max-width:640px){.lego-logo{width:100%}}
+
+.lego-registered{font-size:.48em;line-height:0;vertical-align:super;position:relative;top:-.04em;font-family:Arial,sans-serif;font-weight:600;margin-left:.03em}
+
+/* Brick tile v2: modeled as a single molded shell, not studs pasted on cards. */
+.lego-theme-grid{gap:23px 17px;padding-top:15px}
+.lego-theme{
+  --brick:#bc473a;--brick-dark:#88372f;--brick-light:#e06a58;
+  position:relative;overflow:visible;isolation:isolate;
+  background:var(--brick);border:0;border-radius:7px 7px 11px 11px;
+  box-shadow:inset 2px 2px 0 #ffffff35,inset -4px -4px 0 #00000019,0 5px 0 var(--brick-dark),0 12px 18px -13px #08243b77;
+  padding:15px 13px 12px;min-width:0;
+  transition:transform .16s ease,box-shadow .16s ease;
+}
+.lego-theme:nth-child(2){--brick:#456c9d;--brick-dark:#2d476b;--brick-light:#7197c6}
+.lego-theme:nth-child(3){--brick:#d6a23f;--brick-dark:#a17a2d;--brick-light:#e9c36a}
+.lego-theme:nth-child(4){--brick:#426d6a;--brick-dark:#294d4a;--brick-light:#72a6a1}
+.lego-theme:nth-child(5){--brick:#a46c4e;--brick-dark:#754c39;--brick-light:#ce9571}
+.lego-theme:nth-child(6){--brick:#667b9a;--brick-dark:#425574;--brick-light:#99acca}
+.lego-brick-studs{position:absolute;top:-13px;left:16px;right:16px;height:16px;display:flex;justify-content:space-around;gap:10px;pointer-events:none}
+.lego-brick-stud{position:relative;display:block;flex:0 1 47px;max-width:47px;height:16px;background:linear-gradient(90deg,var(--brick-dark),var(--brick-light) 28%,var(--brick) 78%);border-radius:50% 50% 5px 5px/47% 47% 3px 3px;box-shadow:inset 0 2px 1px #ffffff4a,0 -1px 0 var(--brick-dark)}
+.lego-brick-stud::before{content:"";position:absolute;inset:-2px 0 9px;background:var(--brick-light);border-radius:50%;box-shadow:inset 0 1px 1px #ffffff50}
+.lego-brick-window{display:flex;align-items:center;justify-content:center;width:100%;background:#fffdf8;border:2px solid #ffffffa8;border-radius:5px;box-shadow:inset 0 2px 6px #08243b1c,0 2px 1px #00000018;overflow:hidden}
+.lego-theme-art{border-radius:0;width:100%;object-fit:contain;padding:6px;background:#fffdf8}
+.lego-theme-name{padding:11px 4px 3px;color:#fffdf8;font:600 21px Georgia,serif;text-shadow:0 1px 1px #00000036;border:0}
+.lego-theme:hover{transform:translateY(-3px);box-shadow:inset 2px 2px 0 #ffffff35,inset -4px -4px 0 #00000019,0 8px 0 var(--brick-dark),0 14px 20px -12px #08243b77}
+.lego-theme.current{outline:3px solid #08243b;outline-offset:4px;background:var(--brick)}
+.lego-theme:focus-visible{outline:3px solid #08243b;outline-offset:5px}
+@media(max-width:640px){.lego-theme-grid{gap:22px 11px}.lego-theme{padding:11px 8px 9px}.lego-brick-studs{left:9px;right:9px;top:-10px;height:12px;gap:5px}.lego-brick-stud{height:12px;max-width:35px}.lego-brick-stud::before{bottom:7px}.lego-theme-name{font-size:16px;padding:9px 3px 2px}.lego-theme-art{padding:4px}}
+
+/* Visual collection checklist: muted missing sets, full-color owned sets. */
+.lego-results{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;align-items:stretch}
+.lego-set-tile{min-width:0;display:flex;flex-direction:column;background:#fff;border:1px solid #dfd6c9;border-radius:15px;overflow:hidden;box-shadow:0 7px 24px -21px #08243b70}
+.lego-set-cover{position:relative;background:#f7f5f2;aspect-ratio:1.18;display:flex;align-items:center;justify-content:center;padding:14px;border-bottom:1px solid #e9e2d8;overflow:hidden}
+.lego-set-photo{width:100%;height:100%;object-fit:contain;transition:filter .2s ease}
+.lego-set-tile.is-unowned .lego-set-photo{filter:grayscale(1);opacity:.48}
+.lego-set-tile.is-owned .lego-set-photo{filter:none;opacity:1}
+.lego-set-status{position:absolute;top:9px;left:9px;border-radius:18px;padding:5px 8px;font:800 10px Inter,system-ui,sans-serif;letter-spacing:.06em;background:#e3e0da;color:#55534e}
+.lego-set-status.owned{background:#dcebdd;color:#215735}
+.lego-set-status.wishlist{background:#fff1d6;color:#875a1c}
+.lego-set-details{padding:13px 13px 9px;flex:1}
+.lego-set-details h3{font-size:15px;line-height:1.3;margin:7px 0 8px;min-height:39px}
+.lego-set-actions{padding:10px 12px 13px;display:flex;flex-direction:column;gap:7px}
+.lego-set-actions .lego-button{width:100%;min-height:36px}
+.lego-set-actions .on{background:#08243b;color:#fff}
+.lego-shop-pending{display:flex;flex-direction:column;gap:2px;border:1px dashed #d9c7a4;background:#fff9ed;color:#6e5932;border-radius:9px;padding:9px;text-align:center}
+.lego-shop-pending span{font-size:13px;font-weight:750}
+.lego-shop-pending small{font-size:11px;line-height:1.35}
+.lego-image-fallback{font-size:12px;color:#7e7973;text-align:center}
+.lego-affiliate{padding:13px 20px}
+.lego-affiliate p{font-size:13px;margin:0;color:#655f56}
+@media(max-width:850px){.lego-results{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:640px){.lego-results{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.lego-set-cover{padding:9px}.lego-set-details{padding:11px 10px 7px}.lego-set-details h3{font-size:14px;min-height:36px}.lego-set-actions{padding:8px 9px 10px}.lego-set-status{font-size:9px}.lego-set-actions .lego-button{font-size:12px;padding:6px}}
+
+/* Selection is integrated into the brick, never an external dark outline. */
+.lego-theme.current{outline:none!important;outline-offset:0!important;filter:saturate(1.09) brightness(1.045);box-shadow:inset 2px 2px 0 #ffffff55,inset -4px -4px 0 #0000001c,0 5px 0 var(--brick-dark),0 12px 18px -13px #08243b77}
+.lego-theme-selected{position:absolute;right:10px;bottom:9px;border-radius:100px;padding:4px 8px;background:#fffdf8;color:#08243b;font:700 10px Inter,system-ui,sans-serif;box-shadow:0 1px 4px #0002;letter-spacing:.01em}
+.lego-theme.current .lego-theme-name{padding-right:85px}
+.lego-theme:focus-visible{outline:2px solid #f59a23!important;outline-offset:3px!important}
+@media(max-width:640px){.lego-theme-selected{font-size:9px;right:7px;bottom:6px;padding:3px 6px}.lego-theme.current .lego-theme-name{padding-right:70px}}
+
+/* Give the cream A enough tonal contrast without changing approved artwork. */
+.lego-logo{position:relative;isolation:isolate}
+.lego-logo::before{
+ content:"";position:absolute;z-index:-1;pointer-events:none;
+ left:0;top:5%;width:48%;height:83%;
+ background:radial-gradient(ellipse at 35% 50%,rgba(177,143,105,.23) 0%,rgba(177,143,105,.13) 42%,transparent 74%);
+ filter:blur(9px);
+}
+.lego-logo img{position:relative;z-index:1}
+
+/* Site copyright and policy navigation */
+.lego-footer{margin:40px auto 0;padding:28px 12px 12px;border-top:1px solid #d9cebf}
+.lego-footer-links{display:flex;gap:10px 24px;flex-wrap:wrap;justify-content:center;margin-bottom:16px}
+.lego-footer-links a{color:#08243b;text-decoration:none;font-weight:650;font-size:13px}
+.lego-footer-links a:hover,.lego-footer-links a:focus-visible{text-decoration:underline}
+.lego-copyright{font-weight:650;margin:7px 0}
+.lego-footer-disclaimer{max-width:760px;margin:8px auto;color:#746b60;line-height:1.6}
+
+/* Separate clean homepage from dedicated theme collection view */
+.lego-home-themes{margin-top:48px}
+.lego-theme-header{align-items:center;flex-wrap:nowrap;gap:30px;min-height:245px}
+.lego-theme-header .lego-logo{flex:0 1 560px}
+.lego-featured-theme{width:min(285px,32%);flex:0 0 min(285px,32%);padding-top:14px}
+.lego-featured-theme .lego-theme{width:100%}
+.lego-theme-header + .lego-main{margin-top:12px}
+.lego-catalog-section{margin-top:16px}
+.lego-home-themes .lego-theme.current{outline:none}
+@media(max-width:640px){
+ .lego-home-themes{margin-top:28px}
+ .lego-theme-header{gap:12px;align-items:center;min-height:0}
+ .lego-theme-header .lego-logo{flex:1 1 56%;min-width:0}
+ .lego-featured-theme{width:40%;flex:0 0 40%;padding-top:9px}
+ .lego-featured-theme .lego-theme{padding:8px 6px 6px}
+ .lego-featured-theme .lego-brick-studs{top:-7px;height:9px}
+ .lego-featured-theme .lego-brick-stud{height:9px}
+ .lego-featured-theme .lego-theme-name{font-size:13px;padding:7px 2px 2px}
+ .lego-featured-theme .lego-theme-art{padding:2px}
+ .lego-catalog-section{margin-top:18px}
+}
+
+/* Dedicated theme card: unchanged brick finish and closer logo alignment. */
+.lego-theme-header{justify-content:flex-start;gap:12px}
+.lego-theme-header .lego-logo{flex:0 1 510px}
+.lego-featured-theme{margin-left:-12px}
+@media(max-width:640px){.lego-theme-header{gap:5px}.lego-theme-header .lego-logo{flex:1 1 55%}.lego-featured-theme{margin-left:0}}
+
+/* Theme identity, not DOM position, determines the brick color. */
+.lego-theme[data-theme="speed-champions"]{--brick:#bc473a;--brick-dark:#88372f;--brick-light:#e06a58}
+.lego-theme[data-theme="star-wars"]{--brick:#456c9d;--brick-dark:#2d476b;--brick-light:#7197c6}
+.lego-theme[data-theme="technic"]{--brick:#d6a23f;--brick-dark:#a17a2d;--brick-light:#e9c36a}
+.lego-theme[data-theme="city"]{--brick:#426d6a;--brick-dark:#294d4a;--brick-light:#72a6a1}
+.lego-theme[data-theme="icons"]{--brick:#a46c4e;--brick-dark:#754c39;--brick-light:#ce9571}
+.lego-theme[data-theme="architecture"]{--brick:#667b9a;--brick-dark:#425574;--brick-light:#99acca}
+/* Half an inch to the right relative to the previous theme-page position. */
+@media(min-width:641px){.lego-featured-theme{transform:translateX(64px)}}
+
+/* Theme-page-only back navigation, top-right without shifting the feature brick. */
+.lego-theme-header{position:relative;padding-top:35px}
+.lego-back-to-themes{position:absolute;top:0;right:0;background:transparent;border:1px solid #cfc1ac;color:#08243b;border-radius:100px;font-weight:700;min-height:34px;padding:6px 13px;font-size:12px}
+.lego-back-to-themes:hover{background:#fffdf8;border-color:#ad8e64}
+@media(max-width:640px){.lego-theme-header{padding-top:48px}.lego-back-to-themes{top:3px;right:0}}
+
+/* Position the featured theme brick closer to the right edge on desktop. */
+@media(min-width:641px){.lego-theme-header{justify-content:space-between}.lego-featured-theme{transform:none;margin-left:auto;margin-right:18px;flex:0 0 285px;width:285px}}
+
+/* Dedicated neutral brick for browsing the complete Rebrickable catalog. */
+.lego-theme[data-theme="complete-catalog"]{--brick:#435d79;--brick-dark:#2c4157;--brick-light:#6c89a6}
+
+/* Full catalog homepage: retain featured cards, then searchable LEGO theme index. */
+.lego-more-themes{margin:35px 0 48px}
+.lego-more-themes h2{font:normal 30px Georgia,serif;margin:0 0 14px}
+.lego-theme-search{display:block;width:100%;max-width:430px;background:#fffdf8;border:1px solid #d9cebf;border-radius:10px;min-height:45px;padding:10px 14px;color:#08243b;font:inherit}
+.lego-theme-count{color:#746b60;font-size:13px;margin:12px 0 20px}
+.lego-all-theme-grid{margin-bottom:35px}
+@media(max-width:640px){.lego-more-themes{margin-top:24px}.lego-more-themes h2{font-size:25px}}
+
+/* Homepage: six popular bricks, with a simple two-column theme directory. */
+.lego-popular-heading{font:normal 30px Georgia,serif;margin:35px 0 6px}
+.lego-home-themes{margin-top:20px}
+.lego-theme-name-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:25px}
+.lego-theme-name-button{display:block;text-align:left;width:100%;background:#fffdf8;border:1px solid #d9cebf;border-radius:10px;padding:12px 16px;color:#08243b;font:600 15px Inter,system-ui,sans-serif;min-height:45px}
+.lego-theme-name-button:hover{background:#f9eede;border-color:#c29d69}
+.lego-theme[data-theme="city"]{--brick:#426d6a;--brick-dark:#294d4a;--brick-light:#72a6a1}
+.lego-theme[data-theme="pokemon"]{--brick:#d6a23f;--brick-dark:#a17a2d;--brick-light:#e9c36a}
+.lego-theme[data-theme="star-wars"]{--brick:#456c9d;--brick-dark:#2d476b;--brick-light:#7197c6}
+.lego-theme[data-theme="technic"]{--brick:#bc473a;--brick-dark:#88372f;--brick-light:#e06a58}
+.lego-theme[data-theme="botanicals"]{--brick:#497c58;--brick-dark:#2f573f;--brick-light:#7aaa87}
+.lego-theme[data-theme="icons"]{--brick:#a46c4e;--brick-dark:#754c39;--brick-light:#ce9571}
+@media(max-width:640px){.lego-popular-heading{font-size:26px;margin-top:26px}.lego-theme-name-grid{gap:8px}.lego-theme-name-button{padding:11px;font-size:13px}}
+
+/* Expand the two-column LEGO theme directory on demand. */
+.lego-more-toggle{display:block;margin:4px auto 22px;min-width:150px;background:#08243b;color:#fffdf8;border:1px solid #08243b;border-radius:999px}
+.lego-more-toggle:hover{background:#173b56;color:white}
+.lego-more-toggle[hidden]{display:none}
+
+/* Individual set detail pages */
+.lego-set-detail{margin:28px 0 45px}
+.lego-detail-back{margin-bottom:20px;border-radius:100px}
+.lego-detail-header{align-items:start}
+.lego-detail-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
+.lego-detail-figure,.lego-detail-info{background:#fffdf8;border:1px solid #ded4c5;border-radius:19px;padding:25px}
+.lego-detail-figure{display:flex;align-items:center;justify-content:center;min-height:320px}
+.lego-detail-figure img{display:block;max-width:100%;max-height:500px;object-fit:contain}
+.lego-detail-kicker{font-weight:750;font-size:12px;letter-spacing:.08em;color:#9b6631;margin:0 0 10px}
+.lego-detail-info h1{font:normal clamp(29px,3vw,43px) Georgia,serif;margin:0 0 23px}
+.lego-detail-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;margin:0 0 22px}
+.lego-detail-facts div{background:#f5efe5;border-radius:10px;padding:11px 13px}
+.lego-detail-facts dt{color:#70665a;font-size:12px;margin-bottom:4px}
+.lego-detail-facts dd{font-weight:750;margin:0;overflow-wrap:anywhere}
+.lego-detail-status{font-weight:750;margin:0 0 13px}
+.lego-detail-actions{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:20px}
+.lego-detail-actions .on{background:#08243b;color:#fffdf8}
+.lego-detail-source{display:inline-block;color:#87531d;margin-top:18px;font-weight:700}
+.lego-detail-credit{font-size:12px;color:#716a61;margin-top:15px}
+.lego-view-detail{margin-top:6px;width:100%;font-size:12px}
+@media(max-width:700px){.lego-detail-layout{grid-template-columns:1fr;gap:12px}.lego-detail-figure{min-height:240px}.lego-detail-figure,.lego-detail-info{padding:17px}.lego-set-detail{margin-top:20px}}
+
+/* Set photo and title are real links to their individual detail pages. */
+.lego-set-open{color:inherit;text-decoration:none;cursor:pointer}
+.lego-set-open:hover h3,.lego-set-open:focus-visible h3{text-decoration:underline;text-decoration-color:#ad6c24}
+.lego-set-open:focus-visible{outline:3px solid #f59a23;outline-offset:-3px}
+.lego-set-open:hover .lego-set-photo{transform:scale(1.025)}
+.lego-set-photo{transition:filter .2s ease,transform .2s ease}
+
+/* Data-backed set photo gallery; no invented image variants. */
+.lego-detail-figure{flex-direction:column;gap:13px}
+.lego-gallery-main{width:100%;max-height:480px;object-fit:contain}
+.lego-gallery-arrows{display:flex;gap:10px;justify-content:center}
+.lego-gallery-controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.lego-gallery-thumb{width:68px;height:62px;padding:4px;background:white;border:2px solid #d9cebf;border-radius:8px;cursor:pointer}
+.lego-gallery-thumb.active{border-color:#08243b}
+.lego-gallery-thumb img{width:100%;height:100%;object-fit:contain}
+.lego-gallery-count,.lego-gallery-single{font-size:12px;color:#70665a;text-align:center;margin:0}
+
+/* Archív inventory: its own collector-oriented layout, not a Rebrickable clone */
+.archiv-inventory{margin:38px 0 12px;border-top:1px solid #d8cbba;padding-top:25px}
+.archiv-eyebrow{font-size:11px;font-weight:800;letter-spacing:.14em;color:#ab7031;margin:0 0 5px}
+.archiv-inventory h2{font:normal clamp(27px,3vw,39px) Georgia,serif;margin:0 0 15px}
+.archiv-parts-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:22px 0 10px}
+.archiv-parts-toolbar input,.archiv-parts-toolbar select{font:inherit;color:#08243b;min-height:43px;padding:8px 12px;border:1px solid #d4c9b9;border-radius:10px;background:#fffdf8}
+.archiv-parts-toolbar input{flex:1 1 240px;min-width:0}
+.archiv-parts-toolbar select{max-width:230px}
+.archiv-check-toggle{background:#08243b;color:white;border-radius:10px}
+.archiv-parts-progress{color:#756a5e;font-size:13px;margin:8px 0 21px}
+.archiv-parts-lists{display:grid;gap:15px}
+.archiv-parts-panel{background:#fffdf8;border:1px solid #ddd2c1;border-radius:16px;overflow:hidden}
+.archiv-parts-section-head{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:19px 21px;font-size:20px;font-weight:750;color:#08243b}
+.archiv-parts-section-head::-webkit-details-marker{display:none}
+.archiv-parts-section-head:after{content:"⌄";margin-left:4px;color:#a76b30}
+.archiv-parts-section[open]>.archiv-parts-section-head:after{content:"⌃"}
+.archiv-parts-pill{margin-left:auto;padding:6px 10px;border-radius:50px;background:#eee6d9;color:#63584c;font-size:12px;font-weight:650;white-space:nowrap}
+.archiv-parts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:12px;padding:0 18px 19px}
+.archiv-part-card{min-width:0;border:1px solid #e4dacc;background:#fff;border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:4px}
+.archiv-part-photo{height:104px;display:flex;align-items:center;justify-content:center;background:#faf8f3;border-radius:8px}
+.archiv-part-photo img{max-width:95%;max-height:95%;object-fit:contain}
+.archiv-part-placeholder{color:#978e83;font-size:11px}
+.archiv-part-quantity{font-size:17px;color:#08243b}
+.archiv-part-name{font-size:12px;font-weight:650;line-height:1.35;margin:0;overflow-wrap:anywhere}
+.archiv-part-meta{font-size:11px;color:#7b7267;margin:0 0 4px;overflow-wrap:anywhere}
+.archiv-part-check{margin-top:auto;display:flex;gap:7px;align-items:center;font-size:12px;cursor:pointer;padding-top:6px}
+.archiv-part-checked{border-color:#52876a;background:#f0f9f1}
+.archiv-parts-no-match{padding:4px 20px 22px;color:#756a5e;font-size:13px}
+.archiv-inventory-loading,.archiv-empty-inventory{color:#756a5e}
+@media(max-width:560px){.archiv-parts-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0 10px 12px}.archiv-parts-section-head{padding:15px 12px;font-size:16px}.archiv-parts-pill{font-size:10px;padding:5px 7px}.archiv-parts-toolbar select{max-width:100%}}
+
+/* Keep inventory sections concise while preserving responsive grid rows. */
+.archiv-part-card[hidden],.archiv-parts-more[hidden]{display:none}
+.archiv-parts-more{display:block;margin:0 auto 20px;padding:10px 28px;background:#08243b;color:#fffdf8;border:1px solid #08243b;border-radius:999px;cursor:pointer}
+.archiv-parts-more:hover{background:#173b56}
+
+/* eBay EPN shopping discovery, intentionally distinct from unverified live listing cards */
+.archiv-ebay-shopping{margin:28px 0 20px;border:1px solid #dfd0b9;border-radius:18px;padding:22px 25px;background:linear-gradient(120deg,#fffdf8,#f8f0e3)}
+.archiv-ebay-shopping h2{font:normal clamp(25px,3vw,34px) Georgia,serif;margin:4px 0 10px}
+.archiv-ebay-description{color:#534c44;line-height:1.55;margin:0 0 17px}
+.archiv-ebay-action{display:inline-block;text-decoration:none;background:#08243b;color:#fff;padding:12px 23px;border-radius:999px;font-weight:750}
+.archiv-ebay-action:hover,.archiv-ebay-action:focus-visible{background:#174665;color:#fff}
+.archiv-ebay-disclosure{font-size:12px;color:#75695a;line-height:1.5;margin:14px 0 0}
+@media(max-width:640px){.archiv-ebay-shopping{padding:17px}}
+
+.archiv-ebay-inline{display:flex;flex-direction:column;align-items:center;gap:6px;padding:13px 12px}
+.archiv-ebay-inline-link{color:#08243b;font-weight:800;font-size:16px;text-decoration:underline;text-underline-offset:3px}
+.archiv-ebay-inline-disclosure{font-size:11px;color:#7c6955;line-height:1.45;margin:4px 0 0;text-align:center}
+
+/* Ownership controls sit beneath the set photo, within its card. */
+.lego-image-collection{width:100%;align-self:stretch;border-top:1px solid #e6ddd0;padding-top:16px;margin-top:8px}
+.lego-image-collection .lego-detail-status{margin-bottom:10px}
+.lego-image-collection .lego-detail-actions{margin-bottom:0}
+
+/* Keep both set-detail cards flush at the top and bottom on desktop. */
+@media(min-width:701px){
+ .lego-detail-layout{align-items:stretch;grid-auto-rows:auto}
+ .lego-detail-layout>.lego-detail-figure,
+ .lego-detail-layout>.lego-detail-info{box-sizing:border-box;align-self:stretch;height:auto;min-height:0}
+}
+
+/* One clear affiliate disclosure at the bottom of each theme catalog. */
+.lego-theme-affiliate-disclosure{margin:18px 4px 24px;color:#75695a;font-size:12px;line-height:1.5;text-align:center}
+
+/* Public LEGO browsing with optional cloud profile controls. */
+.lego-account-controls{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-left:auto}
+.lego-account-label{font-size:13px;font-weight:650;color:#62594e;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lego-account-button{background:#08243b;color:#fffdf8;border-color:#08243b}
+.lego-account-button:hover{background:#174665;color:#fff}
+.lego-account-message{border:1px solid #e4cbaa;background:#fff9ed;border-radius:10px;padding:11px 15px;color:#78511e;font-size:13px}
+@media(max-width:640px){.lego-account-controls{margin:14px 0 0;justify-content:flex-start}}
+
+/* Google Identity style controls, retaining Firebase Authentication functionality. */
+.gsi-material-button{background:#fff;color:#1f1f1f;border:1px solid #747775;border-radius:4px;font:500 14px/20px Roboto,Arial,sans-serif;letter-spacing:.25px;height:40px;padding:0 12px;cursor:pointer;min-width:174px;display:inline-flex;align-items:center;justify-content:center;box-shadow:none}
+.gsi-material-button:hover{background:#f8faff;border-color:#747775}
+.gsi-material-button:focus-visible{outline:2px solid #4285f4;outline-offset:2px}
+.gsi-material-button-content-wrapper{display:inline-flex;align-items:center;justify-content:center;gap:10px;white-space:nowrap}
+.gsi-material-button-icon{display:block;width:18px;height:18px;flex:none}
+.gsi-material-button-contents{font-weight:500}
+@media(max-width:640px){.lego-account-controls{justify-content:center}.gsi-material-button{flex:1 1 185px}}
+
+/* Compact account menu in the header (signed out: Google buttons; signed in: sign out). */
+.lego-header{position:relative}
+.lego-account-controls{position:relative;display:block;flex:0 0 auto;margin-left:auto;align-self:flex-start;z-index:20}
+.lego-account-toggle{list-style:none;cursor:pointer;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;width:44px;height:44px;border:1px solid #cbbfae;border-radius:8px;background:#fffdf8;color:#102c3e;box-sizing:border-box}
+.lego-account-toggle::-webkit-details-marker{display:none}
+.lego-account-toggle::marker{content:""}
+.lego-account-toggle:focus-visible{outline:2px solid #4285f4;outline-offset:2px}
+.lego-account-controls[open] .lego-account-toggle{background:#f4ead9}
+.lego-menu-line{width:21px;height:2px;border-radius:2px;background:currentColor;display:block}
+.lego-account-dropdown{position:absolute;right:0;top:calc(100% + 8px);width:max-content;max-width:min(90vw,270px);display:flex;flex-direction:column;gap:9px;padding:12px;border:1px solid #dbd0c0;border-radius:10px;background:#fffdf8;box-shadow:0 12px 32px rgba(25,29,33,.16);box-sizing:border-box}
+.lego-account-controls:not([open]) .lego-account-dropdown{display:none}
+.lego-account-dropdown .gsi-material-button{width:100%;min-width:195px}
+.lego-account-dropdown .lego-account-button{min-width:195px;padding:10px 16px;border-radius:6px;cursor:pointer}
+@media(max-width:640px){.lego-account-controls{margin:0 0 0 auto;justify-content:initial}.lego-account-dropdown .gsi-material-button{flex:none}}
+
+/* Signed-in Google profile image replaces the hamburger trigger. */
+.lego-account-avatar{display:block;width:36px;height:36px;border-radius:50%;object-fit:cover}
+.lego-account-toggle:has(.lego-account-avatar){border-radius:50%;padding:3px;overflow:hidden}
+
+/* Private reporting dashboard, available only to an approved Firebase administrator. */
+.lego-admin{margin:34px 0 60px;min-height:400px}
+.lego-admin h1{font:normal clamp(31px,4vw,46px) Georgia,serif;margin:0 0 16px}
+.lego-admin h2{margin-top:34px}
+.lego-admin-note{color:#6d6255;line-height:1.55;max-width:750px}
+.lego-admin-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:14px;margin:24px 0}
+.lego-admin-card{background:#fffdf8;border:1px solid #d9cebf;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:9px}
+.lego-admin-card strong{font-size:32px;color:#08243b}
+.lego-admin-card span{font-size:13px;color:#6d6255}
+.lego-admin-themes{background:#fffdf8;border:1px solid #d9cebf;border-radius:12px;padding:20px;margin:15px 0 26px}
+.lego-admin-theme{display:grid;grid-template-columns:minmax(110px,180px) 1fr 55px;gap:12px;align-items:center;padding:8px 0}
+.lego-admin-track{height:13px;border-radius:9px;background:#efe7dc;overflow:hidden}
+.lego-admin-bar{height:100%;background:#e68c24;border-radius:9px}
+.lego-admin-theme strong{text-align:right}
+@media(max-width:640px){.lego-admin-theme{grid-template-columns:95px 1fr 40px;font-size:12px}}
+
+/* Daily trends and owner-only individual activity views. */
+.lego-admin-day{display:grid;grid-template-columns:minmax(125px,1fr) minmax(145px,1fr) minmax(105px,1fr);align-items:center;gap:12px;border-bottom:1px solid #ebe3d7;padding:11px 0;font-size:13px}
+.lego-admin-day:last-child{border-bottom:0}
+.lego-admin-day strong{text-align:right;font-size:13px}
+.lego-admin-people{display:flex;gap:9px;flex-wrap:wrap;margin:10px 0 20px}
+.lego-admin-person.active{background:#08243b;color:#fff}
+@media(max-width:640px){.lego-admin-day{grid-template-columns:1fr 1fr;gap:5px}.lego-admin-day strong{grid-column:2}.lego-admin-people{flex-direction:column}}
+
+/* Theme catalog headers: pin account at far right and back button immediately to its left. */
+.lego-theme-header{position:relative;padding-top:0;min-height:155px}
+.lego-theme-header>.lego-account-controls{position:absolute;top:0;right:0;margin:0;z-index:30}
+.lego-theme-header>.lego-back-to-themes{top:5px;right:58px;z-index:10}
+@media(max-width:640px){
+ .lego-theme-header{padding-top:54px}
+ .lego-theme-header>.lego-account-controls{top:0;right:0;margin:0}
+ .lego-theme-header>.lego-back-to-themes{top:5px;right:54px}
+}
+
+/* Product detail header: prevent the return button from overlapping the avatar. */
+.lego-detail-header{position:relative}
+.lego-detail-header>.lego-account-controls{position:absolute;right:0;top:0;margin:0;z-index:30}
+.lego-detail-header>.lego-back-to-themes{position:absolute;right:58px;top:5px;z-index:10}
+@media(max-width:640px){
+ .lego-detail-header{padding-top:54px}
+ .lego-detail-header>.lego-account-controls{right:0;top:0;margin:0}
+ .lego-detail-header>.lego-back-to-themes{right:54px;top:5px}
+}
+
+/* Reserve a real top control lane on theme pages so the navigation never overlays the theme tile. */
+.lego-theme-header{padding-top:64px;box-sizing:border-box}
+.lego-theme-header>.lego-account-controls{top:0;right:0}
+.lego-theme-header>.lego-back-to-themes{top:5px;right:58px}
+@media(max-width:640px){
+ .lego-theme-header{padding-top:64px}
+ .lego-theme-header>.lego-back-to-themes{right:54px}
+}
+
+/* Home and admin on narrow screens: anchor the account avatar to the top-right
+   of the header, not as a new block beneath the wide Archív wordmark. */
+@media(max-width:640px){
+  .lego-header:not(.lego-theme-header):not(.lego-detail-header)>.lego-account-controls{
+    position:absolute;
+    top:0;
+    right:0;
+    margin:0;
+    z-index:30;
+  }
+}
+
+
+/* Collector profile: private account page and reversible communication preferences. */
+.archiv-profile{width:min(1040px,calc(100% - 28px));margin:20px auto 64px;color:#08243b}
+.archiv-profile-back{margin:0 0 22px}
+.archiv-profile-hero{margin:0 0 24px}
+.archiv-profile-kicker{display:block;font-size:12px;letter-spacing:.16em;font-weight:850;color:#9d6429}
+.archiv-profile-hero h1{font:normal clamp(38px,6vw,64px)/1.08 Georgia,serif;letter-spacing:-.025em;margin:12px 0}
+.archiv-profile-intro{max-width:660px;font-size:16px;line-height:1.65;color:#63594c;margin:8px 0 0}
+.archiv-profile-panel{border:1px solid #ded4c5;background:#fffdf8;border-radius:18px;padding:clamp(20px,4vw,34px);margin:0 0 20px;box-shadow:0 8px 25px #102b4210}
+.archiv-profile-panel h2,.archiv-profile-danger h2{font:normal clamp(24px,4vw,31px) Georgia,serif;margin:0 0 15px;line-height:1.3}
+.archiv-profile-identity{display:flex;gap:16px;align-items:center;margin-bottom:26px}
+.archiv-profile-identity h2{margin:0 0 5px;font-size:29px}
+.archiv-profile-identity p{margin:0;overflow-wrap:anywhere;color:#6c625a}
+.archiv-profile-avatar{width:72px;height:72px;object-fit:cover;border-radius:50%;box-shadow:0 0 0 3px #e5d3b6}
+.archiv-profile-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:28px}
+.archiv-profile-stat{border:1px solid #e6dbcd;background:#f5eee2;border-radius:13px;padding:18px 12px;min-width:0}
+.archiv-profile-stat strong{display:block;font-size:clamp(21px,3vw,31px);line-height:1.2;overflow-wrap:anywhere;color:#08243b}
+.archiv-profile-stat span{display:block;font-size:12px;line-height:1.4;margin-top:6px;color:#6e6255}
+.archiv-profile-facts{display:grid;grid-template-columns:1fr 1fr;gap:13px 20px;margin:0}
+.archiv-profile-facts div{border-top:1px solid #eae0d3;padding-top:12px;min-width:0}
+.archiv-profile-facts dt{font-size:12px;color:#786e62;margin-bottom:4px}
+.archiv-profile-facts dd{font-size:15px;font-weight:650;margin:0;overflow-wrap:anywhere}
+.archiv-profile-theme{margin:0 0 16px}
+.archiv-profile-theme:last-child{margin-bottom:0}
+.archiv-profile-theme-meta{display:flex;justify-content:space-between;gap:12px;margin-bottom:7px;font-size:14px}
+.archiv-profile-theme-meta strong{font-size:13px;white-space:nowrap}
+.archiv-profile-bar-track{height:11px;background:#e9dfd0;border-radius:99px;overflow:hidden}
+.archiv-profile-bar{display:block;height:100%;background:#d58738;border-radius:99px}
+.archiv-profile-muted{color:#6e6255;font-size:14px;line-height:1.6}
+.archiv-profile-optin{display:flex;align-items:center;gap:14px;padding:17px;border:1px solid #e6d8c7;border-radius:11px;background:#f7f1e9;cursor:pointer}
+.archiv-profile-optin input{width:22px;height:22px;accent-color:#1a634f;flex:none;cursor:pointer}
+.archiv-profile-optin input:disabled{opacity:.5;cursor:not-allowed}
+.archiv-profile-optin span{display:flex;flex-direction:column;gap:5px}
+.archiv-profile-optin strong{font-size:14px;line-height:1.5}
+.archiv-profile-optin small{font-size:13px;color:#716656}
+.archiv-profile-staging-note{color:#80591f;background:#fff5df;border:1px solid #e9d9ac;padding:11px 14px;border-radius:9px;font-size:13px;line-height:1.6;margin:14px 0 0}
+.archiv-profile-error{color:#963b32;padding:10px 0;font-size:13px}
+.archiv-profile-success{color:#20613a;padding:10px 0;font-size:13px}
+.archiv-profile-danger{border:1px solid #e2bbb3;border-radius:18px;padding:clamp(20px,4vw,32px);margin:44px 0 0;background:#fff9f6}
+.archiv-profile-danger h2{color:#80352b}
+.archiv-profile-danger>p{line-height:1.65;color:#6c514c}
+.archiv-profile-delete-trigger,.archiv-profile-delete-final{border-color:#8c4238!important;color:#8c4238!important;background:transparent!important}
+.archiv-profile-delete-trigger:hover,.archiv-profile-delete-final:hover:not(:disabled){color:#fff!important;background:#8c4238!important}
+.archiv-profile-confirm{padding:17px;margin-top:15px;border:1px solid #e6bbb5;border-radius:12px;background:#fffdfb;display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+.archiv-profile-confirm p{font-size:13px;color:#6f514b;line-height:1.6;margin:0}
+.archiv-profile-confirm input{width:100%;max-width:330px;padding:11px;border:1px solid #9c817c;border-radius:7px;background:white;color:#08243b;font:inherit}
+.archiv-profile-delete-final:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:650px){.archiv-profile-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.archiv-profile-facts{grid-template-columns:1fr}.archiv-profile-identity h2{font-size:23px}.archiv-profile-avatar{width:58px;height:58px}}
