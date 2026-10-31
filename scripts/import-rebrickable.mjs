@@ -32,7 +32,11 @@ function classify(id){
  const name=rootTheme?.name || "Other LEGO";
  return name==="Pokémon"?"Pokemon":name;
 }
-const rows=csv("sets").filter(s=>s.set_num&&s.name).map(s=>({number:s.set_num,name:s.name,year:Number(s.year)||0,theme:classify(s.theme_id),parts:Number(s.num_parts)||0,image:s.img_url||""}));
+// Affiliate safety: future-year sets are conservatively excluded until their
+// release year arrives. This cannot determine whether current-year sets were
+// officially announced, so editorial review is still needed for prelaunch data.
+const currentYear=new Date().getUTCFullYear();
+const rows=csv("sets").filter(s=>s.set_num&&s.name&&Number(s.year)>0&&Number(s.year)<=currentYear).map(s=>({number:s.set_num,name:s.name,year:Number(s.year)||0,theme:classify(s.theme_id),parts:Number(s.num_parts)||0,image:s.img_url||""}));
 writeFileSync(new URL("src/lego-catalog.json",root),JSON.stringify(rows));
 const counts=new Map(),images=new Map();
 for(const row of rows){
