@@ -78,8 +78,15 @@ jobs:
           # Do not copy unapproved staging files into the production root.
           git worktree add "$RUNNER_TEMP/archiv-lego-production" 7ad5c81340e72b69821b14a9f616ed65ea48cb3e^
           npm --prefix "$RUNNER_TEMP/archiv-lego-production" ci
-          mkdir -p "$RUNNER_TEMP/archiv-lego-production/public/data"
-          cp -R "$RUNNER_TEMP/archiv-lego-preview/public/data/." "$RUNNER_TEMP/archiv-lego-production/public/data/" 2>/dev/null || true
+          # Restore the full generated catalog used by successful production builds.
+          # The staging importer writes src/*.json and public/lego-parts, NOT public/data.
+          # Copy only generated catalog/inventory data, never staged application code or styles.
+          cp "$RUNNER_TEMP/archiv-lego-preview/src/lego-catalog.json" "$RUNNER_TEMP/archiv-lego-production/src/lego-catalog.json"
+          cp "$RUNNER_TEMP/archiv-lego-preview/src/lego-themes.json" "$RUNNER_TEMP/archiv-lego-production/src/lego-themes.json"
+          mkdir -p "$RUNNER_TEMP/archiv-lego-production/public/lego-parts"
+          cp -R "$RUNNER_TEMP/archiv-lego-preview/public/lego-parts/." "$RUNNER_TEMP/archiv-lego-production/public/lego-parts/"
+          # Fail the deployment rather than silently publishing the tiny seed catalog again.
+          node -e 'const fs=require("fs");const root=process.argv[1];const sets=JSON.parse(fs.readFileSync(root+"/src/lego-catalog.json"));const themes=JSON.parse(fs.readFileSync(root+"/src/lego-themes.json"));const shards=fs.readdirSync(root+"/public/lego-parts").filter(x=>/^\\d+\\.json$/.test(x));if(sets.length<25000||themes.length<15||shards.length!==128)throw Error("Incomplete production catalog: "+sets.length+" sets, "+themes.length+" themes, "+shards.length+" inventory shards");console.log("Production catalog validated:",sets.length,"sets,",themes.length,"themes,",shards.length,"inventory shards")' "$RUNNER_TEMP/archiv-lego-production"
           git -C "$RUNNER_TEMP/archiv-lego-production" restore --source=0f3d4dfe26532378475595acdd8c25850f5e45db -- src/lego-entry.ts src/lego-styles.css
           npm --prefix "$RUNNER_TEMP/archiv-lego-production" run build:web
           cp -R "$RUNNER_TEMP/archiv-lego-production/dist-web/." dist-web/
