@@ -168,7 +168,6 @@ const tileSets:Record<string,string>={
 const setImage=(number:string)=>"https://cdn.rebrickable.com/media/sets/"+number+".jpg";
 let selected="All LEGO",search="",sort="name",page=0;
 function setFromHash(){const m=location.hash.match(/^#\/set\/(.+)$/);return m?decodeURIComponent(m[1]):null}
-function goSet(id:string){location.hash="#/set/"+encodeURIComponent(id);render()}
 function themeFromHash(){const slug=decodeURIComponent(location.hash.replace(/^#\/?/,""));return themes.slice(1).find(n=>n.toLowerCase().replace(/\s+/g,"-")===slug)||"All LEGO"}
 function goProfile(){profileError="";profileInfo="";deleteConfirmOpen=false;deleteConfirmText="";location.hash="#/profile";render()}
 selected=themeFromHash();
@@ -236,13 +235,14 @@ function renderInventory(parent:HTMLElement,setNumber:string){
   if(!section.isConnected)return;
   message.remove();
   if(!inv){section.append(e("p","archiv-empty-inventory","A parts inventory hasn't been published for this set yet."));return}
+   const inventory=inv;
   const key="archiv-parts-checked:"+setNumber;let checks:Record<string,boolean>={};
   try{checks=JSON.parse(localStorage.getItem(key)||"{}")}catch{}
   let query="",color="All colors",showChecklist=false,showAllBuilding=false,showAllSpares=false;
   const tools=e("div","archiv-parts-toolbar");
   const searchBox=e("input") as HTMLInputElement;searchBox.type="search";searchBox.placeholder="Find a piece or number";searchBox.setAttribute("aria-label","Search pieces");tools.append(searchBox);
   const colorSelect=e("select") as HTMLSelectElement;colorSelect.setAttribute("aria-label","Filter by color");
-  const allColors=[...new Set([...inv.parts,...inv.spares].map(p=>p.color))].sort();
+  const allColors=[...new Set([...inventory.parts,...inventory.spares].map(p=>p.color))].sort();
   for(const c of ["All colors",...allColors]){const opt=e("option","",c);opt.value=c;colorSelect.append(opt)}tools.append(colorSelect);
   const checkButton=button("Track pieces",()=>{showChecklist=!showChecklist;checkButton.textContent=showChecklist?"Hide checklist":"Track pieces";draw()},"archiv-check-toggle");tools.append(checkButton);
   section.append(tools);
@@ -250,9 +250,9 @@ function renderInventory(parent:HTMLElement,setNumber:string){
   const lists=e("div","archiv-parts-lists");section.append(lists);
   function draw(){
    lists.replaceChildren();
-   const total=[...inv.parts,...inv.minifigs,...inv.spares];const checked=total.filter((p,i)=>checks[(i<inv.parts.length?"parts":i<inv.parts.length+inv.minifigs.length?"minifigs":"spares")+":"+p.id+":"+p.color]).length;
+   const total=[...inventory.parts,...inventory.minifigs,...inventory.spares];const checked=total.filter((p,i)=>checks[(i<inventory.parts.length?"parts":i<inventory.parts.length+inventory.minifigs.length?"minifigs":"spares")+":"+p.id+":"+p.color]).length;
    progress.textContent=showChecklist?checked+" of "+total.length+" part types checked":total.reduce((n,p)=>n+p.quantity,0).toLocaleString()+" pieces across "+total.length.toLocaleString()+" inventory entries";
-   for(const [kind,title,items] of [["minifigs","Minifigures",inv.minifigs],["spares","Extra & spare pieces",inv.spares],["parts","Building pieces",inv.parts]] as const){
+   for(const [kind,title,items] of [["minifigs","Minifigures",inventory.minifigs],["spares","Extra & spare pieces",inventory.spares],["parts","Building pieces",inventory.parts]] as const){
     const panel=e("section","archiv-parts-panel");const details=e("details","archiv-parts-section");details.open=true;
     const sum=e("summary","archiv-parts-section-head");sum.append(e("span","",title),e("span","archiv-parts-pill",items.length+" types · "+items.reduce((n,p)=>n+p.quantity,0)+" pieces"));details.append(sum);
     const matched=items.filter(p=>(kind==="minifigs"||color==="All colors"||p.color===color)&&[p.id,p.name,p.color].join(" ").toLowerCase().includes(query));
@@ -319,7 +319,7 @@ function renderSetDetail(shell:HTMLElement,id:string){
   const counter=e("p","lego-gallery-count");
   const controls=e("div","lego-gallery-controls");
   let active=0;
-  function showImage(index:number){active=(index+images.length)%images.length;mainImage.src=images[active];mainImage.alt=row.name+" photograph "+(active+1)+" of "+images.length;counter.textContent=(active+1)+" / "+images.length;for(const [i,b] of [...controls.children].entries())b.classList.toggle("active",i===active)}
+  function showImage(index:number){active=(index+images.length)%images.length;mainImage.src=images[active];mainImage.alt=row!.name+" photograph "+(active+1)+" of "+images.length;counter.textContent=(active+1)+" / "+images.length;for(const [i,b] of [...controls.children].entries())b.classList.toggle("active",i===active)}
   mainImage.onerror=()=>{mainImage.style.display="none";counter.textContent="This photograph is unavailable."};
   figure.append(mainImage);
   if(images.length>1){const prev=button("← Previous",()=>showImage(active-1),"lego-gallery-prev"),next=button("Next →",()=>showImage(active+1),"lego-gallery-next");figure.append(e("div","lego-gallery-arrows"));figure.lastElementChild?.append(prev,next);for(let i=0;i<images.length;i++){const thumb=e("button","lego-gallery-thumb");thumb.setAttribute("aria-label","Show photograph "+(i+1));const pic=e("img");pic.src=images[i];pic.alt="";thumb.append(pic);thumb.onclick=()=>showImage(i);controls.append(thumb)}figure.append(controls)}
