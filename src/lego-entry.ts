@@ -519,7 +519,13 @@ function renderSignup(shell:HTMLElement){
  signup.disabled=authBusy;hero.append(signup);
  const signIn=button("Already have an account? Sign in",()=>{void signInLego()},"archiv-sign-up-existing");
  signIn.disabled=authBusy;hero.append(signIn);
- hero.append(e("p","archiv-profile-muted","Archív uses Google to verify your identity. We never see your Google password. Read our Privacy Policy and Terms of Use for account details."));
+ const legal=e("p","archiv-profile-muted");
+ const privacy=e("a","","Privacy Policy") as HTMLAnchorElement;
+ privacy.href=import.meta.env.BASE_URL+"privacy.html";
+ const terms=e("a","","Terms of Use") as HTMLAnchorElement;
+ terms.href=import.meta.env.BASE_URL+"terms.html";
+ legal.append("Archív uses Google to verify your identity. We never see your Google password. Read our ",privacy," and ",terms," for account details.");
+ hero.append(legal);
  main.append(hero);shell.append(main);
 }
 function renderProfile(shell:HTMLElement){
