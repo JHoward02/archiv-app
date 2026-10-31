@@ -145,18 +145,18 @@ jobs:
             REVERSED_ID=$(/usr/libexec/PlistBuddy -c 'Print :REVERSED_CLIENT_ID' ios-native/GoogleService-Info.plist)
             test -n "$REVERSED_ID"
             python3 - <<'PY'
-            import plistlib
-            from pathlib import Path
-            config=plistlib.loads(Path('ios-native/GoogleService-Info.plist').read_bytes())
-            info_path=Path('ios/App/App/Info.plist')
-            info=plistlib.loads(info_path.read_bytes())
-            url_types=info.setdefault('CFBundleURLTypes', [])
-            scheme=config['REVERSED_CLIENT_ID']
-            if not any(scheme in item.get('CFBundleURLSchemes', []) for item in url_types):
-                url_types.append({'CFBundleURLSchemes':[scheme]})
-            info_path.write_bytes(plistlib.dumps(info))
-            print('Configured iOS native Google callback scheme:', scheme)
-            PY
+          import plistlib
+          from pathlib import Path
+          config=plistlib.loads(Path('ios-native/GoogleService-Info.plist').read_bytes())
+          info_path=Path('ios/App/App/Info.plist')
+          info=plistlib.loads(info_path.read_bytes())
+          url_types=info.setdefault('CFBundleURLTypes', [])
+          scheme=config['REVERSED_CLIENT_ID']
+          if not any(scheme in item.get('CFBundleURLSchemes', []) for item in url_types):
+              url_types.append({'CFBundleURLSchemes':[scheme]})
+          info_path.write_bytes(plistlib.dumps(info))
+          print('Configured iOS native Google callback scheme:', scheme)
+          PY
             echo 'Configured native iPhone Google OAuth URL callback.'
           fi
 
