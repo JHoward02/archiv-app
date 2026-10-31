@@ -27,4 +27,7 @@ jobs:
           grep -q 'if(authAttempt)return' src/lego-entry.ts
           grep -q 'Create Archív account with Google' src/lego-entry.ts
           grep -q 'auth-signup-decision.test.ts' <(find tests -name '*.test.ts')
+          grep -q '/src/lego-entry.ts' index.html
+          ! grep -q '/src/standalone.ts' index.html
+          grep -q 'LEGO Collections' dist-web/index.html
           test -s dist-web/index.html
