@@ -37,6 +37,8 @@ jobs:
           npm --prefix "$RUNNER_TEMP/archiv-profile-preview" run build:web
           mkdir -p dist-web/profile-preview
           cp -R "$RUNNER_TEMP/archiv-profile-preview/dist-web/." dist-web/profile-preview/
+      # Approved staging-only refresh: collector profile preview (staging commit 448bcc072dcb8a3a35ad73ca3cbd554d4a1ee59e).
+      # Production application assets remain sourced from pinned cfd3562675c3503d466553918cd6a304256632fa.
       - name: Build isolated LEGO preview
         run: |
           git fetch origin archiv-2-lego-staging
