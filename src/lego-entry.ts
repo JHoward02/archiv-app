@@ -1,8 +1,8 @@
+import "./lego-styles.css";
+import { initializeApp, getApps } from "firebase/app";
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, deleteUser, reauthenticateWithPopup, type User } from "firebase/auth";
 import { collection, doc, getFirestore, onSnapshot, setDoc, deleteDoc, getDoc, getDocs, addDoc, increment, serverTimestamp, updateDoc, writeBatch, type Unsubscribe } from "firebase/firestore";
-import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, type User } from "firebase/auth";
-import { collection, doc, getFirestore, onSnapshot, setDoc, deleteDoc, getDoc, getDocs, addDoc, increment, serverTimestamp, type Unsubscribe } from "firebase/firestore";
-const legoAuth=firebaseApp?getAuth(firebaseApp):null;
+type SetRow={number:string;name:string;year:number;theme:string;parts:number;image?:string;images?:string[]};
 type Status="owned"|"wishlist";
 const featured=["City","Pokemon","Star Wars","Technic","Botanicals","Icons"];
 let themes=["All LEGO",...featured,"Complete Catalog"];
@@ -12,17 +12,16 @@ const firebaseConfig={apiKey:import.meta.env.VITE_FIREBASE_API_KEY,authDomain:im
 const firebaseReady=Object.values(firebaseConfig).every(Boolean);
 const firebaseApp=firebaseReady?(getApps()[0]??initializeApp(firebaseConfig)):null;
 const legoAuth=firebaseApp?getAuth(firebaseApp):null;
+const legoDb=firebaseApp?getFirestore(firebaseApp):null;
+const legoRecordPrefix="archiv-lego-set:";
+let currentUser:User|null=null,authReady=!legoAuth,collectionReady=!legoAuth,accountError="";
+let stopCollection:Unsubscribe|null=null,authGeneration=0;
+type Activity={uid:string;type:string;setNumber?:string;theme?:string;at:string};
 type Profile={uid:string;name?:string;email?:string;firstSeen?:string;lastSeen?:string;communicationsOptIn?:boolean};
 // Data-erasing profile actions stay off until the shared Firebase rules are approved and deployed.
 const PROFILE_BACKEND_READY=import.meta.env.VITE_PROFILE_BACKEND_READY==="true";
 let ownProfile:Profile|null=null,ownProfileLoaded=false,profileBusy=false,profileError="",profileInfo="",deleteConfirmOpen=false,deleteConfirmText="",deletingAccount=false;
 let stopOwnProfile:Unsubscribe|null=null;
-const legoRecordPrefix="archiv-lego-set:";
-let currentUser:User|null=null,authReady=!legoAuth,collectionReady=!legoAuth,accountError="";
-let stopCollection:Unsubscribe|null=null,authGeneration=0;
-type Activity={uid:string;type:string;setNumber?:string;theme?:string;at:string};
-type Profile={uid:string;name?:string;email?:string;firstSeen?:string;lastSeen?:string};
- if(deletingAccount)return;
 let profiles:Profile[]=[],events:Activity[]=[],chosenUid="";
 let adminEnabled=false,adminStatus="Checking access…",adminRows:Array<{owned?:number;wishlist?:number;themes?:Record<string,number>;affiliateClicks?:number}>=[],adminLoading=false,adminError="";
 async function checkAdmin(user:User|null,gen:number){
@@ -54,7 +53,8 @@ async function loadAdmin(){
  adminLoading=false;render();
 }
 async function registerCollector(user:User){
- if(deletingAccount||!currentUser||!legoDb)return;
+ if(deletingAccount)return;
+ if(!legoDb)return;
  try{
   const ref=doc(legoDb,"collectorProfiles",user.uid);
   const prior=await getDoc(ref);
@@ -67,14 +67,14 @@ async function registerCollector(user:User){
  }catch(err){console.warn("Registration reporting unavailable",err)}
 }
 async function recordActivity(type:string,setNumber?:string,theme?:string){
- if(!currentUser||!legoDb)return;
- if(deletingAccount||!legoDb)return;
+ if(deletingAccount||!currentUser||!legoDb)return;
+ try{await addDoc(collection(legoDb,"users",currentUser.uid,"activity"),{
   type,at:new Date().toISOString(),...(setNumber?{setNumber}:{}),...(theme?{theme}:{})
  })}catch(err){console.warn("Activity event unavailable",err)}
 }
 async function reportCollector(user:User,items:Record<string,Status>){
- if(!legoDb)return;
- if(deletingAccount||!currentUser||!legoDb)return;
+ if(deletingAccount||!legoDb)return;
+ const themes:Record<string,number>={};
  for(const [id,status] of Object.entries(items)){
   if(status!=="owned")continue;
   const theme=data.find(x=>x.number===id)?.theme||"Unknown";
@@ -87,9 +87,9 @@ async function reportCollector(user:User,items:Record<string,Status>){
  },{merge:true})}catch(err){console.warn("Analytics summary unavailable",err)}
 }
 async function reportAffiliateClick(){
- if(!currentUser||!legoDb)return;
-async function signInLego(){if(!legoAuth){accountError="Cloud sign-in is not configured.";render();return}try{accountError="";await signInWithPopup(legoAuth,new GoogleAuthProvider())}catch(error){if((error as {code?:string}).code==="auth/popup-blocked"){await signInWithRedirect(legoAuth,new GoogleAuthProvider());return}accountError=error instanceof Error?error.message:"Sign-in failed.";render()}}
-async function signOutLego(){if(!legoAuth)return;try{await signOut(legoAuth)}catch(error){accountError=error instanceof Error?error.message:"Sign-out failed.";render()}}
+ if(deletingAccount||!currentUser||!legoDb)return;
+ try{await setDoc(doc(legoDb,"collectorSummaries",currentUser.uid),{affiliateClicks:increment(1),lastActive:serverTimestamp()},{merge:true});void recordActivity("affiliate_click")}
+ catch(err){console.warn("Click reporting unavailable",err)}
 }
 document.addEventListener("click",ev=>{
  const el=ev.target;if(!(el instanceof Element))return;
@@ -100,6 +100,7 @@ document.addEventListener("click",ev=>{
 async function signInLego(){if(!legoAuth){accountError="Cloud sign-in is not configured.";render();return}try{accountError="";await signInWithPopup(legoAuth,new GoogleAuthProvider())}catch(error){if((error as {code?:string}).code==="auth/popup-blocked"){await signInWithRedirect(legoAuth,new GoogleAuthProvider());return}accountError=error instanceof Error?error.message:"Sign-in failed.";render()}}
 async function signOutLego(){if(!legoAuth)return;try{await signOut(legoAuth)}catch(error){accountError=error instanceof Error?error.message:"Sign-out failed.";render()}}
 
+// Rebrickable set-image URLs supplied in the downloaded CSV catalog.
 // Do not scrape or bulk-download images; display with source attribution.
 const tileSets:Record<string,string>={
 "Speed Champions":"77239-1",
@@ -115,28 +116,26 @@ const tileSets:Record<string,string>={
 const setImage=(number:string)=>"https://cdn.rebrickable.com/media/sets/"+number+".jpg";
 let selected="All LEGO",search="",sort="name",page=0;
 function setFromHash(){const m=location.hash.match(/^#\/set\/(.+)$/);return m?decodeURIComponent(m[1]):null}
-function goSet(id:string){location.hash="#/set/"+encodeURIComponent(id);render()}
-function goProfile(){profileError="";profileInfo="";deleteConfirmOpen=false;deleteConfirmText="";location.hash="#/profile";render()}
 function themeFromHash(){const slug=decodeURIComponent(location.hash.replace(/^#\/?/,""));return themes.slice(1).find(n=>n.toLowerCase().replace(/\s+/g,"-")===slug)||"All LEGO"}
+function goProfile(){profileError="";profileInfo="";deleteConfirmOpen=false;deleteConfirmText="";location.hash="#/profile";render()}
+selected=themeFromHash();
 // Remember the displayed route, not merely the selected theme. Android/browser Back
 // can return to the same theme from a set or admin page without changing selected.
 let displayedRouteHash=location.hash;
-selected=themeFromHash();
+function goTheme(n:string){selected=n;search="";page=0;location.hash=n==="All LEGO"?"#/":"#/"+encodeURIComponent(n.toLowerCase().replace(/\s+/g,"-"));render()}
 window.addEventListener("hashchange",()=>{if(location.hash==="#/profile"){render();return}if(location.hash==="#/admin"){if(adminEnabled)void loadAdmin();else render();return}if(setFromHash()){render();return}const next=themeFromHash();if(next!==selected){selected=next;search="";page=0}if(displayedRouteHash!==location.hash)render()});
-window.addEventListener("hashchange",()=>{if(location.hash==="#/admin"){if(adminEnabled)void loadAdmin();else render();return}if(setFromHash()){render();return}const next=themeFromHash();if(next!==selected){selected=next;search="";page=0;render()}});
- const generation=++authGeneration;stopCollection?.();stopCollection=null;stopOwnProfile?.();stopOwnProfile=null;currentUser=user;saved={};ownProfile=null;ownProfileLoaded=!user;profileError="";profileInfo="";deleteConfirmOpen=false;deleteConfirmText="";authReady=true;collectionReady=!user;accountError="";render();
+let saved:Record<string,Status>={};
 if(legoAuth&&legoDb)onAuthStateChanged(legoAuth,user=>{
- const generation=++authGeneration;stopCollection?.();stopCollection=null;currentUser=user;saved={};authReady=true;collectionReady=!user;accountError="";render();
+ const generation=++authGeneration;stopCollection?.();stopCollection=null;stopOwnProfile?.();stopOwnProfile=null;currentUser=user;saved={};ownProfile=null;ownProfileLoaded=!user;profileError="";profileInfo="";deleteConfirmOpen=false;deleteConfirmText="";authReady=true;collectionReady=!user;accountError="";render();
+ void checkAdmin(user,generation);
+ if(!user)return;
+ const uid=user.uid;
+ void registerCollector(user);
  stopOwnProfile=onSnapshot(doc(legoDb!,"collectorProfiles",uid),snapshot=>{
   if(generation!==authGeneration)return;
   ownProfile=snapshot.exists()?({uid,...snapshot.data()} as Profile):null;
   ownProfileLoaded=true;if(location.hash==="#/profile")render();
  },error=>{if(generation!==authGeneration)return;ownProfileLoaded=false;profileError="Could not load profile: "+error.message;if(location.hash==="#/profile")render()});
- void checkAdmin(user,generation);
- if(!user)return;
- const uid=user.uid;
- void registerCollector(user);
- if(deletingAccount)return;
  stopCollection=onSnapshot(collection(legoDb!,"users",uid,"items"),snapshot=>{
   if(generation!==authGeneration)return;
   const next:Record<string,Status>={};
@@ -152,7 +151,7 @@ async function load(){try{const [setsResponse,themeResponse]=await Promise.all([
 function e<K extends keyof HTMLElementTagNameMap>(tag:K,cls="",value=""){const n=document.createElement(tag);n.className=cls;if(value){const parts=value.split("LEGO®");if(parts.length===1)n.textContent=value;else{parts.forEach((part,i)=>{if(i){n.append(document.createTextNode("LEGO"));const mark=document.createElement("sup");mark.className="lego-registered";mark.textContent="®";n.append(mark)}if(part)n.append(document.createTextNode(part))})}}return n}
 function button(label:string,click:()=>void,cls=""){const b=e("button","lego-button "+cls,label);b.onclick=click;return b}
 async function save(id:string,status:Status){
-   const inventory=inv;
+ if(deletingAccount)return;
  if(!currentUser){accountError="Sign in with Google to track owned sets and your wishlist across devices.";render();return}
  if(!collectionReady||!legoDb){accountError="Your collection is still loading. Try again.";render();return}
  const userId=currentUser.uid,ref=doc(legoDb,"users",userId,"items",legoRecordPrefix+id);
@@ -184,24 +183,25 @@ function renderInventory(parent:HTMLElement,setNumber:string){
   if(!section.isConnected)return;
   message.remove();
   if(!inv){section.append(e("p","archiv-empty-inventory","A parts inventory hasn't been published for this set yet."));return}
-  const allColors=[...new Set([...inventory.parts,...inventory.spares].map(p=>p.color))].sort();
+   const inventory=inv;
+  const key="archiv-parts-checked:"+setNumber;let checks:Record<string,boolean>={};
   try{checks=JSON.parse(localStorage.getItem(key)||"{}")}catch{}
   let query="",color="All colors",showChecklist=false,showAllBuilding=false,showAllSpares=false;
   const tools=e("div","archiv-parts-toolbar");
   const searchBox=e("input") as HTMLInputElement;searchBox.type="search";searchBox.placeholder="Find a piece or number";searchBox.setAttribute("aria-label","Search pieces");tools.append(searchBox);
   const colorSelect=e("select") as HTMLSelectElement;colorSelect.setAttribute("aria-label","Filter by color");
-  const allColors=[...new Set([...inv.parts,...inv.spares].map(p=>p.color))].sort();
-   const total=[...inventory.parts,...inventory.minifigs,...inventory.spares];const checked=total.filter((p,i)=>checks[(i<inventory.parts.length?"parts":i<inventory.parts.length+inventory.minifigs.length?"minifigs":"spares")+":"+p.id+":"+p.color]).length;
+  const allColors=[...new Set([...inventory.parts,...inventory.spares].map(p=>p.color))].sort();
+  for(const c of ["All colors",...allColors]){const opt=e("option","",c);opt.value=c;colorSelect.append(opt)}tools.append(colorSelect);
   const checkButton=button("Track pieces",()=>{showChecklist=!showChecklist;checkButton.textContent=showChecklist?"Hide checklist":"Track pieces";draw()},"archiv-check-toggle");tools.append(checkButton);
   section.append(tools);
   const progress=e("p","archiv-parts-progress");section.append(progress);
   const lists=e("div","archiv-parts-lists");section.append(lists);
   function draw(){
    lists.replaceChildren();
-   const total=[...inv.parts,...inv.minifigs,...inv.spares];const checked=total.filter((p,i)=>checks[(i<inv.parts.length?"parts":i<inv.parts.length+inv.minifigs.length?"minifigs":"spares")+":"+p.id+":"+p.color]).length;
+   const total=[...inventory.parts,...inventory.minifigs,...inventory.spares];const checked=total.filter((p,i)=>checks[(i<inventory.parts.length?"parts":i<inventory.parts.length+inventory.minifigs.length?"minifigs":"spares")+":"+p.id+":"+p.color]).length;
+   progress.textContent=showChecklist?checked+" of "+total.length+" part types checked":total.reduce((n,p)=>n+p.quantity,0).toLocaleString()+" pieces across "+total.length.toLocaleString()+" inventory entries";
    for(const [kind,title,items] of [["minifigs","Minifigures",inventory.minifigs],["spares","Extra & spare pieces",inventory.spares],["parts","Building pieces",inventory.parts]] as const){
-   for(const [kind,title,items] of [["minifigs","Minifigures",inv.minifigs],["spares","Extra & spare pieces",inv.spares],["parts","Building pieces",inv.parts]] as const){
-  function showImage(index:number){active=(index+images.length)%images.length;mainImage.src=images[active];mainImage.alt=row!.name+" photograph "+(active+1)+" of "+images.length;counter.textContent=(active+1)+" / "+images.length;for(const [i,b] of [...controls.children].entries())b.classList.toggle("active",i===active)}
+    const panel=e("section","archiv-parts-panel");const details=e("details","archiv-parts-section");details.open=true;
     const sum=e("summary","archiv-parts-section-head");sum.append(e("span","",title),e("span","archiv-parts-pill",items.length+" types · "+items.reduce((n,p)=>n+p.quantity,0)+" pieces"));details.append(sum);
     const matched=items.filter(p=>(kind==="minifigs"||color==="All colors"||p.color===color)&&[p.id,p.name,p.color].join(" ").toLowerCase().includes(query));
     const grid=e("div","archiv-parts-grid");
@@ -267,7 +267,42 @@ function renderSetDetail(shell:HTMLElement,id:string){
   const counter=e("p","lego-gallery-count");
   const controls=e("div","lego-gallery-controls");
   let active=0;
-  function showImage(index:number){active=(index+images.length)%images.length;mainImage.src=images[active];mainImage.alt=row.name+" photograph "+(active+1)+" of "+images.length;counter.textContent=(active+1)+" / "+images.length;for(const [i,b] of [...controls.children].entries())b.classList.toggle("active",i===active)}
+  function showImage(index:number){active=(index+images.length)%images.length;mainImage.src=images[active];mainImage.alt=row!.name+" photograph "+(active+1)+" of "+images.length;counter.textContent=(active+1)+" / "+images.length;for(const [i,b] of [...controls.children].entries())b.classList.toggle("active",i===active)}
+  mainImage.onerror=()=>{mainImage.style.display="none";counter.textContent="This photograph is unavailable."};
+  figure.append(mainImage);
+  if(images.length>1){const prev=button("← Previous",()=>showImage(active-1),"lego-gallery-prev"),next=button("Next →",()=>showImage(active+1),"lego-gallery-next");figure.append(e("div","lego-gallery-arrows"));figure.lastElementChild?.append(prev,next);for(let i=0;i<images.length;i++){const thumb=e("button","lego-gallery-thumb");thumb.setAttribute("aria-label","Show photograph "+(i+1));const pic=e("img");pic.src=images[i];pic.alt="";thumb.append(pic);thumb.onclick=()=>showImage(i);controls.append(thumb)}figure.append(controls)}
+  
+  if(images.length>1)figure.append(counter);
+  showImage(0);
+ }
+ const details=e("section","lego-detail-info");
+ details.append(e("p","lego-detail-kicker","LEGO® set "+row.number));
+ details.append(e("h1","",row.name));
+ const facts=e("dl","lego-detail-facts");
+ for(const [label,value] of [["Set number",row.number],["Theme",row.theme],["Release year",String(row.year||"Not listed")],["Pieces",row.parts?row.parts.toLocaleString():"Not listed"]]){const item=e("div");item.append(e("dt","",label),e("dd","",value));facts.append(item)}
+ details.append(facts);
+ const collection=e("div","lego-image-collection");
+ collection.append(e("p","lego-detail-status",owned?"✓ In your collection":wish?"♡ On your wishlist":"Not in your collection"));
+ const actions=e("div","lego-detail-actions");
+ actions.append(button(owned?"✓ Owned · Remove":"Mark as owned",()=>save(row.number,"owned"),owned?"on":""));
+ actions.append(button(wish?"✓ On wishlist":"♡ Add to wishlist",()=>save(row.number,"wishlist"),wish?"on":""));
+ collection.append(actions);
+ figure.append(collection);
+ if(!owned){
+  const seller=e("div","lego-shop-pending archiv-ebay-inline");
+  const link=e("a","archiv-ebay-inline-link","Find on eBay ↗");
+  link.href=ebaySetSearch(row);link.target="_blank";link.rel="noopener noreferrer sponsored";
+  link.setAttribute("aria-label","Find "+row.name+" on eBay (affiliate link)");
+  seller.append(link,e("small","","Search eBay listings for this exact set"));
+  seller.append(e("p","archiv-ebay-inline-disclosure","Affiliate link: Archív may earn a commission from qualifying purchases. Seller listings, prices and availability are not verified."));
+  details.append(seller);
+ }
+
+ hero.append(figure,details);wrap.append(hero);
+ renderInventory(wrap,row.number);
+ 
+ shell.append(wrap);
+}
 
 function profileDate(value?:string){
  const d=value?new Date(value):null;return d&&!Number.isNaN(d.getTime())?d.toLocaleDateString(undefined,{month:"long",day:"numeric",year:"numeric"}):"Not available";
@@ -293,7 +328,6 @@ async function updateCommunicationsOptIn(value:boolean){
  finally{profileBusy=false;if(location.hash==="#/profile")render()}
 }
 async function reauthenticateForDeletion(user:User){
- // Require a fresh Google sign-in before irreversible deletion.
  await reauthenticateWithPopup(user,new GoogleAuthProvider());
 }
 async function deleteUserDocuments(path:string[]){
@@ -419,42 +453,7 @@ function renderProfile(shell:HTMLElement){
  shell.append(main);
 }
 function render(){displayedRouteHash=location.hash;app.replaceChildren();const shell=e("div","lego-shell");app.append(shell);
-  figure.append(mainImage);
-  if(images.length>1){const prev=button("← Previous",()=>showImage(active-1),"lego-gallery-prev"),next=button("Next →",()=>showImage(active+1),"lego-gallery-next");figure.append(e("div","lego-gallery-arrows"));figure.lastElementChild?.append(prev,next);for(let i=0;i<images.length;i++){const thumb=e("button","lego-gallery-thumb");thumb.setAttribute("aria-label","Show photograph "+(i+1));const pic=e("img");pic.src=images[i];pic.alt="";thumb.append(pic);thumb.onclick=()=>showImage(i);controls.append(thumb)}figure.append(controls)}
-  
-  if(images.length>1)figure.append(counter);
-  showImage(0);
- }
- const details=e("section","lego-detail-info");
- details.append(e("p","lego-detail-kicker","LEGO® set "+row.number));
- details.append(e("h1","",row.name));
- const facts=e("dl","lego-detail-facts");
- for(const [label,value] of [["Set number",row.number],["Theme",row.theme],["Release year",String(row.year||"Not listed")],["Pieces",row.parts?row.parts.toLocaleString():"Not listed"]]){const item=e("div");item.append(e("dt","",label),e("dd","",value));facts.append(item)}
- details.append(facts);
- const collection=e("div","lego-image-collection");
- collection.append(e("p","lego-detail-status",owned?"✓ In your collection":wish?"♡ On your wishlist":"Not in your collection"));
- const actions=e("div","lego-detail-actions");
- actions.append(button(owned?"✓ Owned · Remove":"Mark as owned",()=>save(row.number,"owned"),owned?"on":""));
- actions.append(button(wish?"✓ On wishlist":"♡ Add to wishlist",()=>save(row.number,"wishlist"),wish?"on":""));
- collection.append(actions);
- figure.append(collection);
- if(!owned){
-  const seller=e("div","lego-shop-pending archiv-ebay-inline");
-  const link=e("a","archiv-ebay-inline-link","Find on eBay ↗");
-  link.href=ebaySetSearch(row);link.target="_blank";link.rel="noopener noreferrer sponsored";
-  link.setAttribute("aria-label","Find "+row.name+" on eBay (affiliate link)");
-  seller.append(link,e("small","","Search eBay listings for this exact set"));
-  seller.append(e("p","archiv-ebay-inline-disclosure","Affiliate link: Archív may earn a commission from qualifying purchases. Seller listings, prices and availability are not verified."));
-  details.append(seller);
- }
-
- hero.append(figure,details);wrap.append(hero);
- renderInventory(wrap,row.number);
- 
- shell.append(wrap);
-}
-function render(){app.replaceChildren();const shell=e("div","lego-shell");app.append(shell);
-else if(currentUser){menu.append(button("My profile",()=>{account.open=false;goProfile()},"lego-account-button"));if(adminEnabled)menu.append(button("Admin dashboard",()=>{account.open=false;location.hash="#/admin";void loadAdmin()},"lego-account-button"));menu.append(button("Sign out",()=>{account.open=false;void signOutLego()},"lego-account-button"))}
+const header=e("header","lego-header");
 const logo=e("a","lego-logo");logo.href="#/";logo.onclick=(event)=>{event.preventDefault();goTheme("All LEGO")};logo.setAttribute("aria-label","Archív home");
 const art=e("img");art.src=import.meta.env.BASE_URL+"archiv-lego-logo.png";art.alt="Archív. Your collection lives here.";art.onerror=()=>{art.onerror=null;art.src=import.meta.env.BASE_URL+"logo4"};logo.append(art);
 header.append(logo);
@@ -464,8 +463,7 @@ if(currentUser?.photoURL){const avatar=e("img","lego-account-avatar") as HTMLIma
 account.append(toggle);
 const menu=e("div","lego-account-dropdown");
 if(!authReady)menu.append(e("span","lego-account-label","Checking sign-in…"));
-else if(currentUser){if(adminEnabled)menu.append(button("Admin dashboard",()=>{account.open=false;location.hash="#/admin";void loadAdmin()},"lego-account-button"));menu.append(button("Sign out",()=>{account.open=false;void signOutLego()},"lego-account-button"))}
-if(location.hash==="#/profile"){renderProfile(shell);const foot=e("footer","lego-footer");const nav=e("nav","lego-footer-links");for(const [label,file] of [["Contact","contact.html"],["Attribution","attribution.html"],["Terms of Use","terms.html"],["Privacy","privacy.html"]]){const link=e("a","",label);link.href=import.meta.env.BASE_URL+file;nav.append(link)}foot.append(nav,e("p","lego-copyright","© 2026 Archív. All rights reserved."));shell.append(foot);return}
+else if(currentUser){menu.append(button("My profile",()=>{account.open=false;goProfile()},"lego-account-button"));if(adminEnabled)menu.append(button("Admin dashboard",()=>{account.open=false;location.hash="#/admin";void loadAdmin()},"lego-account-button"));menu.append(button("Sign out",()=>{account.open=false;void signOutLego()},"lego-account-button"))}
 else {
  const googleMark=()=>{const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");svg.setAttribute("viewBox","0 0 48 48");svg.setAttribute("aria-hidden","true");svg.classList.add("gsi-material-button-icon");for(const [fill,d] of [["#EA4335","M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"],["#4285F4","M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"],["#FBBC05","M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"],["#34A853","M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"]] ){const p=document.createElementNS("http://www.w3.org/2000/svg","path");p.setAttribute("fill",fill);p.setAttribute("d",d);svg.append(p)}return svg};
 
@@ -476,6 +474,7 @@ header.append(account);
 shell.append(header);
 if(accountError)shell.append(e("p","lego-account-message",accountError));
 if(currentUser&&!collectionReady)shell.append(e("p","lego-account-message","Loading your saved collection…"));
+if(location.hash==="#/profile"){renderProfile(shell);const foot=e("footer","lego-footer");const nav=e("nav","lego-footer-links");for(const [label,file] of [["Contact","contact.html"],["Attribution","attribution.html"],["Terms of Use","terms.html"],["Privacy","privacy.html"]]){const link=e("a","",label);link.href=import.meta.env.BASE_URL+file;nav.append(link)}foot.append(nav,e("p","lego-copyright","© 2026 Archív. All rights reserved."));shell.append(foot);return}
 if(location.hash==="#/admin"){
  const main=e("main","lego-admin");
  main.append(e("h1","","Archív analytics"));
