@@ -8,3 +8,19 @@ export function decideGoogleAuth(intent:GoogleAuthIntent,isNewUser:boolean|null)
  if(intent==="sign-up"&&isNewUser)return "created";
  return "existing";
 }
+
+/** Fields permitted by collectorProfiles/{uid} Firestore rules at registration. */
+export function createCollectorProfile(
+ displayName:string|null,
+ email:string|null,
+ communicationsOptIn:boolean,
+ registeredAt:string
+){
+ return {
+  name:displayName||"Collector",
+  email:email||"",
+  firstSeen:registeredAt,
+  lastSeen:registeredAt,
+  communicationsOptIn:communicationsOptIn===true
+ };
+}
