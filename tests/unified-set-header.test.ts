@@ -28,7 +28,7 @@ describe("consistent Archív logo and set page navigation",()=>{
  it("places the theme catalog button directly below the catalog heading",()=>{
   const title=app.indexOf('main.append(e("h2","",selected))');
   const back=app.indexOf('main.append(button("← Back to Catalog",()=>goTheme("All LEGO"),"archiv-collector-back archiv-set-page-back"))');
-  const filters=app.indexOf('const controls=e("div","lego-controls")',title);
+  const filters=app.indexOf('const toolbar=e("div","archiv-filter-bar archiv-catalog-filters")',title);
   expect(title).toBeGreaterThan(0);
   expect(back).toBeGreaterThan(title);
   expect(filters).toBeGreaterThan(back);
