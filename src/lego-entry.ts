@@ -49,6 +49,8 @@ type Activity={uid:string;type:string;setNumber?:string;theme?:string;at:string}
 type Profile={uid:string;name?:string;email?:string;firstSeen?:string;lastSeen?:string;communicationsOptIn?:boolean};
 // Data-erasing profile actions stay off until the shared Firebase rules are approved and deployed.
 const PROFILE_BACKEND_READY=import.meta.env.VITE_PROFILE_BACKEND_READY==="true";
+// Opt in only after photo permissions, admin access and legal copy are deployed.
+const PHOTO_BACKEND_READY=import.meta.env.VITE_PHOTO_BACKEND_READY==="true";
 let ownProfile:Profile|null=null,ownProfileLoaded=false,profileBusy=false,profileError="",profileInfo="",deleteConfirmOpen=false,deleteConfirmText="",deletingAccount=false;
 let stopOwnProfile:Unsubscribe|null=null;
 let profiles:Profile[]=[],events:Activity[]=[],chosenUid="";
@@ -495,9 +497,11 @@ function renderSetDetail(shell:HTMLElement,id:string){
   photoPanel.append(e("h3","","Your set photograph"));
   const savedImage=e("div","archiv-owner-photo-contents");
   photoPanel.append(savedImage);
-  photoPanel.append(button("Upload or replace your photo",()=>openOwnedPhotoDialog(legoDb!,currentUser!.uid,row.number,row.name,render),"archiv-photo-upload-button"));
+  const upload=button("Upload or replace your photo",()=>openOwnedPhotoDialog(legoDb!,currentUser!.uid,row.number,row.name,render),"archiv-photo-upload-button");
+  upload.disabled=!PHOTO_BACKEND_READY;photoPanel.append(upload);
+  if(!PHOTO_BACKEND_READY)savedImage.append(e("p","archiv-photo-muted","Photo contributions are being prepared. Secure storage and moderation must be enabled first."));
   figure.append(photoPanel);
-  showOwnPhoto(savedImage,legoDb,currentUser.uid,row.number);
+  if(PHOTO_BACKEND_READY)showOwnPhoto(savedImage,legoDb,currentUser.uid,row.number);
  }
  if(!owned){
   const seller=e("div","lego-shop-pending archiv-ebay-inline");
@@ -510,7 +514,7 @@ function renderSetDetail(shell:HTMLElement,id:string){
  }
 
  hero.append(figure,details);wrap.append(hero);
- if(legoDb){
+ if(legoDb&&PHOTO_BACKEND_READY){
   const published=e("section","archiv-community-photo-panel");
   wrap.append(published);
   showPublishedPhoto(published,legoDb,row.number);
@@ -572,9 +576,11 @@ async function deleteOwnProfile(){
   const priorMarker=await getDoc(marker);
   if(!priorMarker.exists())await setDoc(marker,{deleting:true});
   // Withdraw any publicly approved photos before erasing the user's identity.
-  const storedPhotos=await getDocs(collection(legoDb,"users",user.uid,"setPhotos"));
-  for(const photo of storedPhotos.docs)await withdrawOwnSetPhoto(legoDb,user.uid,photo.id);
-  await deleteUserDocuments(["setPhotos"]);
+  if(PHOTO_BACKEND_READY){
+   const storedPhotos=await getDocs(collection(legoDb,"users",user.uid,"setPhotos"));
+   for(const photo of storedPhotos.docs)await withdrawOwnSetPhoto(legoDb,user.uid,photo.id);
+   await deleteUserDocuments(["setPhotos"]);
+  }
   await deleteUserDocuments(["items"]);
   await deleteUserDocuments(["groups"]);
   await deleteUserDocuments(["activity"]);
@@ -789,7 +795,8 @@ if(location.hash==="#/admin"){
   if(legoDb){
    const photoModeration=e("section","archiv-admin-photo-review");
    main.append(photoModeration);
-   renderPhotoModeration(photoModeration,legoDb,id=>{const set=data.find(x=>x.number===id);return set?set.name+" ("+id+")":"LEGO set "+id});
+   if(PHOTO_BACKEND_READY)renderPhotoModeration(photoModeration,legoDb,id=>{const set=data.find(x=>x.number===id);return set?set.name+" ("+id+")":"LEGO set "+id});
+   else photoModeration.append(e("h2","","Community photo review"),e("p","lego-admin-note","Photo moderation is staged but will only activate after secure Firebase rules and updated photo policies have been deployed."));
   }
   main.append(e("h2","","Popular themes in owned collections"));
   const themes:Record<string,number>={};
@@ -906,7 +913,10 @@ if(collectorRoute){
      const side=e("div","archiv-collector-set-side");
      side.append(e("span","archiv-collector-status",desired==="owned"?"✓ Owned":"♡ Wishlisted"));
      if(desired==="owned"&&legoDb&&currentUser){
-      side.append(button("Upload photo",()=>openOwnedPhotoDialog(legoDb!,currentUser!.uid,row.number,row.name,render),"archiv-photo-row-upload"));
+      const upload=button("Upload photo",()=>openOwnedPhotoDialog(legoDb!,currentUser!.uid,row.number,row.name,render),"archiv-photo-row-upload");
+      upload.disabled=!PHOTO_BACKEND_READY;
+      if(!PHOTO_BACKEND_READY)upload.title="Photo uploads activate after secure storage and moderation are configured.";
+      side.append(upload);
      }
      const details=e("a","archiv-collector-details","View set details");details.href="#/set/"+encodeURIComponent(row.number);details.onclick=()=>{collectionDetailReturn=view};side.append(details);
      if(desired==="wishlist"){
