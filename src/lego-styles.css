@@ -449,3 +449,62 @@
 .archiv-personal-welcome{margin:24px 0 8px;color:#08243b;font:normal clamp(25px,3.5vw,35px)/1.2 Georgia,serif}
 .archiv-personal-welcome+.lego-popular-heading{margin-top:12px}
 .archiv-personal-collection-label{color:#86633e;font-size:12px;font-weight:750;letter-spacing:.06em;margin:0 0 10px}
+
+/* Signed-in homepage summary is compact so the browse-first catalog remains primary. */
+.archiv-home-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:8px 0 31px}
+.archiv-home-stat{display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;min-height:132px;gap:7px;padding:16px 10px;border-radius:15px;border:1px solid #e0d4c4;background:#fffdf8;color:#08243b;box-shadow:0 5px 22px -18px #08243b70;cursor:pointer;transition:border-color .15s,transform .15s,box-shadow .15s}
+.archiv-home-stat:hover:not(:disabled){border-color:#c0803b;transform:translateY(-2px);box-shadow:0 12px 25px -19px #08243b70}
+.archiv-home-stat:focus-visible{outline:3px solid #176553;outline-offset:3px}
+.archiv-home-stat:disabled{opacity:.65;cursor:wait}
+.archiv-home-stat-number{font:normal clamp(30px,4.2vw,44px)/1 Georgia,serif}
+.archiv-home-stat-label{font-size:13px;font-weight:750}
+.archiv-home-stat-open{font-size:11px;color:#8f6337;font-weight:750}
+.archiv-catalog-heading{margin:26px 0 10px;font:normal clamp(30px,4vw,40px)/1.2 Georgia,serif;color:#08243b}
+.archiv-catalog-heading+.lego-popular-heading{margin-top:4px}
+
+/* Private collector category views, separate from the shopping-first homepage. */
+.archiv-collector-view{padding:24px 0 8px}
+.archiv-collector-view-header{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin:8px 0 18px}
+.archiv-collector-view-intro h1{font:normal clamp(34px,5vw,47px)/1.15 Georgia,serif;margin:8px 0;color:#08243b}
+.archiv-collector-view-intro p{color:#6d6257;font-size:14px;line-height:1.6;margin:8px 0 0}
+.archiv-collector-eyebrow{font-size:11px;font-weight:800;letter-spacing:.17em;color:#af783c}
+.archiv-collector-catalog-link,.archiv-collector-bottom-link{font-size:13px;color:#176553;font-weight:750;text-decoration:underline;text-underline-offset:3px}
+.archiv-collector-catalog-link{flex-shrink:0;margin-bottom:5px}
+.archiv-collector-catalog-link:focus-visible,.archiv-collector-bottom-link:focus-visible{outline:3px solid #176553;outline-offset:4px}
+.archiv-collector-back{margin-bottom:16px}
+.archiv-collector-count{color:#685f57;font-size:13px;font-weight:750;margin:21px 0 15px}
+.archiv-collector-feedback{padding:27px;border-radius:14px;background:#fffdf8;border:1px solid #e3d8ca;color:#645c54;line-height:1.6}
+.archiv-collecting-themes{margin:12px 0 32px}
+.archiv-collector-list{background:#fffdf8;border:1px solid #ded5c9;border-radius:16px;overflow:hidden}
+.archiv-collector-set-row{display:grid;grid-template-columns:110px minmax(0,1fr) minmax(136px,190px);gap:18px;align-items:center;padding:16px;border-bottom:1px solid #ebe2d7}
+.archiv-collector-set-row:last-child{border-bottom:0}
+.archiv-collector-set-photo{display:flex;align-items:center;justify-content:center;border-radius:10px;overflow:hidden;background:#faf7f2;border:1px solid #efe8de;height:105px}
+.archiv-collector-set-photo img{max-width:100%;width:100%;height:100%;object-fit:contain}
+.archiv-collector-image-empty{display:flex;align-items:center;justify-content:center;background:#f5eee4;border:1px solid #e6d8c6;border-radius:10px;color:#84796c;min-height:95px;padding:10px;font-size:12px;text-align:center}
+.archiv-collector-set-info{min-width:0}
+.archiv-collector-set-theme{font-size:10px;font-weight:800;color:#96703d;letter-spacing:.1em;text-transform:uppercase}
+.archiv-collector-set-name{display:block;color:#08243b;font-size:17px;font-weight:750;line-height:1.35;text-decoration:none;margin:5px 0}
+.archiv-collector-set-name:hover{text-decoration:underline;text-underline-offset:3px}
+.archiv-collector-set-meta{color:#777066;font-size:12px;margin:6px 0}
+.archiv-collector-set-side{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.archiv-collector-status{font-size:11px;font-weight:800;border:1px solid #d2dfd2;color:#206b48;background:#f1f8ef;border-radius:80px;padding:5px 10px}
+.archiv-collector-details{color:#08243b;font-size:12px;text-underline-offset:3px}
+.archiv-collector-ebay{color:#155f4a;font-size:13px;font-weight:800;text-decoration:underline;text-underline-offset:3px}
+.archiv-collector-disclosure{color:#786c5d;font-size:10px;line-height:1.4}
+.archiv-collector-show-more{display:block;margin:20px auto 26px}
+.archiv-collector-bottom-link{display:inline-block;margin:24px 0 20px}
+.archiv-collector-unavailable{grid-template-columns:110px minmax(0,1fr)}
+@media(max-width:700px){
+ .archiv-home-stats{gap:8px;margin-bottom:25px}
+ .archiv-home-stat{min-height:110px;padding:12px 4px;gap:5px}
+ .archiv-home-stat-number{font-size:clamp(26px,7vw,38px)}
+ .archiv-home-stat-label{font-size:11px}
+ .archiv-home-stat-open{font-size:9px}
+ .archiv-collector-view-header{align-items:flex-start;flex-direction:column;gap:10px}
+ .archiv-collector-set-row{grid-template-columns:84px minmax(0,1fr);gap:12px;padding:12px}
+ .archiv-collector-set-photo{height:90px}
+ .archiv-collector-set-name{font-size:15px}
+ .archiv-collector-set-side{grid-column:2;display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px}
+ .archiv-collector-disclosure{flex-basis:100%}
+ .archiv-collector-unavailable{grid-template-columns:84px minmax(0,1fr)}
+}
