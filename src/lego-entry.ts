@@ -849,8 +849,7 @@ if(selected==="All LEGO"){
   }
   shell.append(stats);
  }
- shell.append(e("h2","archiv-catalog-heading","Catalog"));
- const heading=e("h2","lego-popular-heading","Most Popular");shell.append(heading);
+ shell.append(e("h2","archiv-catalog-heading","Catalog: Most Popular"));
 const t=e("div","lego-theme-grid lego-home-themes");featured.forEach(n=>t.append(themeTile(n)));shell.append(t);
 const more=e("section","lego-more-themes");more.append(e("h2","","More LEGO® themes"));
 const field=e("input","lego-theme-search") as HTMLInputElement;field.type="search";field.placeholder="Find a LEGO® theme";field.setAttribute("aria-label","Find a LEGO theme");more.append(field);
