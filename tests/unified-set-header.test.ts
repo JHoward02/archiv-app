@@ -42,7 +42,8 @@ describe("consistent Archív logo and set page navigation",()=>{
  it("keeps account menu and collector features on all pages",()=>{
   expect(app).toContain('header.append(account)');
   expect(app).toContain('const collectorRoute=collectorViewFromHash()');
-  expect(app).toContain('const heading=e("h2","lego-popular-heading","Most Popular")');
+  expect(app).toContain('shell.append(e("h2","archiv-catalog-heading","Catalog: Most Popular"))');
+  expect(app).not.toContain('const heading=e("h2","lego-popular-heading","Most Popular")');
   expect(app).toContain('const seller=e("div","lego-shop-pending archiv-ebay-inline")');
   expect(app).toContain('privacy.href=import.meta.env.BASE_URL+"privacy.html"');
  });
