@@ -1,60 +1,56 @@
-# Archív community photographs: ownership, retention, moderation, and launch
+# Archív community photographs: nonexclusive permission and removal requests
 
-**Status:** Staging code only. `VITE_PHOTO_BACKEND_READY` stays **false**, and no photo uploads are authorized. The updated `firestore.rules` in this branch are **NOT DEPLOYED**. Legal terms and Firebase authorization must be reviewed and activated separately.
+**Status:** Code and interface in staging. Uploads remain **disabled** (`VITE_PHOTO_BACKEND_READY=false`) until approved legal language and Firebase access rules are deployed and verified. Production continues to use its existing release and policies.
 
-## Invariants requested by the product owner
+## Policy and product behavior
 
-1. **All uploads:** On every new photo upload, the contributor must affirm that they own the photo's copyright and execute a distinct, written electronic copyright assignment in favor of the legally identified owner/operator of Archív. This applies to private photos as well as photos submitted to community review. A blanket website Terms statement is **not** sufficient.
-2. **Separate community choice:** Copyright assignment is mandatory for saving any uploaded photo. Submission to community review is a different, optional checkbox. Private means invisible to other collectors, not that the copyright remains with the uploader.
-3. **Moderation:** Pending photos are visible only to their uploader and authorized reviewers. Moderation must approve a submission before any public community photo is created.
-4. **Permanent community content:** Each approved photograph becomes an independent `communitySetPhotos/{photoId}` catalog asset. Multiple approved photos may coexist for the same set. Approved community photographs remain displayed after account deletion and are never deleted merely because the contributor removes their private copy, withdraws a pending submission, or deletes their account.
-5. **Account deletion:** Remove all private, pending, rejected, and account-linked photo copies from `users/{uid}/setPhotos`. This includes redundant working copies of approved photos, but the **independent approved community originals are retained**. Retain a restricted copyright assignment audit record for each approved photo, containing the verified account UID, signed name, timestamp, assignment version, and photo ID. This is a legal-document retention exception to ordinary account erasure.
-6. **Administrators:** Authorized moderators can unpublish community photos for legal, safety, or policy reasons. Account deletion is **not** a reason to unpublish an approved photo.
-7. **No retroactive assertion:** No upload created before the signed assignment agreement may be treated as Archív-owned on this basis alone.
+- **Photographers retain all copyright.** Archív never claims ownership of user-uploaded photos. Uploading a photo does not assign its copyright to Archív.
+- **Private upload:** The user grants Archív only the operational permission needed to resize, store, and show the image in that user's own account. It is not submitted for public display.
+- **Optional community permission:** The user explicitly checks **Submit for community review**. This grants Archív a **non-exclusive, worldwide, royalty-free, limited-purpose license** to store, resize, reproduce and display the photograph within the Archív catalog and related app features after approval. The photographer remains free to use/license the work elsewhere.
+- **Review:** Photos are private until explicitly submitted and approved by an authorized moderator. Admins can reject or unpublish photos. An approved photo gets an independent public `communitySetPhotos/{photoId}` document without a name or UID and may remain in the catalog even after account deletion.
+- **Removal requests:** An approved photo is eligible for removal on request. Each community gallery photo includes a **Request removal** mail link identifying the set and public photo ID. An Archív admin verifies the requester is the rights holder or their authorized representative before unpublishing. Admins may also unpublish for legal, privacy or content-moderation reasons. Requests are not fulfilled automatically by clicking the link, and website/email copies already cached elsewhere may persist temporarily.
+- **Account deletion:** Deletes account-linked personal/private/pending/rejected photos and the contributor's account-linked working copies of approved photos. Independently approved public community photos stay available by default, **but can still be removed on request**. Restricted evidence of community-display permission may be retained for rights disputes and legitimate removal-request handling for an appropriate period, as disclosed in the Privacy Policy. Public documents contain no account IDs or personal names.
+- **No retroactive re-licensing:** Don't automatically apply this policy to past uploads made under different terms. No photos are presently accepted by this disabled-by-default staged feature.
 
-## Legal requirements (United States)
+## Technical design
 
-- **17 U.S.C. § 204(a)** requires a transfer of copyright ownership to be in writing and signed by the rights holder (or authorized agent). Draft language, an unchecked box, or a routine ToS amendment cannot establish retroactive ownership. Electronic-signature enforceability, assent evidence, minors, international users, and transfer termination rights need counsel review.
-- The agreement must name **the actual legal entity/person receiving the copyright**, not only the Archív trade name. This is a launch blocker; replace the draft phrase `the legal operator of Archív` with the verified legal name.
-- The photographer must own the rights being assigned, and cannot transfer copyrights of other people or underlying third-party designs. Rights in LEGO artwork, branding, and products are not acquired.
-- Confirm whether separate author moral rights or privacy/publicity consents are required for your operating jurisdictions. A copyright transfer does not automatically give rights in recognizable people or private surroundings.
+- `users/{uid}/setPhotos/{setNumber}`: private account photo, `status`, `communityConsent`, `licenseVersion`, `consentedAt`, and image. Uploaders may overwrite/delete personal copies. New uploads are owner-only and size-limited.
+- `communitySetPhotos/{photoId}`: approved public image, LEGO set number, approval timestamp. Multiple photos per set, no public author UID or name. Only moderators may publish/unpublish. An account deletion does not delete these.
+- `communityPhotoPermissions/{photoId}`: restricted record of the explicit permission (`ownerUid`, consent timestamp, license version, set, and approved photo ID). Moderators only; subject to a defined data-retention policy.
+- `PHOTO_LICENSE_VERSION=archiv-community-photo-license-v1-2026-11-01`.
+- Images are compressed/re-encoded locally as small JPEGs to remove embedded source EXIF, capped around 250KB. This low-volume Firestore prototype may eventually need a scalable object store.
 
-## Proposed Terms of Use addition (for legal review, NOT live yet)
+## Proposed Terms of Use language (for review before publication)
 
-**User-submitted photographs and copyright assignment.**
+**Uploaded photographs and community permission**
 
-> Only upload photographs for which you personally own the copyright and have authority to transfer those rights. Each photograph requires a separate signed copyright-assignment agreement before Archív will store it. By checking the assignment confirmation, typing your full legal name as your electronic signature, and submitting the photograph, you assign and transfer to **[INSERT LEGAL NAME OF ARCHÍV OPERATOR]** all copyright rights that you own in the uploaded photograph, worldwide, for the full remaining copyright term, subject to applicable law. No payment is due for the transfer unless separately agreed in writing. This transfer applies whether the photo is kept private or submitted for community review and remains effective after you remove your account-linked photo or delete your account. You are not transferring rights in underlying third-party trademarks, LEGO products, or copyrighted artwork that you do not own.
+> You retain ownership of the copyright in photographs you upload to Archív. We do not claim ownership of your photos. You represent that you own the photograph or have the rights needed to upload it. You grant Archív permission to process, resize, store, and display a private upload to you as necessary to provide the photo feature.
 >
-> Saving a photo privately does **not** submit it to the public community catalog. To propose a photo for publication, separately select the optional **Submit for community review** checkbox. Archív can reject or unpublish contributions. Once Archív approves and publishes a community photo, it becomes an independently retained Archív catalog asset. Approved community photos are not deleted merely because you later remove your private copy or delete your account. Private, pending, and rejected account photos are deleted with your account. You may request removal of published material for applicable legal reasons, and Archív may remove community photos at its discretion.
-
-**Electronic assignment evidence (technical):** Store a versioned statement/agreement ID, affirmative checkbox, typed full legal name, authenticated Firebase UID, server-verified timestamp where feasible, and photo identifier/fingerprint. Prior to release, have counsel approve the actual signature procedure and evidence/retention policy. Present the complete assignment before signing.
-
-## Proposed Privacy Policy addition (for legal review, NOT live yet)
-
-> When you upload a set photograph, Archív resizes it into a small JPEG in your browser, which removes embedded source camera metadata such as GPS/EXIF. We store the JPEG, LEGO set identifier, upload/review status, account identifier, and the details of your signed copyright-assignment agreement (including your typed legal name, acceptance time, and agreement version). Photos saved without opting into community review are private to your account. Pending submissions are accessible to authorized Archív moderators.
+> If you optionally select **Submit for community review**, you also grant Archív a non-exclusive, worldwide, royalty-free license to store, reproduce, resize, and display the photograph in Archív's community catalog and related app features if we approve it. You remain the copyright owner and may use or license your photo elsewhere. Archív may reject a submission or remove it for moderation, legal, or privacy reasons.
 >
-> After a moderator approves a community photograph, a separate copy is published in the community LEGO catalog and can be viewed by all visitors. That approved photo remains in the catalog after you delete your account. Public community photo records are not labeled with your account ID or signature. When you delete your account, we erase private and unapproved photos and account-linked copies. We retain approved public community photographs and restricted copyright assignment records, including identifying signature information, to document copyright ownership and respond to disputes. These audit records are accessible only to authorized administrators and retained for the legally appropriate period. Contact Archív about copyright, privacy, or removal requests.
+> An approved community photograph may remain publicly available after you delete your Archív account. You may request its removal at any time by emailing **getshelfiecollect@gmail.com** or using the **Request removal** link accompanying the photo. Include the LEGO set number or photo reference. We may request reasonable verification that you own the rights or are authorized to act for the rights holder. We will review removal requests and remove qualifying photographs from the Archív catalog. Removal may not immediately eliminate independently cached copies or prior lawful uses.
 
-## Technical storage model
+## Proposed Privacy Policy language (for review before publication)
 
-- `users/{uid}/setPhotos/{setNumber}`: private/working JPEG copy, typed signature, copyright assignment version, timestamps and `private|pending|approved|rejected` status. Account deletion deletes these records.
-- `communitySetPhotos/{randomPhotoId}`: a permanent, approved image and set number; **no public UID or signed legal name**. Readable by everyone; created/unpublished only by moderators. Multiple approved images per set allowed.
-- `communityPhotoAssignments/{randomPhotoId}`: restricted audit of uploader UID, signed legal name, signature time, agreement version, set, approval time, and published photo ID. Survives account deletion; write-once/moderator-only.
-- Images are converted locally to JPEG, capped at 340,000 base64 characters (~250 KB), and stored in Firestore for initial low-volume deployment. Reassess costs, quotas, and object storage/CDN for scale.
+> If you upload a LEGO set photo, we store a resized JPEG, the set identifier, the upload/review status, an account identifier, and, when you opt into community review, a record of your permission and its timestamp. We convert source photos to JPEG in your browser to strip embedded camera metadata such as GPS/EXIF. Photos saved privately are available only to you. Authorized reviewers may access photos you submit for community review.
+>
+> When approved, a separate photo copy is published in the shared Archív catalog. Its public record does not include your account name, email or UID. Approved community photos may remain after you delete your account. You retain copyright and can request removal of an approved photo by contacting **getshelfiecollect@gmail.com**; we may ask for reasonable proof of authorship or authorization.
+>
+> Account deletion removes your personal and unapproved photo records and account-linked working copies. Separately approved community photos are retained unless removed on request or for moderation reasons. We may retain limited nonpublic permission records associated with approved community photos for an appropriate period to document the permission provided and resolve copyright or removal disputes. Contact us to request access, removal, or clarification of data rights.
 
-## Release and security validation required BEFORE enabling uploads
+## Activation and security checklist
 
-- [ ] Identify Archív's actual legal operator/transferee and have counsel approve the electronically signed rights assignment, Terms and Privacy Policy.
-- [ ] Publish the approved Terms and Privacy Policy on both production and preview before enabling the feature anywhere.
-- [ ] Deploy tested, reconciled `firestore.rules` from this branch in Firebase project `archiv-3f5df`; GitHub file changes alone do not deploy rules.
-- [ ] Run Firebase Emulator Suite tests: signed-in owner with **Owned** set may upload; nonowner rejected; private photos not readable by other users or admins without pending status; admin can query only pending; only admin can publish/unpublish; uploader cannot delete or overwrite published community copies; audit records admin-only and immutable; deleted account cannot write photo data.
-- [ ] Check cross-write consistency: admin publication and audit create in the same batch; stale pending submission cannot be approved.
-- [ ] Confirm assignment evidence uses trustworthy server time, a verifiable signed agreement version, and legal-entity identification, with no unintended publication of signed personal information.
-- [ ] With distinct collector and admin test accounts: upload private, upload pending, approve, reject, repeat approval for another photo of the same set, delete private photo, delete account, verify **community gallery persists**, and confirm retained audit availability for legal purposes.
-- [ ] Confirm `collectionGroup("setPhotos")` pending query and necessary indexes, plus `communitySetPhotos` set-number query.
-- [ ] Explicitly activate `VITE_PHOTO_BACKEND_READY=true` in a staging-only build after backend tests. Keep production pinned until separately approved.
-- [ ] Check UI on mobile and validate replacement, cancellation, error recovery, and photo ownership warnings.
+- [ ] Review/approve Terms and Privacy language, including request handling and consent record retention. Non-exclusive copyright licensing is supported by U.S. Copyright Office guidance; avoid describing any automatic copyright transfer.
+- [ ] Publish the approved legal terms on Archív's production and relevant staging endpoints **before** any uploads are enabled.
+- [ ] Deploy the reviewed `firestore.rules` to the intended Firebase project `archiv-3f5df`. A GitHub source file alone does not deploy Firebase rules.
+- [ ] Run Firebase Emulator Suite policy tests: signed-in owner of Owned set uploads; cross-user reads/writes denied; unsigned reads denied for private photos; private records invisible to moderators except pending; only admin approves, publishes, unpublishes; public photo documents never carry identifying fields; permission records admin-only; account deletion cannot remove community photos.
+- [ ] Confirm Firestore query indexes for pending `collectionGroup("setPhotos")` and set-filtered `communitySetPhotos`.
+- [ ] Test two distinct collector accounts and a moderator: upload private, review opt-in default unchecked, pending approval, rejection, approved gallery, removal-email photo ID, admin unpublish, and account deletion retaining public approved photos. Also test that a verified request results in removal.
+- [ ] Establish a workflow for removal-request identity verification, audit logging, actual deletion, and response time.
+- [ ] Enable `VITE_PHOTO_BACKEND_READY=true` only in an explicitly approved staging build after security and legal tests. Keep production immutable until separately approved.
 
-## Current limitations
+## Limitations
 
-Uploads are intentionally disabled by default. Neither a passing source test nor a GitHub Pages deployment verifies Firebase security rules. This prototype uses Firestore to hold compressed JPEG payloads, not a production-grade media CDN. Public images are displayed on set details as separately labeled community photos, not substituted for catalog tiles. Moderator decisions are manual. No old upload can be assigned retroactively without separate signed consent.
+The uploader cannot directly erase already-approved community photos via account deletion; verified removal requests are processed by an admin. This prototype has no automated request intake or takedown SLA, so no guarantee should be made about exact processing time. Public photos may be externally cached. The app is not yet licensed to ingest user photos until the reviewed Terms and actual Firebase security rules are live. Non-exclusive license language should be reviewed for the regions where Archív is offered.
+
+**References:** U.S. Copyright Office, Copyright Basics, Circular 1 (non-exclusive permission does not transfer ownership); `https://www.copyright.gov/what-is-copyright/`.
