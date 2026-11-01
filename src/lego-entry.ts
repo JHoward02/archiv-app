@@ -6,7 +6,7 @@ import { collectorOverview, collectingThemeTiles, setsWithStatus, absentFromCata
 import { filterSets, sortSets, decadeOptions, pieceOptions, setSortOptions, savedThemeCounts, type SetOrder } from "./lego-filters";
 import { openLegoSetNumberScanner } from "./lego-camera-scanner";
 import { openOwnedPhotoDialog, showOwnPhoto, showPublishedPhoto, renderPhotoModeration } from "./lego-photo-ui";
-import { withdrawOwnSetPhoto } from "./lego-photo-contributions";
+import { removeOwnSetPhoto } from "./lego-photo-contributions";
 import { collection, doc, getFirestore, onSnapshot, setDoc, deleteDoc, getDoc, getDocs, addDoc, increment, serverTimestamp, updateDoc, writeBatch, type Unsubscribe } from "firebase/firestore";
 type SetRow={number:string;name:string;year:number;theme:string;parts:number;image?:string;images?:string[]};
 type Status="owned"|"wishlist";
@@ -575,10 +575,11 @@ async function deleteOwnProfile(){
   // Resume deletion rather than trying to update the marker (which rules forbid).
   const priorMarker=await getDoc(marker);
   if(!priorMarker.exists())await setDoc(marker,{deleting:true});
-  // Withdraw any publicly approved photos before erasing the user's identity.
+  // Erase only the user-account photo copies. Approved community catalog copies and
+  // restricted copyright-assignment audit records are independent and persist.
   if(PHOTO_BACKEND_READY){
    const storedPhotos=await getDocs(collection(legoDb,"users",user.uid,"setPhotos"));
-   for(const photo of storedPhotos.docs)await withdrawOwnSetPhoto(legoDb,user.uid,photo.id);
+   for(const photo of storedPhotos.docs)await removeOwnSetPhoto(legoDb,user.uid,photo.id);
    await deleteUserDocuments(["setPhotos"]);
   }
   await deleteUserDocuments(["items"]);
@@ -693,12 +694,12 @@ function renderProfile(shell:HTMLElement){
  main.append(preferences);
  const danger=e("section","archiv-profile-danger");
  danger.append(e("h2","","Delete your profile"));
- danger.append(e("p","","Permanently delete your Archív login, saved sets, wishlist, collection activity, personal photographs and any published community photos you contributed. This cannot be undone. Your Google account and eBay account will not be deleted."));
+ danger.append(e("p","","Permanently delete your Archív login, saved sets, wishlist, collection activity, and private or unapproved photo copies. Moderator-approved community photos remain in the Archív catalog, and a restricted copyright-assignment record remains as proof of the transfer. Your Google and eBay accounts are not deleted."));
  const trigger=button(deleteConfirmOpen?"Cancel deletion":"Delete profile",()=>{deleteConfirmOpen=!deleteConfirmOpen;deleteConfirmText="";profileError="";render()},"archiv-profile-delete-trigger");
  danger.append(trigger);
  if(deleteConfirmOpen){
   const confirm=e("div","archiv-profile-confirm");confirm.append(e("strong","","Confirm permanent deletion"));
-  confirm.append(e("p","","To confirm, sign in again with Google and type DELETE below. This will permanently erase your Archív collection records. A minimal account identifier may be retained to prevent deleted records being recreated from an old session."));
+  confirm.append(e("p","","To confirm, sign in again with Google and type DELETE below. This permanently erases your Archív collection records and non-community photos. Approved community photos stay published and restricted copyright-transfer evidence is retained. A minimal account identifier may also remain to prevent old sessions recreating deleted records."));
   const field=e("input") as HTMLInputElement;field.type="text";field.placeholder="Type DELETE";field.autocomplete="off";field.value=deleteConfirmText;
   field.oninput=()=>{deleteConfirmText=field.value;final.disabled=deleteConfirmText!=="DELETE"||!PROFILE_BACKEND_READY||profileBusy};
   confirm.append(field);
