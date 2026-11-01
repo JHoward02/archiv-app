@@ -129,111 +129,57 @@ jobs:
           mkdir -p dist-web/lego-preview
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/lego-preview/
           printf '{"source_commit":"%s","branch":"feature/owned-set-photo-review-20261031","photo_backend_ready":true}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
-          # Promote the verified LEGO build to the production root, without
-          # removing independent preview directories or the rollback branch.
-          # Keep the production release pinned while new shopping features are tested.
-          # The preview above always builds from the latest LEGO staging branch.
-          # Rebuild preview with optional Firebase Google sign-in and cloud LEGO records.
-          # Retry staging preview via newest push; Pages concurrency cancels superseded runs.
-          # Refresh staging preview for Google sign-in and sign-up button presentation.
-          # Refresh LEGO staging preview with expandable account menu.
-          # Refresh staging with Google profile image account toggle.
-          # Stage private collector analytics dashboard and reporting UI.
-          # Stage per-user activity and daily reporting; production pin unchanged.
-          # Preview readable activity and registration totals.
-          # Preview Firebase free-plan account reporting without callable functions.
-          # Refresh theme header account and back-button alignment in staging.
-          # Refresh product detail header controls alignment in staging.
-          # Reserve a dedicated navigation lane above the theme tile.
-          # Preview mobile homepage avatar anchored to upper-right of logo.
-          # Preview theme set-list page without redundant featured theme brick.
-          # Production stays on its pre-policy-change source snapshot until approved.
-          # Do not copy unapproved staging files into the production root.
-          git worktree add "$RUNNER_TEMP/archiv-lego-production" 7ad5c81340e72b69821b14a9f616ed65ea48cb3e^
+          # Approved release (2026-10-31 Pacific): promote the reviewed photo-enabled
+          # LEGO experience with concise community-photo consent to production.
+          # Pin production to an immutable tested commit; future preview changes
+          # must NOT silently update production.
+          RELEASE_SHA="202414c2fffffb1edd1c035bc7520cafe30259f2"
+          test "$(git rev-parse "$RELEASE_SHA^{commit}")" = "$RELEASE_SHA"
+          git worktree add "$RUNNER_TEMP/archiv-lego-production" "$RELEASE_SHA"
           npm --prefix "$RUNNER_TEMP/archiv-lego-production" ci
-          # Restore the full generated catalog used by successful production builds.
-          # The staging importer writes src/*.json and public/lego-parts, NOT public/data.
-          # Copy only generated catalog/inventory data, never staged application code or styles.
+          # The production copy gets the same validated generated LEGO data as preview.
           cp "$RUNNER_TEMP/archiv-lego-preview/src/lego-catalog.json" "$RUNNER_TEMP/archiv-lego-production/src/lego-catalog.json"
           cp "$RUNNER_TEMP/archiv-lego-preview/src/lego-themes.json" "$RUNNER_TEMP/archiv-lego-production/src/lego-themes.json"
           mkdir -p "$RUNNER_TEMP/archiv-lego-production/public/lego-parts"
           cp -R "$RUNNER_TEMP/archiv-lego-preview/public/lego-parts/." "$RUNNER_TEMP/archiv-lego-production/public/lego-parts/"
-          # Fail the deployment rather than silently publishing the tiny seed catalog again.
           node -e 'const fs=require("fs");const root=process.argv[1];const sets=JSON.parse(fs.readFileSync(root+"/src/lego-catalog.json"));const themes=JSON.parse(fs.readFileSync(root+"/src/lego-themes.json"));const shards=fs.readdirSync(root+"/public/lego-parts").filter(x=>/^[0-9]+[.]json$/.test(x));if(sets.length<25000||themes.length<15||shards.length!==128)throw Error("Incomplete production catalog: "+sets.length+" sets, "+themes.length+" themes, "+shards.length+" inventory shards");console.log("Production catalog validated:",sets.length,"sets,",themes.length,"themes,",shards.length,"inventory shards")' "$RUNNER_TEMP/archiv-lego-production"
-          # Promote the approved CI-tested catalog and collector filtering/sorting build.
-          # Preserve existing dashboard, legal policies, staging and rollback checkpoint.
-          git fetch origin feature/catalog-filter-sort-20261031
-          RELEASE_SHA="547986179350ff44dc8c3c7570e9ebec713608c6"
-          test "$(git rev-parse FETCH_HEAD)" = "$RELEASE_SHA"
-          # The production base worktree already has the correct LEGO entrypoint.
-          # Restore all new auth source AND its LEGO branding asset together.
-          git -C "$RUNNER_TEMP/archiv-lego-production" restore --source="$RELEASE_SHA" -- src/lego-entry.ts src/lego-styles.css src/lego-filters.ts src/auth-signup-decision.ts src/collector-home-summary.ts public/archiv-lego-logo.png public/archiv-toy-brick-logo.webp
-          test -s "$RUNNER_TEMP/archiv-lego-production/src/lego-filters.ts"
-          grep -Fq 'from "./lego-filters"' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
-          grep -Fq 'filterSets(' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
-          grep -Fq 'archiv-catalog-filters' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
-          grep -Fq 'Filter and sort your collection' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
-          test -s "$RUNNER_TEMP/archiv-lego-production/public/archiv-lego-logo.png"
+          # Protect collector dashboard, catalog controls, scanner, and photo permissions.
+          test -s "$RUNNER_TEMP/archiv-lego-production/src/lego-photo-ui.ts"
+          test -s "$RUNNER_TEMP/archiv-lego-production/src/lego-photo-contributions.ts"
           test -s "$RUNNER_TEMP/archiv-lego-production/public/archiv-toy-brick-logo.webp"
-          grep -Fq 'art.src=import.meta.env.BASE_URL+"archiv-toy-brick-logo.webp"' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
-          grep -Fq 'shell.append(e("h2","archiv-catalog-heading","Catalog: Most Popular"))' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
-          grep -Fq '.lego-logo img{mix-blend-mode:multiply}' "$RUNNER_TEMP/archiv-lego-production/src/lego-styles.css"
-          grep -Fq '.lego-header>.lego-account-controls{margin-right:18px}' "$RUNNER_TEMP/archiv-lego-production/src/lego-styles.css"
-          grep -Fq 'right:16px;' "$RUNNER_TEMP/archiv-lego-production/src/lego-styles.css"
-          # Require the reviewed homepage-identical header and both set-navigation controls.
-          grep -q 'const navigation=e("nav","archiv-set-back-navigation")' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
-          grep -q 'main.append(button("← Back to Catalog"' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
-          ! grep -q 'header.classList.add("lego-detail-header")' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
-          ! grep -q 'header.classList.add("lego-theme-header")' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
-          grep -q 'privacy.href=import.meta.env.BASE_URL+"privacy.html"' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
-          grep -q 'terms.href=import.meta.env.BASE_URL+"terms.html"' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
-          # Preserve full Google display name on private Profile, but use first names elsewhere.
-          grep -q 'firstNameFromDisplayName(currentUser.displayName||ownProfile?.name)' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
-          grep -q 'user.displayName?.trim()||ownProfile?.name||"Collector"' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
-          grep -q 'personalArchiveTitle(currentUser.displayName||ownProfile?.name)' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
-          # The signed-in dashboard must not publish without all three private pages and affiliate disclosures.
-          test -s "$RUNNER_TEMP/archiv-lego-production/src/collector-home-summary.ts"
-          grep -q 'collectorOverview(data,saved)' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
-          grep -q 'setsWithStatus(data,saved,desired)' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
-          grep -q 'collectingThemeTiles(themes,totals.collectingThemes)' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
-          grep -q 'catalogLink.href="#/complete-catalog"' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
-          grep -q 'bottom.href="#/complete-catalog"' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
-          grep -q 'buy.href=ebaySetSearch(row)' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
-          grep -q 'Archív may earn a commission if you buy through this eBay link.' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
-          VITE_PROFILE_BACKEND_READY=true npm --prefix "$RUNNER_TEMP/archiv-lego-production" run build:web
+          grep -Fq 'const collectorRoute=collectorViewFromHash()' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
+          grep -Fq 'const navigation=e("nav","archiv-set-back-navigation")' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
+          grep -Fq 'launchSetScanner' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
+          grep -Fq 'renderPhotoModeration' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
+          grep -Fq 'Submit for community review (optional).' "$RUNNER_TEMP/archiv-lego-production/src/lego-photo-ui.ts"
+          grep -Fq 'new URL("terms.html#community-photos",window.location.href)' "$RUNNER_TEMP/archiv-lego-production/src/lego-photo-ui.ts"
+          grep -Fq 'new URL("privacy.html#uploaded-photos",window.location.href)' "$RUNNER_TEMP/archiv-lego-production/src/lego-photo-ui.ts"
+          grep -Fq 'PHOTO_LICENSE_VERSION="archiv-community-photo-license-v1-2026-11-01"' "$RUNNER_TEMP/archiv-lego-production/src/lego-photo-contributions.ts"
+          grep -Fq 'match /communitySetPhotos/{photoId}' "$RUNNER_TEMP/archiv-lego-production/firestore.rules"
+          grep -Fq 'catalogLink.href="#/complete-catalog"' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
+          grep -Fq 'bottom.href="#/complete-catalog"' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
+          grep -Fq 'Archív may earn a commission if you buy through this eBay link.' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
+          # Tests run against the exact source that will be published.
+          npm --prefix "$RUNNER_TEMP/archiv-lego-production" run check
+          VITE_PROFILE_BACKEND_READY=true VITE_PHOTO_BACKEND_READY=true npm --prefix "$RUNNER_TEMP/archiv-lego-production" run build:web
+          # Publish the complete pinned release and restore the independently built preview.
           cp -R "$RUNNER_TEMP/archiv-lego-production/dist-web/." dist-web/
-          # Keep the independently built staging preview after production copy.
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/lego-preview/
           printf '{"source_commit":"%s","branch":"feature/owned-set-photo-review-20261031","photo_backend_ready":true}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
-          # Legal policies were previously approved and must remain unchanged.
-          git fetch origin release/collector-profile-web-20261031
-          POLICY_SHA="997b04bbbba91821f375156519b36038321eed23"
-          test "$(git rev-parse FETCH_HEAD)" = "$POLICY_SHA"
-          git show "$POLICY_SHA:public/privacy.html" > dist-web/privacy.html
-          git show "$POLICY_SHA:public/terms.html" > dist-web/terms.html
+          # The production release must carry its matching approved photo terms
+          # and privacy notices, not the old legal snapshot.
           test -s dist-web/privacy.html
           test -s dist-web/terms.html
-          grep -q 'Delete your Archív account yourself' dist-web/privacy.html
-          grep -q 'Delete profile' dist-web/terms.html
-          grep -q 'not currently an approved LEGO.com affiliate' dist-web/terms.html
-          # Record immutable release provenance for post-deploy verification.
-          printf '{"source_commit":"%s","branch":"feature/catalog-filter-sort-20261031","profile_backend_ready":true,"legal_source_commit":"%s"}\n' "$RELEASE_SHA" "$POLICY_SHA" > dist-web/build-info.json
-          # Retire the unused Impact impression/conversion script on the pinned
-          # root site. It loads before user interaction and the new policy must
-          # describe actual tracking practices accurately.
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          root=Path('dist-web/index.html')
-          html=root.read_text()
-          scripts=re.findall(r'<script\b[^>]*>[\s\S]*?</script>',html,flags=re.I)
-          impact=[x for x in scripts if 'utt.impactcdn.com' in x or 'impactStat' in x]
-          assert len(impact)==1, f'Expected one legacy Impact script; found {len(impact)}'
-          html=html.replace(impact[0],'')
-          assert 'utt.impactcdn.com' not in html
-          root.write_text(html)
-          print('Production root: approved collector profile and policies; legacy Impact tracking script removed')
-          PY
+          grep -Fq 'id="community-photos"' dist-web/terms.html
+          grep -Fq 'id="uploaded-photos"' dist-web/privacy.html
+          grep -Fq 'non-exclusive, worldwide, royalty-free license' dist-web/terms.html
+          grep -Fq 'approved LEGO.com affiliate' dist-web/terms.html
+          grep -Fq 'request removal' dist-web/privacy.html
+          # No legacy Impact tracking snippet may be reintroduced at production root.
+          ! grep -Fq 'utt.impactcdn.com' dist-web/index.html
+          ! grep -Fq 'impactStat' dist-web/index.html
+          printf '{"source_commit":"%s","branch":"feature/owned-set-photo-review-20261031","profile_backend_ready":true,"photo_backend_ready":true,"legal_source_commit":"%s"}\n' "$RELEASE_SHA" "$RELEASE_SHA" > dist-web/build-info.json
+          echo "Production approved release: $RELEASE_SHA"
       - uses: actions/configure-pages@v5
         with:
           enablement: true
