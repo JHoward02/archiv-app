@@ -58,11 +58,16 @@ export function openOwnedPhotoDialog(
  async function saveSelected(){
   const selected=input.files?.[0];
   if(!selected){
-   if(original&&check.checked&&!["approved","pending"].includes(original.status)){
-    busySet(true);try{
-     await saveOwnSetPhoto(db,uid,setNumber,original.imageData,true);info.textContent="Submitted for review.";onSaved();close()
-    }catch(err){info.textContent="Could not submit: "+(err instanceof Error?err.message:"Unknown error")}finally{if(!closed)busySet(false)}
-   }else info.textContent="Choose a photograph to upload, or update your review request.";
+   if(!original){info.textContent="Choose a photograph to upload.";return}
+   const previouslyShared=original.status==="pending"||original.status==="approved";
+   if(check.checked===previouslyShared){info.textContent="No changes to save.";return}
+   busySet(true);
+   try{
+    await saveOwnSetPhoto(db,uid,setNumber,original.imageData,check.checked);
+    info.textContent=check.checked?"Submitted for review.":"Review request withdrawn. Photo saved privately.";
+    onSaved();close();
+   }catch(err){info.textContent="Could not update sharing: "+(err instanceof Error?err.message:"Unknown error")}
+   finally{if(!closed)busySet(false)}
    return;
   }
   busySet(true);info.textContent="Resizing your photograph and saving it privately…";
