@@ -2,7 +2,7 @@ name: Unified Header and Back Navigation CI
 on:
   push:
     branches:
-      - feature/unified-header-back-catalog-20261031
+      - feature/alternate-brick-logo-preview-20261031
   workflow_dispatch:
 permissions:
   contents: read
@@ -27,5 +27,5 @@ jobs:
           grep -q 'main.append(button("← Back to Catalog"' src/lego-entry.ts
           grep -q 'personalArchiveTitle(currentUser.displayName||ownProfile?.name)' src/lego-entry.ts
           grep -q 'const collectorRoute=collectorViewFromHash()' src/lego-entry.ts
-          test -s public/archiv-lego-logo.png
+          test -s public/archiv-toy-brick-logo.webp
           test -s dist-web/index.html
