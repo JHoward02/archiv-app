@@ -4,6 +4,7 @@ import { getAuth, GoogleAuthProvider, getAdditionalUserInfo, getRedirectResult, 
 import { createCollectorProfile, decideGoogleAuth, firstNameFromDisplayName, personalArchiveTitle, signupBannerText } from "./auth-signup-decision";
 import { collectorOverview, collectingThemeTiles, setsWithStatus, absentFromCatalog } from "./collector-home-summary";
 import { filterSets, sortSets, decadeOptions, pieceOptions, setSortOptions, savedThemeCounts, type SetOrder } from "./lego-filters";
+import { openLegoSetNumberScanner } from "./lego-camera-scanner";
 import { collection, doc, getFirestore, onSnapshot, setDoc, deleteDoc, getDoc, getDocs, addDoc, increment, serverTimestamp, updateDoc, writeBatch, type Unsubscribe } from "firebase/firestore";
 type SetRow={number:string;name:string;year:number;theme:string;parts:number;image?:string;images?:string[]};
 type Status="owned"|"wishlist";
@@ -288,6 +289,7 @@ if(legoAuth&&legoDb){
 const app=document.querySelector<HTMLElement>("#app")!;
 let data:SetRow[]=[];
 let catalogReady=false,catalogError="";
+function launchSetScanner(){openLegoSetNumberScanner(data,setNumber=>{collectionDetailReturn=null;location.hash="#/set/"+encodeURIComponent(setNumber);render()})}
 const url=new URL("./lego-catalog.json",import.meta.url);
 const themeUrl=new URL("./lego-themes.json",import.meta.url);
 async function load(){
@@ -901,6 +903,7 @@ if(selected==="All LEGO"){
   shell.append(stats);
  }
  shell.append(e("h2","archiv-catalog-heading","Catalog: Most Popular"));
+ shell.append(button("📷 Scan a LEGO set number",launchSetScanner,"archiv-scan-launch archiv-scan-home"));
 const t=e("div","lego-theme-grid lego-home-themes");featured.forEach(n=>t.append(themeTile(n)));shell.append(t);
 const more=e("section","lego-more-themes");more.append(e("h2","","More LEGO® themes"));
 const field=e("input","lego-theme-search") as HTMLInputElement;field.type="search";field.placeholder="Find a LEGO® theme";field.setAttribute("aria-label","Find a LEGO theme");more.append(field);
@@ -925,6 +928,7 @@ const main=e("section","lego-main lego-catalog-section");
 const toolbar=e("div","archiv-filter-bar archiv-catalog-filters");
 toolbar.setAttribute("aria-label","Filter and sort LEGO catalog");
 toolbar.append(searchControl("Search sets","Name, set number, theme, or year",search,v=>{search=v;page=0;renderResults()}));
+toolbar.append(button("📷 Scan set number",launchSetScanner,"archiv-scan-launch"));
 if(selected==="Complete Catalog"){
  const allThemes:[string,string][]=[["all","All themes"],...[...new Set(data.map(row=>row.theme))].sort().map(theme=>[theme,theme] as [string,string])];
  toolbar.append(filterDropdown("Theme",allThemes,catalogTheme,v=>{catalogTheme=v;page=0;renderResults()}));
