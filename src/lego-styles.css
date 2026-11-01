@@ -523,17 +523,16 @@
  .archiv-set-back-navigation .archiv-set-context-back{max-width:100%;white-space:normal}
 }
 
-/* Full-width white header backdrop. Match the uploaded brick logo's near-white canvas,
-   but keep the logo dimensions, page layout and account menu unchanged. */
+/* Content-width white header backdrop: align with the same centered app container,
+   without extending into the page margins or changing logo/account sizing. */
 .lego-header{isolation:isolate}
 .lego-header::before{
   content:"";
   position:absolute;
   top:-20px;
   bottom:-14px;
-  left:50%;
-  width:100vw;
-  transform:translateX(-50%);
+  left:0;
+  right:0;
   background:#fefefe;
   z-index:-1;
   pointer-events:none;
