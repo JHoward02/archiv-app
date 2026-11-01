@@ -17,10 +17,17 @@ p,li{margin:0 0 12px}ul{padding-left:24px}
 .meta{color:#6c625a;font-size:14px}.note{background:#f9f2e7;border-left:4px solid #b98546;padding:13px 17px;margin:20px 0}
 footer{font-size:13px;color:#746b60;text-align:center;border-top:1px solid #ded4c5}
 @media(max-width:640px){main{margin:8px 12px 24px;padding:23px 21px 35px}header{padding:16px 20px}}
+
+/* Shared Archív brand art, matching the application's 560px-wide logo. */
+header.archiv-site-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 20px}
+.archiv-site-logo{display:block;width:min(560px,100%);text-decoration:none}
+.archiv-site-logo img{display:block;width:100%;height:auto;mix-blend-mode:multiply}
+header .archiv-site-back{font-size:13px;white-space:nowrap}
+@media(max-width:640px){header.archiv-site-header{gap:0}header .archiv-site-back{margin-top:-4px}}
 </style>
 </head>
 <body>
-<header><a href="./">← Back to Archív</a></header>
+<header class="archiv-site-header"><a class="archiv-site-logo" href="./" aria-label="Archív home"><img src="./archiv-red-brick-accent-logo.webp" alt="Archív Collect" width="1400" height="466"></a><a class="archiv-site-back" href="./">← Back to Archív</a></header>
 <main>
 <h1>Terms of Use</h1>
 <p class="meta">Archív · Last updated October 31, 2026</p>
