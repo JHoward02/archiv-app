@@ -404,9 +404,13 @@ function renderSetDetail(shell:HTMLElement,id:string){
  const wrap=e("main","lego-set-detail");
  const homeTheme=row?.theme||"Complete Catalog";
  const backTarget=collectionDetailReturn;
+ const navigation=e("nav","archiv-set-back-navigation");
+ navigation.setAttribute("aria-label","Set page navigation");
+ navigation.append(button("← Back to Catalog",()=>goTheme("All LEGO"),"archiv-collector-back archiv-set-page-back"));
  const back=button("← Back to "+(backTarget?(backTarget==="wishlist"?"Wishlist":backTarget==="sets-owned"?"Sets Owned":"Themes Collecting"):(selected!=="All LEGO"?selected:homeTheme)),
-   ()=>backTarget?goCollectorView(backTarget):goTheme(selected!=="All LEGO"?selected:homeTheme),"lego-detail-back");
- wrap.append(back);
+   ()=>backTarget?goCollectorView(backTarget):goTheme(selected!=="All LEGO"?selected:homeTheme),"lego-detail-back archiv-set-context-back");
+ navigation.append(back);
+ wrap.append(navigation);
  if(!row){wrap.append(e("h1","","Set not found"));wrap.append(e("p","","This set is not present in the current Rebrickable catalog."));shell.append(wrap);return}
  const owned=saved[row.number]==="owned",wish=saved[row.number]==="wishlist";
  const hero=e("div","lego-detail-layout");
@@ -731,8 +735,7 @@ if(location.hash==="#/admin"){
 }
 const setId=setFromHash();
 if(setId){
- const returnButton=button("← Back to Sets",()=>goTheme(selected!=="All LEGO"?selected:data.find(x=>x.number===setId)?.theme||"Complete Catalog"),"lego-back-to-themes");
- header.classList.add("lego-detail-header");header.append(returnButton);
+ // Reuse the homepage header verbatim; set navigation lives below the logo.
  renderSetDetail(shell,setId);
  const foot=e("footer","lego-footer");const nav=e("nav","lego-footer-links");
  for(const [label,file] of [["Contact","contact.html"],["Attribution","attribution.html"],["Terms of Use","terms.html"],["Privacy","privacy.html"]]){const link=e("a","",label);link.href=import.meta.env.BASE_URL+file;nav.append(link)}
@@ -857,7 +860,8 @@ let showAllThemes=false;const toggle=button("See More",()=>{showAllThemes=!showA
 function showThemes(){const query=field.value.trim().toLowerCase();grid.replaceChildren();const options=themes.filter(n=>!featured.includes(n)&&n!=="All LEGO"&&n.toLowerCase().includes(query));const visible=query||showAllThemes?options:options.slice(0,12);count.textContent=options.length+" themes";visible.forEach(n=>grid.append(button(n,()=>goTheme(n),"lego-theme-name-button")));toggle.textContent=showAllThemes?"See Less":"See More";toggle.hidden=!!query||options.length<=12}
 field.oninput=showThemes;showThemes();more.append(toggle);shell.append(more);
 }else{
-header.classList.add("lego-theme-header");const back=button("← Back to Themes",()=>goTheme("All LEGO"),"lego-back-to-themes");back.setAttribute("aria-label","Back to all LEGO themes");header.append(back);
+ // Match the new collection pages: back navigation is below the standard logo header.
+ shell.append(button("← Back to Catalog",()=>goTheme("All LEGO"),"archiv-collector-back archiv-set-page-back"));
 }
 const footer=e("footer","lego-footer");
 const footerLinks=e("nav","lego-footer-links");footerLinks.setAttribute("aria-label","Site information");
