@@ -2,6 +2,7 @@ import "./lego-styles.css";
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth, GoogleAuthProvider, getAdditionalUserInfo, getRedirectResult, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, deleteUser, reauthenticateWithPopup, type User, type UserCredential } from "firebase/auth";
 import { createCollectorProfile, decideGoogleAuth, firstNameFromDisplayName, personalArchiveTitle, signupBannerText } from "./auth-signup-decision";
+import { collectorOverview, setsWithStatus, absentFromCatalog } from "./collector-home-summary";
 import { collection, doc, getFirestore, onSnapshot, setDoc, deleteDoc, getDoc, getDocs, addDoc, increment, serverTimestamp, updateDoc, writeBatch, type Unsubscribe } from "firebase/firestore";
 type SetRow={number:string;name:string;year:number;theme:string;parts:number;image?:string;images?:string[]};
 type Status="owned"|"wishlist";
@@ -216,6 +217,17 @@ const tileSets:Record<string,string>={
 };
 const setImage=(number:string)=>"https://cdn.rebrickable.com/media/sets/"+number+".jpg";
 let selected="All LEGO",search="",sort="name",page=0;
+type CollectorView="themes-collecting"|"sets-owned"|"wishlist";
+let collectorPageLimit=40;
+let collectionDetailReturn:CollectorView|null=null;
+function collectorViewFromHash():CollectorView|null{
+ const path=location.hash;
+ return path==="#/themes-collecting"?"themes-collecting":path==="#/sets-owned"?"sets-owned":path==="#/wishlist"?"wishlist":null;
+}
+function goCollectorView(view:CollectorView){
+ collectorPageLimit=40;collectionDetailReturn=null;
+ location.hash="#/"+view;render();
+}
 function setFromHash(){const m=location.hash.match(/^#\/set\/(.+)$/);return m?decodeURIComponent(m[1]):null}
 function themeFromHash(){const slug=decodeURIComponent(location.hash.replace(/^#\/?/,""));return themes.slice(1).find(n=>n.toLowerCase().replace(/\s+/g,"-")===slug)||"All LEGO"}
 function goProfile(){profileError="";profileInfo="";deleteConfirmOpen=false;deleteConfirmText="";location.hash="#/profile";render()}
@@ -223,8 +235,8 @@ selected=themeFromHash();
 // Remember the displayed route, not merely the selected theme. Android/browser Back
 // can return to the same theme from a set or admin page without changing selected.
 let displayedRouteHash=location.hash;
-function goTheme(n:string){selected=n;search="";page=0;location.hash=n==="All LEGO"?"#/":"#/"+encodeURIComponent(n.toLowerCase().replace(/\s+/g,"-"));render()}
-window.addEventListener("hashchange",()=>{if(location.hash==="#/profile"||location.hash==="#/sign-up"){render();return}if(location.hash==="#/admin"){if(adminEnabled)void loadAdmin();else render();return}if(setFromHash()){render();return}const next=themeFromHash();if(next!==selected){selected=next;search="";page=0}if(displayedRouteHash!==location.hash)render()});
+function goTheme(n:string){selected=n;search="";page=0;collectionDetailReturn=null;location.hash=n==="All LEGO"?"#/":"#/"+encodeURIComponent(n.toLowerCase().replace(/\s+/g,"-"));render()}
+window.addEventListener("hashchange",()=>{if(location.hash==="#/profile"||location.hash==="#/sign-up"||collectorViewFromHash()){render();return}if(location.hash==="#/admin"){if(adminEnabled)void loadAdmin();else render();return}if(setFromHash()){render();return}const next=themeFromHash();if(next!==selected){selected=next;search="";page=0}if(displayedRouteHash!==location.hash)render()});
 let saved:Record<string,Status>={};
 function applyFirebaseAuthState(user:User|null){
  if(authAttempt)return;
@@ -269,9 +281,23 @@ if(legoAuth&&legoDb){
 }
 const app=document.querySelector<HTMLElement>("#app")!;
 let data:SetRow[]=[];
+let catalogReady=false,catalogError="";
 const url=new URL("./lego-catalog.json",import.meta.url);
 const themeUrl=new URL("./lego-themes.json",import.meta.url);
-async function load(){try{const [setsResponse,themeResponse]=await Promise.all([fetch(url),fetch(themeUrl)]);if(setsResponse.ok)data=await setsResponse.json();if(themeResponse.ok){extraThemes=await themeResponse.json();themes=["All LEGO",...featured,...extraThemes.map(t=>t.name).filter(n=>!featured.includes(n)&&n!=="Pokémon"),"Complete Catalog"];}}catch{} if(!setFromHash())selected=themeFromHash();render()}
+async function load(){
+ catalogError="";
+ try{
+  const [setsResponse,themeResponse]=await Promise.all([fetch(url),fetch(themeUrl)]);
+  if(!setsResponse.ok||!themeResponse.ok)throw new Error("Catalog data request failed");
+  const [sets,themeData]=await Promise.all([setsResponse.json(),themeResponse.json()]);
+  if(!Array.isArray(sets)||!Array.isArray(themeData)||sets.length<1000)throw new Error("Incomplete catalog data");
+  data=sets;extraThemes=themeData;
+  themes=["All LEGO",...featured,...extraThemes.map(t=>t.name).filter(n=>!featured.includes(n)&&n!=="Pokémon"),"Complete Catalog"];
+  catalogReady=true;
+ }catch{catalogError="The LEGO catalog could not be loaded. Please try again.";catalogReady=false}
+ if(!setFromHash())selected=themeFromHash();
+ render();
+}
 function e<K extends keyof HTMLElementTagNameMap>(tag:K,cls="",value=""){const n=document.createElement(tag);n.className=cls;if(value){const parts=value.split("LEGO®");if(parts.length===1)n.textContent=value;else{parts.forEach((part,i)=>{if(i){n.append(document.createTextNode("LEGO"));const mark=document.createElement("sup");mark.className="lego-registered";mark.textContent="®";n.append(mark)}if(part)n.append(document.createTextNode(part))})}}return n}
 function button(label:string,click:()=>void,cls=""){const b=e("button","lego-button "+cls,label);b.onclick=click;return b}
 async function save(id:string,status:Status){
@@ -377,7 +403,9 @@ function renderSetDetail(shell:HTMLElement,id:string){
  const row=data.find(x=>x.number===id);
  const wrap=e("main","lego-set-detail");
  const homeTheme=row?.theme||"Complete Catalog";
- const back=button("← Back to "+(selected!=="All LEGO"?selected:homeTheme),()=>goTheme(selected!=="All LEGO"?selected:homeTheme),"lego-detail-back");
+ const backTarget=collectionDetailReturn;
+ const back=button("← Back to "+(backTarget?(backTarget==="wishlist"?"Wishlist":backTarget==="sets-owned"?"Sets Owned":"Themes Collecting"):(selected!=="All LEGO"?selected:homeTheme)),
+   ()=>backTarget?goCollectorView(backTarget):goTheme(selected!=="All LEGO"?selected:homeTheme),"lego-detail-back");
  wrap.append(back);
  if(!row){wrap.append(e("h1","","Set not found"));wrap.append(e("p","","This set is not present in the current Rebrickable catalog."));shell.append(wrap);return}
  const owned=saved[row.number]==="owned",wish=saved[row.number]==="wishlist";
@@ -711,11 +739,114 @@ if(setId){
  foot.append(nav,e("p","lego-copyright","© 2026 Archív. All rights reserved."));shell.append(foot);return
 }
 function themeTile(n:string){const b=button("",()=>goTheme(n),"lego-theme");b.dataset.theme=n.toLowerCase().replace(/\s+/g,"-");const palette=["#527c8c","#866f9f","#a76d65","#497e6c","#c29553","#4f6897","#8d8065","#8c618b"];if(!featured.includes(n)&&n!=="Complete Catalog"){const i=Math.max(0,extraThemes.findIndex(t=>t.name===n));b.style.setProperty("--brick",palette[i%palette.length]);b.style.setProperty("--brick-dark",["#355968","#5d4b75","#784a46","#30584c","#8c6b35","#344968","#625b46","#664665"][i%palette.length]);b.style.setProperty("--brick-light",["#7fa2af","#ab96c4","#c8958a","#78a68d","#e0bc78","#7d90b8","#afa387","#b48caf"][i%palette.length])}const studs=e("span","lego-brick-studs");studs.setAttribute("aria-hidden","true");for(let i=0;i<4;i++)studs.append(e("span","lego-brick-stud"));b.append(studs);const picture=e("img","lego-theme-art");picture.src=tileSets[n]?setImage(tileSets[n]):extraThemes.find(t=>t.name===n)?.image||setImage("10307-1");picture.alt="LEGO® "+n+" set photograph sourced from Rebrickable";picture.loading="lazy";picture.onerror=()=>{picture.style.display="none"};const frame=e("span","lego-brick-window");frame.append(picture);b.append(frame,e("span","lego-theme-name",n));return b}
+const collectorRoute=collectorViewFromHash();
+if(collectorRoute){
+ const view=collectorRoute;
+ const main=e("main","archiv-collector-view");
+ const headerRow=e("div","archiv-collector-view-header");
+ const titles:Record<CollectorView,string>={"themes-collecting":"Themes Collecting","sets-owned":"Sets Owned","wishlist":"Wishlist"};
+ const description:Record<CollectorView,string>={
+  "themes-collecting":"LEGO themes with at least one set you own or have wishlisted.",
+  "sets-owned":"Your entire saved LEGO collection, organized as a compact set list.",
+  "wishlist":"LEGO sets on your wishlist, with links to discover purchase options."
+ };
+ headerRow.append(e("div","archiv-collector-view-intro"));
+ const lead=headerRow.firstElementChild as HTMLElement;
+ lead.append(e("span","archiv-collector-eyebrow","YOUR ARCHÍV"),e("h1","",titles[view]),e("p","",description[view]));
+ const catalogLink=e("a","archiv-collector-catalog-link","Browse Full Catalog →");
+ catalogLink.href="#/complete-catalog";
+ headerRow.append(catalogLink);
+ main.append(headerRow);
+ main.append(button("← Back to Catalog",()=>goTheme("All LEGO"),"archiv-collector-back"));
+ if(!authReady){
+  main.append(e("p","archiv-collector-feedback","Checking your Google account…"));
+ }else if(!currentUser){
+  main.append(e("p","archiv-collector-feedback","Sign in with Google to view your private collection."));
+  main.append(button("Sign in with Google",()=>{void signInLego()},"archiv-collector-sign-in"));
+ }else if(!collectionReady){
+  main.append(e("p","archiv-collector-feedback","Loading your saved sets and wishlist…"));
+ }else if(!catalogReady){
+  main.append(e("p","archiv-collector-feedback",catalogError||"Loading the LEGO catalog…"));
+  if(catalogError)main.append(button("Retry catalog",()=>{void load()},"archiv-collector-retry"));
+ }else{
+  const totals=collectorOverview(data,saved);
+  if(view==="themes-collecting"){
+   const matched=themes.filter(theme=>theme!=="All LEGO"&&theme!=="Complete Catalog"&&totals.collectingThemes.has(theme));
+   main.append(e("p","archiv-collector-count",matched.length+" theme"+(matched.length===1?"":"s")+" collected or wishlisted"));
+   if(matched.length){
+    const tiles=e("div","lego-theme-grid archiv-collecting-themes");
+    for(const theme of matched)tiles.append(themeTile(theme));
+    main.append(tiles);
+   }else main.append(e("p","archiv-collector-feedback","No themes yet. Add an owned or wishlisted set from the catalog to see it here."));
+  }else{
+   const desired:Status=view==="sets-owned"?"owned":"wishlist";
+   const entries=setsWithStatus(data,saved,desired);
+   const missing=absentFromCatalog(data,saved,desired);
+   const count=entries.length+missing.length;
+   main.append(e("p","archiv-collector-count",count+" "+(view==="sets-owned"?"owned":"wishlisted")+" set"+(count===1?"":"s")));
+   const list=e("div","archiv-collector-list");
+   list.setAttribute("role","list");
+   for(const row of entries.slice(0,collectorPageLimit)){
+    const item=e("article","archiv-collector-set-row");item.setAttribute("role","listitem");
+    const thumbnail=e("a","archiv-collector-set-photo");thumbnail.href="#/set/"+encodeURIComponent(row.number);
+    thumbnail.onclick=()=>{collectionDetailReturn=view};
+    const photo=e("img") as HTMLImageElement;photo.src=row.image||setImage(row.number);photo.alt=row.name+" LEGO set";photo.loading="lazy";
+    photo.onerror=()=>{photo.remove();thumbnail.append(e("span","archiv-collector-image-empty","No image"))};thumbnail.append(photo);
+    const info=e("div","archiv-collector-set-info");
+    const name=e("a","archiv-collector-set-name",row.name);name.href="#/set/"+encodeURIComponent(row.number);name.onclick=()=>{collectionDetailReturn=view};
+    info.append(e("span","archiv-collector-set-theme",row.theme),name,e("p","archiv-collector-set-meta","Set "+row.number+" · "+(row.year||"Year unknown")+" · "+row.parts.toLocaleString()+" pieces"));
+    const side=e("div","archiv-collector-set-side");
+    side.append(e("span","archiv-collector-status",desired==="owned"?"✓ Owned":"♡ Wishlisted"));
+    const details=e("a","archiv-collector-details","View set details");details.href="#/set/"+encodeURIComponent(row.number);details.onclick=()=>{collectionDetailReturn=view};
+    side.append(details);
+    if(desired==="wishlist"){
+     const buy=e("a","archiv-collector-ebay","Find on eBay ↗");buy.href=ebaySetSearch(row);buy.target="_blank";buy.rel="noopener noreferrer sponsored";
+     buy.setAttribute("aria-label","Find "+row.name+" on eBay (affiliate link)");
+     buy.onclick=()=>{void reportAffiliateClick()};
+     side.append(buy,e("small","archiv-collector-disclosure","Archív may earn a commission if you buy through this eBay link."));
+    }
+    item.append(thumbnail,info,side);list.append(item);
+   }
+   for(const id of missing.slice(0,Math.max(0,collectorPageLimit-entries.length))){
+    const item=e("article","archiv-collector-set-row archiv-collector-unavailable");
+    item.setAttribute("role","listitem");
+    item.append(e("span","archiv-collector-image-empty","No image"),e("div","archiv-collector-set-info","LEGO set "+id+" · Set details unavailable in the current catalog."));
+    list.append(item);
+   }
+   main.append(list);
+   if(count===0)main.append(e("p","archiv-collector-feedback",view==="sets-owned"?"You haven't marked any LEGO sets as owned yet.":"Your wishlist is empty. Browse the catalog to add sets you'd like to collect."));
+   if(count>collectorPageLimit)main.append(button("Show more sets ("+Math.min(collectorPageLimit,count)+" of "+count+")",()=>{collectorPageLimit+=40;render()},"archiv-collector-show-more"));
+  }
+ }
+ const bottom=e("a","archiv-collector-bottom-link","Explore the Full LEGO Catalog →");bottom.href="#/complete-catalog";main.append(bottom);
+ shell.append(main);
+ const collectionFooter=e("footer","lego-footer");
+ const nav=e("nav","lego-footer-links");for(const [label,file] of [["Contact","contact.html"],["Attribution","attribution.html"],["Terms of Use","terms.html"],["Privacy","privacy.html"]]){const link=e("a","",label);link.href=import.meta.env.BASE_URL+file;nav.append(link)}
+ collectionFooter.append(nav,e("p","lego-copyright","© 2026 Archív. All rights reserved."));
+ shell.append(collectionFooter);
+ return;
+}
 if(selected==="All LEGO"){
  if(currentUser){
   const first=firstNameFromDisplayName(currentUser.displayName||ownProfile?.name);
   shell.append(e("p","archiv-personal-welcome",first==="Collector"?"Welcome back to Archív!":"Welcome back, "+first+"!"));
+  const overview=catalogReady?collectorOverview(data,saved):null;
+  const stats=e("nav","archiv-home-stats");
+  stats.setAttribute("aria-label","Your collection");
+  for(const [label,value,route] of [
+   ["Themes Collecting",overview&&collectionReady?overview.collectingThemes.size.toLocaleString():"…","themes-collecting"],
+   ["Sets Owned",overview&&collectionReady?overview.owned.toLocaleString():"…","sets-owned"],
+   ["Wishlist",overview&&collectionReady?overview.wishlist.toLocaleString():"…","wishlist"]
+  ] as const){
+   const card=button(" ",()=>goCollectorView(route),"archiv-home-stat");
+   card.replaceChildren(e("strong","archiv-home-stat-number",value),e("span","archiv-home-stat-label",label),e("span","archiv-home-stat-open","View collection →"));
+   card.setAttribute("aria-label",label+(value==="…"?": loading":": "+value));
+   card.disabled=!collectionReady||!catalogReady;
+   stats.append(card);
+  }
+  shell.append(stats);
  }
+ shell.append(e("h2","archiv-catalog-heading","Catalog"));
  const heading=e("h2","lego-popular-heading","Most Popular");shell.append(heading);
 const t=e("div","lego-theme-grid lego-home-themes");featured.forEach(n=>t.append(themeTile(n)));shell.append(t);
 const more=e("section","lego-more-themes");more.append(e("h2","","More LEGO® themes"));
