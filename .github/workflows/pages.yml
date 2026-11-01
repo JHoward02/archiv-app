@@ -60,7 +60,13 @@ jobs:
           test -s "$RUNNER_TEMP/archiv-lego-preview/src/lego-photo-ui.ts"
           grep -Fq 'PHOTO_BACKEND_READY=import.meta.env.VITE_PHOTO_BACKEND_READY==="true"' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
           grep -Fq 'renderPhotoModeration' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
-          grep -Fq 'match /approvedSetPhotos/{setNumber}' "$RUNNER_TEMP/archiv-lego-preview/firestore.rules"
+          grep -Fq 'match /communitySetPhotos/{photoId}' "$RUNNER_TEMP/archiv-lego-preview/firestore.rules"
+          grep -Fq 'match /communityPhotoAssignments/{photoId}' "$RUNNER_TEMP/archiv-lego-preview/firestore.rules"
+          grep -Fq 'PHOTO_ASSIGNMENT_VERSION' "$RUNNER_TEMP/archiv-lego-preview/src/lego-photo-ui.ts"
+          grep -Fq 'removeOwnSetPhoto(legoDb,user.uid,photo.id)' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
+          grep -Fq 'VITE_PHOTO_BACKEND_READY' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
+          ! grep -Fq 'approvedSetPhotos' "$RUNNER_TEMP/archiv-lego-preview/src/lego-photo-contributions.ts"
+          test -s "$RUNNER_TEMP/archiv-lego-preview/docs/COMMUNITY_SET_PHOTOS_ROLLOUT.md"
           grep -Fq 'launchSetScanner' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
           # Staging-only: search OR camera scan must appear directly above the catalog heading.
           python3 - "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts" <<'PY'
