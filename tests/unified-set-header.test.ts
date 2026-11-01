@@ -9,7 +9,7 @@ describe("consistent Archív logo and set page navigation",()=>{
   expect(app).toContain('const header=e("header","lego-header")');
   expect(app).not.toContain('header.classList.add("lego-theme-header")');
   expect(app).not.toContain('header.classList.add("lego-detail-header")');
-  expect(app).toContain('const art=e("img");art.src=import.meta.env.BASE_URL+"archiv-lego-logo.png"');
+  expect(app).toContain('const art=e("img");art.src=import.meta.env.BASE_URL+"archiv-toy-brick-logo.webp"');
   expect(styles).toContain(".lego-logo{width:min(560px,100%)}");
  });
  it("places the theme catalog button directly below the catalog heading",()=>{
