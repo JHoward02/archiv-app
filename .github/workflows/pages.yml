@@ -123,10 +123,10 @@ jobs:
           cp -R "$RUNNER_TEMP/archiv-data-source/public/lego-parts/." "$RUNNER_TEMP/archiv-lego-preview/public/lego-parts/"
           # Enable profile preferences and self-service deletion for the staging preview.
           # Production is compiled separately using the approved immutable release.
-          VITE_PROFILE_BACKEND_READY=true npm --prefix "$RUNNER_TEMP/archiv-lego-preview" run build:web
+          VITE_PROFILE_BACKEND_READY=true VITE_PHOTO_BACKEND_READY=true npm --prefix "$RUNNER_TEMP/archiv-lego-preview" run build:web
           mkdir -p dist-web/lego-preview
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/lego-preview/
-          printf '{"source_commit":"%s","branch":"feature/owned-set-photo-review-20261031","photo_backend_ready":false}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
+          printf '{"source_commit":"%s","branch":"feature/owned-set-photo-review-20261031","photo_backend_ready":true}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
           # Promote the verified LEGO build to the production root, without
           # removing independent preview directories or the rollback branch.
           # Keep the production release pinned while new shopping features are tested.
@@ -202,7 +202,7 @@ jobs:
           cp -R "$RUNNER_TEMP/archiv-lego-production/dist-web/." dist-web/
           # Keep the independently built staging preview after production copy.
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/lego-preview/
-          printf '{"source_commit":"%s","branch":"feature/owned-set-photo-review-20261031","photo_backend_ready":false}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
+          printf '{"source_commit":"%s","branch":"feature/owned-set-photo-review-20261031","photo_backend_ready":true}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
           # Legal policies were previously approved and must remain unchanged.
           git fetch origin release/collector-profile-web-20261031
           POLICY_SHA="997b04bbbba91821f375156519b36038321eed23"
