@@ -27,3 +27,12 @@ export function absentFromCatalog<T extends CollectorSet>(
  const known=new Set(catalog.map(row=>row.number));
  return Object.keys(statuses).filter(number=>statuses[number]===filter&&!known.has(number)).sort();
 }
+
+/** Match catalog theme labels to displayed theme tiles (including Pokémon alias). */
+export function collectingThemeTiles(available:readonly string[],collecting:ReadonlySet<string>):string[]{
+ const pokemon=[...collecting].some(theme=>/pok[eé]mon/i.test(theme));
+ return available.filter(theme=>
+  theme!=="All LEGO"&&theme!=="Complete Catalog"&&
+  (collecting.has(theme)||(theme==="Pokemon"&&pokemon))
+ );
+}
