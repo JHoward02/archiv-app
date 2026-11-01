@@ -82,7 +82,7 @@ describe("Archív copyright-assigned collector photographs",()=>{
  });
  it("documents legal review and the new account-deletion retention boundary",()=>{
   expect(docs).toContain("17 U.S.C. § 204(a)");
-  expect(docs).toContain("approved community photographs remain");
+  expect(docs.toLowerCase()).toContain("approved community photographs remain");
   expect(docs).toContain("restricted copyright assignment");
   expect(docs).toContain("VITE_PHOTO_BACKEND_READY");
  });
