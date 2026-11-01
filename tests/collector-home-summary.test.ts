@@ -1,5 +1,5 @@
 import {describe,expect,it} from "vitest";
-import {collectorOverview,setsWithStatus,absentFromCatalog} from "../src/collector-home-summary";
+import {collectorOverview,collectingThemeTiles,setsWithStatus,absentFromCatalog} from "../src/collector-home-summary";
 
 const catalog=[
  {number:"100-1",theme:"City",name:"City House"},
@@ -33,5 +33,13 @@ describe("collector homepage and dedicated collection lists",()=>{
  it("does not show any private items for an empty collection",()=>{
   expect(collectorOverview(catalog,{}).collectingThemes.size).toBe(0);
   expect(setsWithStatus(catalog,{},"wishlist")).toEqual([]);
+ });
+ it("maps saved Pokémon sets to the Pokemon browsing tile without changing label",()=>{
+  const overview=collectorOverview([{number:"501-1",theme:"Pokémon"}],{"501-1":"wishlist"});
+  expect(collectingThemeTiles(["All LEGO","City","Pokemon","Complete Catalog"],overview.collectingThemes)).toEqual(["Pokemon"]);
+ });
+ it("the collecting theme count matches visible tiles",()=>{
+  const overview=collectorOverview(catalog,{"100-1":"owned","200-1":"wishlist"});
+  expect(collectingThemeTiles(["All LEGO","City","Pokemon","Star Wars","Technic","Complete Catalog"],overview.collectingThemes)).toEqual(["City","Star Wars"]);
  });
 });
