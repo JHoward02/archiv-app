@@ -3,26 +3,30 @@ import {
  type Firestore
 } from "firebase/firestore";
 
-/** Private uploads and immutable, reviewed public community photographs.
- * No previously submitted photos are assumed to have been copyright-assigned.
- * This feature stays disabled until a legally reviewed assignment and Firestore rules launch.
+/** Collectors retain copyright. A separate optional permission authorizes publication.
+ * Approved community copies persist after account deletion, subject to removal requests.
+ * Backend remains disabled until Firebase security rules and public legal notices are live.
  */
 export type PhotoStatus="private"|"pending"|"approved"|"rejected";
-export const PHOTO_ASSIGNMENT_VERSION="archiv-photo-assignment-v1-2026-11-01";
+export const PHOTO_LICENSE_VERSION="archiv-community-photo-license-v1-2026-11-01";
 export const MAX_PHOTO_DATA_LENGTH=340000;
 export const PHOTO_LIMIT_BYTES=15*1024*1024;
+export const COMMUNITY_PHOTO_REMOVAL_EMAIL="getshelfiecollect@gmail.com";
+export const COMMUNITY_PHOTO_LICENSE=
+ "I own this photograph or have the necessary rights to share it. I give Archív a non-exclusive, worldwide, royalty-free permission to store, resize, reproduce, and publicly display it in the Archív community catalog after moderator approval. I keep my copyright. Approved photos may remain after I delete my account, but I can request removal by contacting Archív. Archív may verify that I am the photographer or rights holder before processing the request.";
 export type PrivateSetPhoto={
  ownerUid:string;setNumber:string;imageData:string;status:PhotoStatus;
  uploadedAt:string;submittedAt:string|null;
- assignmentVersion:string;rightsAssigned:true;signedName:string;signedAt:string;
+ licenseVersion:string;communityConsent:boolean;consentedAt:string|null;
  communityPhotoId?:string;
 };
 export type CommunitySetPhoto={
  setNumber:string;imageData:string;approvedAt:string;
 };
-export type PhotoAssignmentAudit={
+export type ListedCommunitySetPhoto=CommunitySetPhoto&{photoId:string};
+export type PhotoPermissionRecord={
  ownerUid:string;setNumber:string;communityPhotoId:string;
- assignmentVersion:string;signedName:string;signedAt:string;approvedAt:string;
+ licenseVersion:string;consentedAt:string;approvedAt:string;
 };
 export type ReviewPhoto=PrivateSetPhoto&{referencePath:string};
 export function validSetNumber(id:string){return /^[A-Za-z0-9]{2,16}-[0-9]{1,3}$/.test(id)}
@@ -31,15 +35,9 @@ export function isSafePhotoData(data:string):boolean{
   && data.length>25&&data.length<=MAX_PHOTO_DATA_LENGTH
   && /^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/.test(data);
 }
-export function validAssignmentSignature(name:string,accepted:boolean){
- const trimmed=name.trim();
- return accepted&&trimmed.length>=3&&trimmed.length<=120&&/[A-Za-z\p{L}]/u.test(trimmed);
-}
 function privateRef(db:Firestore,uid:string,setNumber:string){
  return doc(db,"users",uid,"setPhotos",setNumber);
 }
-export const PHOTO_ASSIGNMENT_STATEMENT=
- "By checking the box and signing with my full legal name, I represent that I own the copyright in this photograph and assign to the legal operator of Archív all copyright rights I hold in the uploaded photograph, for the full copyright term, worldwide. This assignment applies even when the photo is private. Submitting for community review is a separate, optional choice. If Archív approves it as a community photo, the approved photo may remain publicly displayed after I delete my account. Removing my private copy or deleting my account does not undo a completed copyright assignment.";
 
 export async function compressContributorImage(file:File):Promise<string>{
  if(!file.type.startsWith("image/"))throw Error("Choose a JPEG, PNG, HEIC, or WebP photograph.");
@@ -67,33 +65,39 @@ export async function compressContributorImage(file:File):Promise<string>{
  }finally{URL.revokeObjectURL(src)}
 }
 
+
 export async function getOwnSetPhoto(db:Firestore,uid:string,setNumber:string):Promise<PrivateSetPhoto|null>{
  const snap=await getDoc(privateRef(db,uid,setNumber));
  if(!snap.exists())return null;
  const data=snap.data() as PrivateSetPhoto;
  return data.ownerUid===uid&&data.setNumber===setNumber&&isSafePhotoData(data.imageData)?data:null;
 }
-export async function getCommunitySetPhotos(db:Firestore,setNumber:string):Promise<CommunitySetPhoto[]>{
+export async function getCommunitySetPhotos(db:Firestore,setNumber:string):Promise<ListedCommunitySetPhoto[]>{
  const snap=await getDocs(query(collection(db,"communitySetPhotos"),where("setNumber","==",setNumber)));
- return snap.docs.map(d=>d.data() as CommunitySetPhoto)
+ return snap.docs.map(d=>({...d.data() as CommunitySetPhoto,photoId:d.id}))
   .filter(data=>data.setNumber===setNumber&&isSafePhotoData(data.imageData))
   .sort((a,b)=>b.approvedAt.localeCompare(a.approvedAt));
 }
+export function removalRequestUrl(setNumber:string,photoId:string):string{
+ const subject="Archív community photo removal request: "+setNumber;
+ const body="Please review removal of community photo "+photoId+" for LEGO set "+setNumber+
+  ". I can provide information to verify I am the photographer or rights holder.";
+ return "mailto:"+COMMUNITY_PHOTO_REMOVAL_EMAIL+
+  "?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body);
+}
 export async function saveOwnSetPhoto(
- db:Firestore,uid:string,setNumber:string,imageData:string,submitForReview:boolean,
- signedName:string,acceptedAssignment:boolean
+ db:Firestore,uid:string,setNumber:string,imageData:string,submitForReview:boolean
 ):Promise<void>{
  if(!validSetNumber(setNumber)||!isSafePhotoData(imageData))throw Error("Invalid set photo.");
- if(!validAssignmentSignature(signedName,acceptedAssignment))throw Error("Sign the copyright assignment with your legal name before saving.");
  const now=new Date().toISOString();
  await setDoc(privateRef(db,uid,setNumber),{
   ownerUid:uid,setNumber,imageData,status:submitForReview?"pending":"private",
   uploadedAt:now,submittedAt:submitForReview?now:null,
-  assignmentVersion:PHOTO_ASSIGNMENT_VERSION,rightsAssigned:true,
-  signedName:signedName.trim(),signedAt:now
+  licenseVersion:PHOTO_LICENSE_VERSION,communityConsent:submitForReview,
+  consentedAt:submitForReview?now:null
  } satisfies PrivateSetPhoto);
 }
-/** Deleting or replacing a private upload NEVER deletes an already-approved community copy. */
+/** Deleting a personal image does not erase a separately approved community photo. */
 export async function removeOwnSetPhoto(db:Firestore,uid:string,setNumber:string):Promise<void>{
  await deleteDoc(privateRef(db,uid,setNumber));
 }
@@ -101,7 +105,7 @@ export async function pendingCommunityPhotos(db:Firestore):Promise<ReviewPhoto[]
  const pending=await getDocs(query(collectionGroup(db,"setPhotos"),where("status","==","pending")));
  return pending.docs.map(d=>({...d.data() as PrivateSetPhoto,referencePath:d.ref.path}))
   .filter(x=>validSetNumber(x.setNumber)&&isSafePhotoData(x.imageData)&&
-   x.assignmentVersion===PHOTO_ASSIGNMENT_VERSION&&x.rightsAssigned===true)
+   x.licenseVersion===PHOTO_LICENSE_VERSION&&x.communityConsent===true&&!!x.consentedAt)
   .sort((a,b)=>(a.submittedAt||"").localeCompare(b.submittedAt||""));
 }
 export async function moderateSetPhoto(db:Firestore,photo:ReviewPhoto,decision:"approved"|"rejected"):Promise<void>{
@@ -111,23 +115,21 @@ export async function moderateSetPhoto(db:Firestore,photo:ReviewPhoto,decision:"
  const snap=await getDoc(source);
  const live=snap.data() as PrivateSetPhoto|undefined;
  if(!snap.exists()||live?.status!=="pending"||live.imageData!==photo.imageData||
-  live.assignmentVersion!==PHOTO_ASSIGNMENT_VERSION||live.rightsAssigned!==true||
-  !validAssignmentSignature(live.signedName,true)){
-  throw Error("The photo or assignment changed since review. Refresh the queue.");
+  live.licenseVersion!==PHOTO_LICENSE_VERSION||live.communityConsent!==true||
+  typeof live.consentedAt!=="string"||!live.consentedAt){
+  throw Error("The photo or consent changed since review. Refresh the queue.");
  }
  const batch=writeBatch(db);
  if(decision==="approved"){
-  // Auto-ID permits multiple permanent approved photographs for the same LEGO set.
-  // The public record deliberately contains no account identifier or legal name.
+  // Auto IDs allow several approved photos for one set. Public documents
+  // contain no name or UID. The private permission record can establish assent.
   const publicRef=doc(collection(db,"communitySetPhotos"));
   const approvedAt=new Date().toISOString();
   batch.set(publicRef,{setNumber:photo.setNumber,imageData:photo.imageData,approvedAt} satisfies CommunitySetPhoto);
-  // Only moderators can read this signed copyright-transfer audit trail.
-  batch.set(doc(db,"communityPhotoAssignments",publicRef.id),{
+  batch.set(doc(db,"communityPhotoPermissions",publicRef.id),{
    ownerUid:photo.ownerUid,setNumber:photo.setNumber,communityPhotoId:publicRef.id,
-   assignmentVersion:live.assignmentVersion,signedName:live.signedName,
-   signedAt:live.signedAt,approvedAt
-  } satisfies PhotoAssignmentAudit);
+   licenseVersion:live.licenseVersion,consentedAt:live.consentedAt,approvedAt
+  } satisfies PhotoPermissionRecord);
   batch.update(source,{status:"approved",communityPhotoId:publicRef.id});
  }else batch.update(source,{status:"rejected"});
  await batch.commit();
