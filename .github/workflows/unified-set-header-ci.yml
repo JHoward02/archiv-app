@@ -4,6 +4,7 @@ on:
     branches:
       - feature/alternate-brick-logo-preview-20261031
       - feature/catalog-filter-sort-20261031
+      - feature/lego-camera-set-scan-20261031
   workflow_dispatch:
 permissions:
   contents: read
@@ -34,3 +35,8 @@ jobs:
             grep -q 'Catalog: Most Popular' src/lego-entry.ts
           fi
           test -s dist-web/index.html
+          if [ -f src/lego-camera-scanner.ts ]; then
+            grep -q 'launchSetScanner' src/lego-entry.ts
+            grep -q 'capture","environment' src/lego-camera-scanner.ts
+            grep -q 'findSetNumberMatches' src/lego-camera-scanner.ts
+          fi
