@@ -12,6 +12,13 @@ describe("consistent Archív logo and set page navigation",()=>{
   expect(app).toContain('const art=e("img");art.src=import.meta.env.BASE_URL+"archiv-toy-brick-logo.webp"');
   expect(styles).toContain(".lego-logo{width:min(560px,100%)}");
  });
+ it("extends the uploaded logo's near-white header across the viewport on desktop and mobile",()=>{
+  expect(styles).toContain("Full-width white header backdrop");
+  expect(styles).toContain(".lego-header::before{");
+  expect(styles).toContain("width:100vw;");
+  expect(styles).toContain("background:#fefefe;");
+  expect(styles).toContain(".lego-header::before{top:-12px;bottom:-12px}");
+ });
  it("places the theme catalog button directly below the catalog heading",()=>{
   const title=app.indexOf('main.append(e("h2","",selected))');
   const back=app.indexOf('main.append(button("← Back to Catalog",()=>goTheme("All LEGO"),"archiv-collector-back archiv-set-page-back"))');
