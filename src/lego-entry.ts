@@ -290,6 +290,31 @@ const app=document.querySelector<HTMLElement>("#app")!;
 let data:SetRow[]=[];
 let catalogReady=false,catalogError="";
 function launchSetScanner(){openLegoSetNumberScanner(data,setNumber=>{collectionDetailReturn=null;location.hash="#/set/"+encodeURIComponent(setNumber);render()})}
+function cameraGlyph(){
+ const ns="http://www.w3.org/2000/svg";
+ const svg=document.createElementNS(ns,"svg");
+ svg.setAttribute("viewBox","0 0 24 24");svg.setAttribute("fill","none");
+ svg.setAttribute("stroke","currentColor");svg.setAttribute("stroke-width","1.8");
+ svg.setAttribute("stroke-linecap","round");svg.setAttribute("stroke-linejoin","round");
+ svg.setAttribute("aria-hidden","true");svg.classList.add("archiv-camera-glyph");
+ const body=document.createElementNS(ns,"path");
+ body.setAttribute("d","M14.5 4h-5L7.5 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3.5L14.5 4Z");
+ const lens=document.createElementNS(ns,"circle");lens.setAttribute("cx","12");lens.setAttribute("cy","13.5");lens.setAttribute("r","3.5");
+ svg.append(body,lens);return svg;
+}
+function scanSetNumberButton(home=false){
+ const b=button("",launchSetScanner,home?"archiv-scan-launch archiv-scan-home":"archiv-scan-launch");
+ b.replaceChildren(cameraGlyph(),e("span","","Scan Set Number"));return b;
+}
+function searchFullCatalogFromHome(query:string){
+ const term=query.trim();if(!term)return;
+ selected="Complete Catalog";search=term;page=0;sort="name-asc";
+ catalogTheme="all";catalogDecade="all";catalogPieces="all";catalogStatus="all";
+ collectionDetailReturn=null;
+ location.hash="#/complete-catalog";
+ render();
+}
+
 const url=new URL("./lego-catalog.json",import.meta.url);
 const themeUrl=new URL("./lego-themes.json",import.meta.url);
 async function load(){
@@ -902,7 +927,19 @@ if(selected==="All LEGO"){
   }
   shell.append(stats);
  }
- shell.append(button("📷 Scan a LEGO set number",launchSetScanner,"archiv-scan-launch archiv-scan-home"));
+ const discover=e("div","archiv-home-discover");
+ discover.setAttribute("role","search");
+ const searchForm=e("form","archiv-home-search");
+ const homeQuery=e("input") as HTMLInputElement;
+ homeQuery.type="search";homeQuery.placeholder="Name, theme, or set number";
+ homeQuery.setAttribute("aria-label","Search LEGO sets by name, theme, or set number");
+ homeQuery.autocomplete="off";
+ const submit=e("button","archiv-home-search-submit","Search") as HTMLButtonElement;
+ submit.type="submit";
+ searchForm.append(homeQuery,submit);
+ searchForm.onsubmit=event=>{event.preventDefault();if(!homeQuery.value.trim()){homeQuery.focus();return}searchFullCatalogFromHome(homeQuery.value)};
+ discover.append(searchForm,e("span","archiv-home-search-or","OR"),scanSetNumberButton(true));
+ shell.append(discover);
  shell.append(e("h2","archiv-catalog-heading","Catalog: Most Popular"));
 const t=e("div","lego-theme-grid lego-home-themes");featured.forEach(n=>t.append(themeTile(n)));shell.append(t);
 const more=e("section","lego-more-themes");more.append(e("h2","","More LEGO® themes"));
@@ -928,7 +965,7 @@ const main=e("section","lego-main lego-catalog-section");
 const toolbar=e("div","archiv-filter-bar archiv-catalog-filters");
 toolbar.setAttribute("aria-label","Filter and sort LEGO catalog");
 toolbar.append(searchControl("Search sets","Name, set number, theme, or year",search,v=>{search=v;page=0;renderResults()}));
-toolbar.append(button("📷 Scan set number",launchSetScanner,"archiv-scan-launch"));
+toolbar.append(scanSetNumberButton());
 if(selected==="Complete Catalog"){
  const allThemes:[string,string][]=[["all","All themes"],...[...new Set(data.map(row=>row.theme))].sort().map(theme=>[theme,theme] as [string,string])];
  toolbar.append(filterDropdown("Theme",allThemes,catalogTheme,v=>{catalogTheme=v;page=0;renderResults()}));
