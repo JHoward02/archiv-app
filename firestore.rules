@@ -66,7 +66,7 @@ service cloud.firestore {
     function validPhotoData() {
       return request.resource.data.imageData is string
         && request.resource.data.imageData.size() <= 340000
-        && request.resource.data.imageData.matches('^data:image/jpeg;base64,[A-Za-z0-9+/=]{16,340000}$');
+        && request.resource.data.imageData.matches('^data:image/jpeg;base64,[A-Za-z0-9+/=]+$');
     }
     match /users/{userId}/setPhotos/{setNumber} {
       allow get: if owner(userId) || (isReportingAdmin() && resource.data.status == 'pending');
