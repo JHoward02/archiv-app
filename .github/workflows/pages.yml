@@ -97,8 +97,8 @@ jobs:
           grep -q 'const collectorRoute=collectorViewFromHash()' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
           # Stop preview publication if the LEGO-specific logo asset is missing again.
           test -s "$RUNNER_TEMP/archiv-lego-preview/public/archiv-lego-logo.png"
-          test -s "$RUNNER_TEMP/archiv-lego-preview/public/archiv-toy-brick-logo.webp"
-          grep -q 'archiv-toy-brick-logo.webp' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
+          test -s "$RUNNER_TEMP/archiv-lego-preview/public/archiv-red-brick-accent-logo.webp"
+          grep -Fq 'archiv-red-brick-accent-logo.webp' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
           # Staging-only: let the alternate logo blend into the cream page and inset the account control.
           grep -q 'mix-blend-mode:multiply' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
           grep -q 'lego-header::before{content:none}' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
@@ -133,7 +133,7 @@ jobs:
           # LEGO experience with concise community-photo consent to production.
           # Pin production to an immutable tested commit; future preview changes
           # must NOT silently update production.
-          RELEASE_SHA="202414c2fffffb1edd1c035bc7520cafe30259f2"
+          RELEASE_SHA="bb39c35ae41f07b9007f3277415b9f28bd676ac3"
           test "$(git rev-parse "$RELEASE_SHA^{commit}")" = "$RELEASE_SHA"
           git worktree add "$RUNNER_TEMP/archiv-lego-production" "$RELEASE_SHA"
           npm --prefix "$RUNNER_TEMP/archiv-lego-production" ci
@@ -146,7 +146,7 @@ jobs:
           # Protect collector dashboard, catalog controls, scanner, and photo permissions.
           test -s "$RUNNER_TEMP/archiv-lego-production/src/lego-photo-ui.ts"
           test -s "$RUNNER_TEMP/archiv-lego-production/src/lego-photo-contributions.ts"
-          test -s "$RUNNER_TEMP/archiv-lego-production/public/archiv-toy-brick-logo.webp"
+          test -s "$RUNNER_TEMP/archiv-lego-production/public/archiv-red-brick-accent-logo.webp"
           grep -Fq 'const collectorRoute=collectorViewFromHash()' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
           grep -Fq 'const navigation=e("nav","archiv-set-back-navigation")' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
           grep -Fq 'launchSetScanner' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
@@ -154,6 +154,9 @@ jobs:
           grep -Fq 'Submit for community review (optional).' "$RUNNER_TEMP/archiv-lego-production/src/lego-photo-ui.ts"
           grep -Fq 'new URL("terms.html#community-photos",window.location.href)' "$RUNNER_TEMP/archiv-lego-production/src/lego-photo-ui.ts"
           grep -Fq 'new URL("privacy.html#uploaded-photos",window.location.href)' "$RUNNER_TEMP/archiv-lego-production/src/lego-photo-ui.ts"
+          grep -Fq 'archiv-red-brick-accent-logo.webp' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
+          grep -Fq 'archiv-red-brick-accent-logo.webp' "$RUNNER_TEMP/archiv-lego-production/public/terms.html"
+          grep -Fq 'archiv-red-brick-accent-logo.webp' "$RUNNER_TEMP/archiv-lego-production/public/privacy.html"
           grep -Fq 'PHOTO_LICENSE_VERSION="archiv-community-photo-license-v1-2026-11-01"' "$RUNNER_TEMP/archiv-lego-production/src/lego-photo-contributions.ts"
           grep -Fq 'match /communitySetPhotos/{photoId}' "$RUNNER_TEMP/archiv-lego-production/firestore.rules"
           grep -Fq 'catalogLink.href="#/complete-catalog"' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
@@ -175,6 +178,9 @@ jobs:
           grep -Fq 'non-exclusive, worldwide, royalty-free license' dist-web/terms.html
           grep -Fq 'approved LEGO.com affiliate' dist-web/terms.html
           grep -Fq 'request removal' dist-web/privacy.html
+          grep -Fq 'src="./archiv-red-brick-accent-logo.webp"' dist-web/privacy.html
+          grep -Fq 'src="./archiv-red-brick-accent-logo.webp"' dist-web/terms.html
+          test -s dist-web/archiv-red-brick-accent-logo.webp
           # No legacy Impact tracking snippet may be reintroduced at production root.
           ! grep -Fq 'utt.impactcdn.com' dist-web/index.html
           ! grep -Fq 'impactStat' dist-web/index.html
@@ -203,7 +209,7 @@ jobs:
         run: |
           set -euo pipefail
           BASE="https://jhoward02.github.io/archiv-app"
-          EXPECTED="202414c2fffffb1edd1c035bc7520cafe30259f2"
+          EXPECTED="bb39c35ae41f07b9007f3277415b9f28bd676ac3"
           for attempt in $(seq 1 15); do
             if curl --fail --silent --show-error --location --max-time 20 --retry 1 -H 'Cache-Control: no-cache' "$BASE/build-info.json?release-check=$GITHUB_RUN_ID-$attempt" -o /tmp/archiv-production-info.json \
               && python3 -c 'import json,sys; d=json.load(open("/tmp/archiv-production-info.json")); assert d.get("source_commit")==sys.argv[1] and d.get("legal_source_commit")==sys.argv[1] and d.get("photo_backend_ready") is True and d.get("profile_backend_ready") is True, d' "$EXPECTED"; then
@@ -221,6 +227,10 @@ jobs:
           curl --fail --silent --show-error --location --max-time 20 "$BASE/?verify=$GITHUB_RUN_ID" -o /tmp/archiv-production-index.html
           grep -Fq 'id="community-photos"' /tmp/archiv-production-terms.html
           grep -Fq 'id="uploaded-photos"' /tmp/archiv-production-privacy.html
+          grep -Fq 'archiv-red-brick-accent-logo.webp' /tmp/archiv-production-terms.html
+          grep -Fq 'archiv-red-brick-accent-logo.webp' /tmp/archiv-production-privacy.html
+          curl --fail --silent --show-error --location --max-time 20 "$BASE/archiv-red-brick-accent-logo.webp?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-logo.webp
+          python3 -c 'from pathlib import Path; b=Path("/tmp/archiv-live-logo.webp").read_bytes(); assert len(b)>10000 and b[:4]==b"RIFF" and b[8:12]==b"WEBP", "Missing red-brick artwork"'
           grep -Fq 'Archív | LEGO Collections' /tmp/archiv-production-index.html
           ! grep -Fq 'utt.impactcdn.com' /tmp/archiv-production-index.html
           ! grep -Fq 'impactStat' /tmp/archiv-production-index.html
