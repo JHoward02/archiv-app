@@ -575,3 +575,45 @@
  .archiv-filter-bar{grid-template-columns:minmax(0,1fr)}
  .archiv-filter-search{grid-column:auto}
 }
+
+/* Phone camera set-number recognition: isolated staging feature. */
+.archiv-scan-launch{border-color:#176553;background:#e7f2e9;color:#145943;white-space:normal;text-align:center}
+.archiv-scan-launch:hover{background:#d8ebe0;border-color:#124d3a}
+.archiv-scan-home{display:inline-flex;align-items:center;margin:1px 0 20px}
+.archiv-scan-backdrop{position:fixed;inset:0;background:#071b2ad9;z-index:1200;display:flex;align-items:center;justify-content:center;padding:14px}
+.archiv-scan-dialog{width:min(100%,640px);max-height:calc(100dvh - 28px);overflow-y:auto;overscroll-behavior:contain;background:#fffdf8;border:1px solid #ddc9b0;border-radius:18px;padding:22px;color:#08243b;box-shadow:0 20px 60px #0005}
+.archiv-scan-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.archiv-scan-title-row h2{font:normal clamp(24px,4vw,32px) Georgia,serif;margin:0}
+.archiv-scan-close{flex:none;min-width:40px;padding:7px;background:#f2e9df}
+.archiv-scan-description{margin:10px 0 18px;color:#63594e;font-size:14px;line-height:1.5}
+.archiv-scan-choices{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0 12px}
+.archiv-scan-primary{background:#145943;color:#fff;border-color:#145943;flex:1 1 150px}
+.archiv-scan-secondary{flex:1 1 140px}
+.archiv-scan-choices button:disabled{opacity:.5;cursor:wait}
+.archiv-scan-preview{display:block;margin:10px auto;width:100%;max-height:255px;object-fit:contain;background:#f4efe6;border-radius:12px}
+.archiv-scan-preview[hidden]{display:none}
+.archiv-scan-progress{color:#695c50;font-size:12px;line-height:1.5;margin:10px 0 14px}
+.archiv-scan-matches{display:grid;gap:10px}
+.archiv-scan-matches h3{margin:2px 0 0;font:normal 23px Georgia,serif}
+.archiv-scan-confirm{font-size:12px;color:#6b6054;margin:0 0 3px}
+.archiv-scan-hit{display:grid;grid-template-columns:68px minmax(0,1fr) auto;align-items:center;gap:12px;border:1px solid #e2d6c5;border-radius:12px;padding:9px}
+.archiv-scan-hit-image{width:68px;height:68px;object-fit:contain;background:#f6f0e7;border-radius:8px}
+.archiv-scan-hit-info{display:flex;min-width:0;flex-direction:column;gap:5px;font-size:13px}
+.archiv-scan-hit-info strong{overflow-wrap:anywhere}
+.archiv-scan-hit-info span{color:#6a625b;font-size:11px}
+.archiv-scan-open-set{font-size:12px;white-space:nowrap;background:#e8f1e9;border-color:#a9c5b3}
+.archiv-scan-no-match{border-radius:10px;background:#f9ede1;color:#82501d;padding:14px;font-size:13px}
+.archiv-scan-manual{margin-top:20px;border-top:1px solid #e3d9cd;padding-top:16px;display:flex;align-items:end;gap:12px}
+.archiv-scan-manual-label{min-width:0;flex:1;display:flex;flex-direction:column;gap:7px;font-size:12px;font-weight:800}
+.archiv-scan-manual-label input{width:100%;min-height:43px;padding:9px 11px;border-radius:9px;border:1px solid #cfc2b1;background:#fff;font:inherit}
+.archiv-scan-manual .lego-button{min-height:43px;flex:0 0 auto}
+.archiv-scan-note{font-size:11px;color:#6e645a;line-height:1.5;margin:16px 0 0}
+@media(max-width:520px){
+ .archiv-scan-dialog{padding:16px;border-radius:13px}
+ .archiv-scan-hit{grid-template-columns:58px minmax(0,1fr);gap:8px}
+ .archiv-scan-hit-image{width:58px;height:58px}
+ .archiv-scan-open-set{grid-column:2;justify-self:start}
+ .archiv-scan-manual{flex-wrap:wrap}
+ .archiv-scan-manual .lego-button{width:100%}
+ .archiv-scan-preview{max-height:200px}
+}
