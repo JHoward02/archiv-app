@@ -2,7 +2,7 @@ import "./lego-styles.css";
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth, GoogleAuthProvider, getAdditionalUserInfo, getRedirectResult, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, deleteUser, reauthenticateWithPopup, type User, type UserCredential } from "firebase/auth";
 import { createCollectorProfile, decideGoogleAuth, firstNameFromDisplayName, personalArchiveTitle, signupBannerText } from "./auth-signup-decision";
-import { collectorOverview, setsWithStatus, absentFromCatalog } from "./collector-home-summary";
+import { collectorOverview, collectingThemeTiles, setsWithStatus, absentFromCatalog } from "./collector-home-summary";
 import { collection, doc, getFirestore, onSnapshot, setDoc, deleteDoc, getDoc, getDocs, addDoc, increment, serverTimestamp, updateDoc, writeBatch, type Unsubscribe } from "firebase/firestore";
 type SetRow={number:string;name:string;year:number;theme:string;parts:number;image?:string;images?:string[]};
 type Status="owned"|"wishlist";
@@ -771,7 +771,7 @@ if(collectorRoute){
  }else{
   const totals=collectorOverview(data,saved);
   if(view==="themes-collecting"){
-   const matched=themes.filter(theme=>theme!=="All LEGO"&&theme!=="Complete Catalog"&&totals.collectingThemes.has(theme));
+   const matched=collectingThemeTiles(themes,totals.collectingThemes);
    main.append(e("p","archiv-collector-count",matched.length+" theme"+(matched.length===1?"":"s")+" collected or wishlisted"));
    if(matched.length){
     const tiles=e("div","lego-theme-grid archiv-collecting-themes");
@@ -834,7 +834,7 @@ if(selected==="All LEGO"){
   const stats=e("nav","archiv-home-stats");
   stats.setAttribute("aria-label","Your collection");
   for(const [label,value,route] of [
-   ["Themes Collecting",overview&&collectionReady?overview.collectingThemes.size.toLocaleString():"…","themes-collecting"],
+   ["Themes Collecting",overview&&collectionReady?collectingThemeTiles(themes,overview.collectingThemes).length.toLocaleString():"…","themes-collecting"],
    ["Sets Owned",overview&&collectionReady?overview.owned.toLocaleString():"…","sets-owned"],
    ["Wishlist",overview&&collectionReady?overview.wishlist.toLocaleString():"…","wishlist"]
   ] as const){
