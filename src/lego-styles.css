@@ -523,20 +523,20 @@
  .archiv-set-back-navigation .archiv-set-context-back{max-width:100%;white-space:normal}
 }
 
-/* Content-width white header backdrop: align with the same centered app container,
-   without extending into the page margins or changing logo/account sizing. */
-.lego-header{isolation:isolate}
-.lego-header::before{
-  content:"";
-  position:absolute;
-  top:-20px;
-  bottom:-14px;
-  left:0;
-  right:0;
-  background:#fefefe;
-  z-index:-1;
-  pointer-events:none;
+/* Staging logo: let the artwork's white pixels blend naturally into Archív's warm
+   page background, rather than placing a white panel behind the logo. */
+.lego-header{isolation:auto}
+.lego-header::before{content:none}
+.lego-logo{isolation:auto}
+.lego-logo::before{display:none}
+.lego-logo img{mix-blend-mode:multiply}
+
+/* Bring the signed-in avatar / account button inward without changing its size. */
+@media(min-width:641px){
+  .lego-header>.lego-account-controls{margin-right:18px}
 }
 @media(max-width:640px){
-  .lego-header::before{top:-12px;bottom:-12px}
+  .lego-header:not(.lego-theme-header):not(.lego-detail-header)>.lego-account-controls{
+    right:16px;
+  }
 }
