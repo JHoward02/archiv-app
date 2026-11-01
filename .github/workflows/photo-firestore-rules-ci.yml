@@ -1,0 +1,27 @@
+name: Firestore Photo Security Rules QA
+on:
+  push:
+    branches:
+      - feature/owned-set-photo-review-20261031
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  photo-rules:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - name: Install emulator and rules test dependencies (CI only)
+        run: npm install --no-save --no-package-lock firebase-tools@14 @firebase/rules-unit-testing@5
+      - name: Verify nonproduction rules in local Firebase emulator
+        run: npx firebase --project demo-archiv-photo-permissions emulators:exec --only firestore "node tests/photo-firestore-rules.mjs"
