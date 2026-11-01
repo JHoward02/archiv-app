@@ -703,3 +703,16 @@
  .archiv-photo-review-image{width:100%;height:185px}
  .archiv-photo-published-row{flex-wrap:wrap}
 }
+
+/* Explicit electronic copyright transfer, separate from optional community submission. */
+.archiv-photo-assignment{border:1px solid #b8ccb9;background:#f2f7ef;border-radius:12px;padding:14px;margin:15px 0}
+.archiv-photo-assignment h3{margin:0 0 8px;font:normal 21px Georgia,serif;color:#124e3c}
+.archiv-photo-assignment-copy{font-size:12px;line-height:1.6;color:#344c41;margin:0 0 12px}
+.archiv-photo-signature-label{display:flex;flex-direction:column;gap:7px;font-size:12px;font-weight:800;color:#123b2c}
+.archiv-photo-signature-label input{border:1px solid #8ea995;border-radius:8px;padding:10px;background:white;font:inherit;min-height:43px}
+.archiv-photo-signature-label input:focus-visible{outline:2px solid #176553;outline-offset:2px}
+.archiv-photo-assignment-consent{margin-top:12px!important;background:#e0ebdf!important}
+.archiv-photo-consent{cursor:pointer}
+.archiv-photo-community-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}
+.archiv-photo-community-grid .archiv-photo-community-image{max-height:260px;aspect-ratio:4/3}
+@media(max-width:540px){.archiv-photo-assignment{padding:11px}.archiv-photo-community-grid{grid-template-columns:1fr 1fr;gap:8px}}
