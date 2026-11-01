@@ -25,13 +25,28 @@ describe("consistent Archív logo and set page navigation",()=>{
   expect(styles).toContain("right:16px;");
   expect(styles).toContain(".lego-header:not(.lego-theme-header):not(.lego-detail-header)>.lego-account-controls");
  });
- it("places homepage camera scanning above Catalog: Most Popular",()=>{
-  const camera=app.indexOf('shell.append(button("📷 Scan a LEGO set number",launchSetScanner,"archiv-scan-launch archiv-scan-home"))');
-  const catalog=app.indexOf('shell.append(e("h2","archiv-catalog-heading","Catalog: Most Popular"))');
-  const tiles=app.indexOf('const t=e("div","lego-theme-grid lego-home-themes")');
-  expect(camera).toBeGreaterThan(0);
-  expect(catalog).toBeGreaterThan(camera);
+ it("places search left of OR and camera scan, above Catalog: Most Popular",()=>{
+  const discover=app.indexOf('const discover=e("div","archiv-home-discover")');
+  const searchForm=app.indexOf('const searchForm=e("form","archiv-home-search")',discover);
+  const or=app.indexOf('discover.append(searchForm,e("span","archiv-home-search-or","OR"),scanSetNumberButton(true))',searchForm);
+  const catalog=app.indexOf('shell.append(e("h2","archiv-catalog-heading","Catalog: Most Popular"))',or);
+  const tiles=app.indexOf('const t=e("div","lego-theme-grid lego-home-themes")',catalog);
+  expect(discover).toBeGreaterThan(0);
+  expect(searchForm).toBeGreaterThan(discover);
+  expect(or).toBeGreaterThan(searchForm);
+  expect(catalog).toBeGreaterThan(or);
   expect(tiles).toBeGreaterThan(catalog);
+  expect(app).toContain('b.replaceChildren(cameraGlyph(),e("span","","Scan Set Number"))');
+  expect(styles).toContain(".archiv-home-discover .archiv-camera-glyph{width:39px;height:39px}");
+  expect(styles).toContain(".archiv-home-discover{");
+ });
+ it("homepage searches by name, theme and set number using the full catalog",()=>{
+  expect(app).toContain('homeQuery.placeholder="Name, theme, or set number"');
+  expect(app).toContain('homeQuery.setAttribute("aria-label","Search LEGO sets by name, theme, or set number")');
+  expect(app).toContain('searchForm.onsubmit=event=>{event.preventDefault();if(!homeQuery.value.trim()){homeQuery.focus();return}searchFullCatalogFromHome(homeQuery.value)}');
+  expect(app).toContain('selected="Complete Catalog";search=term;page=0;sort="name-asc"');
+  expect(app).toContain('location.hash="#/complete-catalog"');
+  expect(app).toContain('{query:search,theme:catalogTheme,decade:catalogDecade,pieces:catalogPieces,status:catalogStatus},saved');
  });
  it("places the theme catalog button directly below the catalog heading",()=>{
   const title=app.indexOf('main.append(e("h2","",selected))');
