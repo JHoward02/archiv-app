@@ -5,6 +5,8 @@ import { createCollectorProfile, decideGoogleAuth, firstNameFromDisplayName, per
 import { collectorOverview, collectingThemeTiles, setsWithStatus, absentFromCatalog } from "./collector-home-summary";
 import { filterSets, sortSets, decadeOptions, pieceOptions, setSortOptions, savedThemeCounts, type SetOrder } from "./lego-filters";
 import { openLegoSetNumberScanner } from "./lego-camera-scanner";
+import { openOwnedPhotoDialog, showOwnPhoto, showPublishedPhoto, renderPhotoModeration } from "./lego-photo-ui";
+import { withdrawOwnSetPhoto } from "./lego-photo-contributions";
 import { collection, doc, getFirestore, onSnapshot, setDoc, deleteDoc, getDoc, getDocs, addDoc, increment, serverTimestamp, updateDoc, writeBatch, type Unsubscribe } from "firebase/firestore";
 type SetRow={number:string;name:string;year:number;theme:string;parts:number;image?:string;images?:string[]};
 type Status="owned"|"wishlist";
@@ -488,6 +490,15 @@ function renderSetDetail(shell:HTMLElement,id:string){
  actions.append(button(wish?"✓ On wishlist":"♡ Add to wishlist",()=>save(row.number,"wishlist"),wish?"on":""));
  collection.append(actions);
  figure.append(collection);
+ if(owned&&currentUser&&legoDb){
+  const photoPanel=e("section","archiv-owner-photo-panel");
+  photoPanel.append(e("h3","","Your set photograph"));
+  const savedImage=e("div","archiv-owner-photo-contents");
+  photoPanel.append(savedImage);
+  photoPanel.append(button("Upload or replace your photo",()=>openOwnedPhotoDialog(legoDb!,currentUser!.uid,row.number,row.name,render),"archiv-photo-upload-button"));
+  figure.append(photoPanel);
+  showOwnPhoto(savedImage,legoDb,currentUser.uid,row.number);
+ }
  if(!owned){
   const seller=e("div","lego-shop-pending archiv-ebay-inline");
   const link=e("a","archiv-ebay-inline-link","Find on eBay ↗");
@@ -499,6 +510,11 @@ function renderSetDetail(shell:HTMLElement,id:string){
  }
 
  hero.append(figure,details);wrap.append(hero);
+ if(legoDb){
+  const published=e("section","archiv-community-photo-panel");
+  wrap.append(published);
+  showPublishedPhoto(published,legoDb,row.number);
+ }
  renderInventory(wrap,row.number);
  
  shell.append(wrap);
@@ -555,6 +571,10 @@ async function deleteOwnProfile(){
   // Resume deletion rather than trying to update the marker (which rules forbid).
   const priorMarker=await getDoc(marker);
   if(!priorMarker.exists())await setDoc(marker,{deleting:true});
+  // Withdraw any publicly approved photos before erasing the user's identity.
+  const storedPhotos=await getDocs(collection(legoDb,"users",user.uid,"setPhotos"));
+  for(const photo of storedPhotos.docs)await withdrawOwnSetPhoto(legoDb,user.uid,photo.id);
+  await deleteUserDocuments(["setPhotos"]);
   await deleteUserDocuments(["items"]);
   await deleteUserDocuments(["groups"]);
   await deleteUserDocuments(["activity"]);
@@ -667,7 +687,7 @@ function renderProfile(shell:HTMLElement){
  main.append(preferences);
  const danger=e("section","archiv-profile-danger");
  danger.append(e("h2","","Delete your profile"));
- danger.append(e("p","","Permanently delete your Archív login, saved sets, wishlist, collection activity and profile. This cannot be undone. Your Google account and eBay account will not be deleted."));
+ danger.append(e("p","","Permanently delete your Archív login, saved sets, wishlist, collection activity, personal photographs and any published community photos you contributed. This cannot be undone. Your Google account and eBay account will not be deleted."));
  const trigger=button(deleteConfirmOpen?"Cancel deletion":"Delete profile",()=>{deleteConfirmOpen=!deleteConfirmOpen;deleteConfirmText="";profileError="";render()},"archiv-profile-delete-trigger");
  danger.append(trigger);
  if(deleteConfirmOpen){
@@ -766,6 +786,11 @@ if(location.hash==="#/admin"){
 
   const refresh=button(adminLoading?"Refreshing…":"Refresh data",()=>{void loadAdmin()});refresh.disabled=adminLoading;main.append(refresh);
   if(adminError)main.append(e("p","lego-account-message",adminError));
+  if(legoDb){
+   const photoModeration=e("section","archiv-admin-photo-review");
+   main.append(photoModeration);
+   renderPhotoModeration(photoModeration,legoDb,id=>{const set=data.find(x=>x.number===id);return set?set.name+" ("+id+")":"LEGO set "+id});
+  }
   main.append(e("h2","","Popular themes in owned collections"));
   const themes:Record<string,number>={};
   for(const item of adminRows)for(const [name,count] of Object.entries(item.themes||{}))themes[name]=(themes[name]||0)+(Number(count)||0);
@@ -880,6 +905,9 @@ if(collectorRoute){
      info.append(e("span","archiv-collector-set-theme",row.theme),name,e("p","archiv-collector-set-meta","Set "+row.number+" · "+(row.year||"Year unknown")+" · "+row.parts.toLocaleString()+" pieces"));
      const side=e("div","archiv-collector-set-side");
      side.append(e("span","archiv-collector-status",desired==="owned"?"✓ Owned":"♡ Wishlisted"));
+     if(desired==="owned"&&legoDb&&currentUser){
+      side.append(button("Upload photo",()=>openOwnedPhotoDialog(legoDb!,currentUser!.uid,row.number,row.name,render),"archiv-photo-row-upload"));
+     }
      const details=e("a","archiv-collector-details","View set details");details.href="#/set/"+encodeURIComponent(row.number);details.onclick=()=>{collectionDetailReturn=view};side.append(details);
      if(desired==="wishlist"){
       const buy=e("a","archiv-collector-ebay","Find on eBay ↗");buy.href=ebaySetSearch(row);buy.target="_blank";buy.rel="noopener noreferrer sponsored";
