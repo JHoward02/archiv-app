@@ -1,0 +1,38 @@
+name: Collector Home Cards Staging CI
+on:
+  push:
+    branches:
+      - feature/collector-home-cards-20261031
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build:web
+      - name: Validate collector home routes and preservation
+        run: |
+          grep -q 'collectorOverview(data,saved)' src/lego-entry.ts
+          grep -q 'setsWithStatus(data,saved,desired)' src/lego-entry.ts
+          grep -q 'absentFromCatalog(data,saved,desired)' src/lego-entry.ts
+          grep -q 'const collectorRoute=collectorViewFromHash()' src/lego-entry.ts
+          grep -q 'catalogLink.href="#/complete-catalog"' src/lego-entry.ts
+          grep -q 'bottom.href="#/complete-catalog"' src/lego-entry.ts
+          grep -q 'ebaySetSearch(row)' src/lego-entry.ts
+          grep -q 'Archív may earn a commission if you buy through this eBay link.' src/lego-entry.ts
+          grep -q 'const heading=e("h2","lego-popular-heading","Most Popular")' src/lego-entry.ts
+          grep -q 'name:displayName?.trim()||"Collector"' src/auth-signup-decision.ts
+          grep -q 'Welcome back, ' src/lego-entry.ts
+          grep -q 'collector-home-summary.test.ts' <(find tests -name '*.test.ts')
+          test -s public/archiv-lego-logo.png
+          test -s dist-web/index.html
