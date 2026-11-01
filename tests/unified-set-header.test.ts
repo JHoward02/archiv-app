@@ -25,6 +25,14 @@ describe("consistent Archív logo and set page navigation",()=>{
   expect(styles).toContain("right:16px;");
   expect(styles).toContain(".lego-header:not(.lego-theme-header):not(.lego-detail-header)>.lego-account-controls");
  });
+ it("places homepage camera scanning above Catalog: Most Popular",()=>{
+  const camera=app.indexOf('shell.append(button("📷 Scan a LEGO set number",launchSetScanner,"archiv-scan-launch archiv-scan-home"))');
+  const catalog=app.indexOf('shell.append(e("h2","archiv-catalog-heading","Catalog: Most Popular"))');
+  const tiles=app.indexOf('const t=e("div","lego-theme-grid lego-home-themes")');
+  expect(camera).toBeGreaterThan(0);
+  expect(catalog).toBeGreaterThan(camera);
+  expect(tiles).toBeGreaterThan(catalog);
+ });
  it("places the theme catalog button directly below the catalog heading",()=>{
   const title=app.indexOf('main.append(e("h2","",selected))');
   const back=app.indexOf('main.append(button("← Back to Catalog",()=>goTheme("All LEGO"),"archiv-collector-back archiv-set-page-back"))');
