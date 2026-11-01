@@ -123,15 +123,21 @@ jobs:
           cp -R "$RUNNER_TEMP/archiv-lego-preview/public/lego-parts/." "$RUNNER_TEMP/archiv-lego-production/public/lego-parts/"
           # Fail the deployment rather than silently publishing the tiny seed catalog again.
           node -e 'const fs=require("fs");const root=process.argv[1];const sets=JSON.parse(fs.readFileSync(root+"/src/lego-catalog.json"));const themes=JSON.parse(fs.readFileSync(root+"/src/lego-themes.json"));const shards=fs.readdirSync(root+"/public/lego-parts").filter(x=>/^[0-9]+[.]json$/.test(x));if(sets.length<25000||themes.length<15||shards.length!==128)throw Error("Incomplete production catalog: "+sets.length+" sets, "+themes.length+" themes, "+shards.length+" inventory shards");console.log("Production catalog validated:",sets.length,"sets,",themes.length,"themes,",shards.length,"inventory shards")' "$RUNNER_TEMP/archiv-lego-production"
-          # Promote the specifically approved, CI-tested unified logo and back navigation release.
-          # Preserve existing collector dashboards, legal policy, and pinned native workflows.
-          git fetch origin feature/unified-header-back-catalog-20261031
-          RELEASE_SHA="85108de8f6ce2044375f9de26aad8fcbb141d2d2"
+          # Promote the specifically approved logo, account inset, warm header, and single catalog heading.
+          # Preserve existing collector dashboard, legal policies, native workflows and rollback refs.
+          git fetch origin feature/alternate-brick-logo-preview-20261031
+          RELEASE_SHA="a3456e658c2a50d50353e9b9929c2d616135c522"
           test "$(git rev-parse FETCH_HEAD)" = "$RELEASE_SHA"
           # The production base worktree already has the correct LEGO entrypoint.
           # Restore all new auth source AND its LEGO branding asset together.
-          git -C "$RUNNER_TEMP/archiv-lego-production" restore --source="$RELEASE_SHA" -- src/lego-entry.ts src/lego-styles.css src/auth-signup-decision.ts src/collector-home-summary.ts public/archiv-lego-logo.png
+          git -C "$RUNNER_TEMP/archiv-lego-production" restore --source="$RELEASE_SHA" -- src/lego-entry.ts src/lego-styles.css src/auth-signup-decision.ts src/collector-home-summary.ts public/archiv-lego-logo.png public/archiv-toy-brick-logo.webp
           test -s "$RUNNER_TEMP/archiv-lego-production/public/archiv-lego-logo.png"
+          test -s "$RUNNER_TEMP/archiv-lego-production/public/archiv-toy-brick-logo.webp"
+          grep -Fq 'art.src=import.meta.env.BASE_URL+"archiv-toy-brick-logo.webp"' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
+          grep -Fq 'shell.append(e("h2","archiv-catalog-heading","Catalog: Most Popular"))' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
+          grep -Fq '.lego-logo img{mix-blend-mode:multiply}' "$RUNNER_TEMP/archiv-lego-production/src/lego-styles.css"
+          grep -Fq '.lego-header>.lego-account-controls{margin-right:18px}' "$RUNNER_TEMP/archiv-lego-production/src/lego-styles.css"
+          grep -Fq 'right:16px;' "$RUNNER_TEMP/archiv-lego-production/src/lego-styles.css"
           # Require the reviewed homepage-identical header and both set-navigation controls.
           grep -q 'const navigation=e("nav","archiv-set-back-navigation")' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
           grep -q 'main.append(button("← Back to Catalog"' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
@@ -169,7 +175,7 @@ jobs:
           grep -q 'Delete profile' dist-web/terms.html
           grep -q 'not currently an approved LEGO.com affiliate' dist-web/terms.html
           # Record immutable release provenance for post-deploy verification.
-          printf '{"source_commit":"%s","branch":"feature/unified-header-back-catalog-20261031","profile_backend_ready":true,"legal_source_commit":"%s"}\n' "$RELEASE_SHA" "$POLICY_SHA" > dist-web/build-info.json
+          printf '{"source_commit":"%s","branch":"feature/alternate-brick-logo-preview-20261031","profile_backend_ready":true,"legal_source_commit":"%s"}\n' "$RELEASE_SHA" "$POLICY_SHA" > dist-web/build-info.json
           # Retire the unused Impact impression/conversion script on the pinned
           # root site. It loads before user interaction and the new policy must
           # describe actual tracking practices accurately.
