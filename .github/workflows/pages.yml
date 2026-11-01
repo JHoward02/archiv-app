@@ -43,6 +43,7 @@ jobs:
       # Production application remains pinned to the existing approved collector-profile release.
       # Authorized staging-only refresh: signup disclosure Privacy Policy and Terms links.
       # Production application and approved legal pages stay pinned to their immutable release.
+      # Isolated preview refresh after CI-tested Pokémon alias for collecting-theme cards.
       - name: Build isolated LEGO preview
         run: |
           git fetch origin feature/collector-home-cards-20261031
