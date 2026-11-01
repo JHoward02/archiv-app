@@ -57,14 +57,18 @@ jobs:
           test -s "$RUNNER_TEMP/archiv-lego-preview/src/lego-camera-scanner.ts"
           test -s "$RUNNER_TEMP/archiv-lego-preview/src/lego-set-number-scan.ts"
           grep -Fq 'launchSetScanner' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
-          # Staging-only: camera search must precede the Catalog: Most Popular headline.
+          # Staging-only: search OR camera scan must appear directly above the catalog heading.
           python3 - "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts" <<'PY'
           from pathlib import Path
           import sys
-          text=Path(sys.argv[1]).read_text()
-          camera='shell.append(button("📷 Scan a LEGO set number",launchSetScanner,"archiv-scan-launch archiv-scan-home"))'
+          source=Path(sys.argv[1]).read_text()
+          search='const searchForm=e("form","archiv-home-search")'
+          combined='discover.append(searchForm,e("span","archiv-home-search-or","OR"),scanSetNumberButton(true))'
           heading='shell.append(e("h2","archiv-catalog-heading","Catalog: Most Popular"))'
-          assert camera in text and heading in text and text.index(camera)<text.index(heading)
+          assert search in source and combined in source and heading in source
+          assert source.index(search)<source.index(combined)<source.index(heading)
+          assert 'b.replaceChildren(cameraGlyph(),e("span","","Scan Set Number"))' in source
+          assert 'searchFullCatalogFromHome(homeQuery.value)' in source
           PY
           grep -Fq 'capture","environment' "$RUNNER_TEMP/archiv-lego-preview/src/lego-camera-scanner.ts"
           grep -Fq 'filterSets(' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
