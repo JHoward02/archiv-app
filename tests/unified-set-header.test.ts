@@ -12,14 +12,18 @@ describe("consistent Archív logo and set page navigation",()=>{
   expect(app).toContain('const art=e("img");art.src=import.meta.env.BASE_URL+"archiv-toy-brick-logo.webp"');
   expect(styles).toContain(".lego-logo{width:min(560px,100%)}");
  });
- it("limits the white logo header to the content container on desktop and mobile",()=>{
-  expect(styles).toContain("Content-width white header backdrop");
-  expect(styles).toContain(".lego-header::before{");
-  expect(styles).toContain("left:0;");
-  expect(styles).toContain("right:0;");
+ it("blends the alternate logo into the warm background without a white panel",()=>{
+  expect(styles).toContain("Staging logo: let the artwork's white pixels blend naturally");
+  expect(styles).toContain(".lego-header::before{content:none}");
+  expect(styles).toContain(".lego-logo::before{display:none}");
+  expect(styles).toContain(".lego-logo img{mix-blend-mode:multiply}");
   expect(styles).not.toContain("width:100vw;");
-  expect(styles).toContain("background:#fefefe;");
-  expect(styles).toContain(".lego-header::before{top:-12px;bottom:-12px}");
+  expect(styles).not.toContain("background:#fefefe;");
+ });
+ it("moves the account icon inward on desktop and mobile",()=>{
+  expect(styles).toContain(".lego-header>.lego-account-controls{margin-right:18px}");
+  expect(styles).toContain("right:16px;");
+  expect(styles).toContain(".lego-header:not(.lego-theme-header):not(.lego-detail-header)>.lego-account-controls");
  });
  it("places the theme catalog button directly below the catalog heading",()=>{
   const title=app.indexOf('main.append(e("h2","",selected))');
