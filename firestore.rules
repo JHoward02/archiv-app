@@ -61,18 +61,11 @@ service cloud.firestore {
       // Immutable marker prevents stale sessions from recreating deleted records.
       allow update, delete: if false;
     }
-    // Collector-owned copyrights; upload and display permissions are nonexclusive.
+    // Collector photos remain the copyright of their photographers.
     function validPhotoData() {
       return request.resource.data.imageData is string
         && request.resource.data.imageData.size() <= 340000
-        && request.resource.data.imageData.matches('^data:image/jpeg;base64,[A-Za-z0-9+/=]+
-      allow read, delete: if owner(userId) && section in ['items', 'groups'];
-      allow create, update: if owner(userId) && section in ['items', 'groups']
-        && !exists(/databases/$(database)/documents/users/$(userId)/account/deletion);
-    }
-  }
-}
-);
+        && request.resource.data.imageData.matches('^data:image/jpeg;base64,[A-Za-z0-9+/=]+$');
     }
     match /users/{userId}/setPhotos/{setNumber} {
       allow get: if owner(userId) || (isReportingAdmin() && resource.data.status == 'pending');
