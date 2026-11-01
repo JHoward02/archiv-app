@@ -540,3 +540,38 @@
     right:16px;
   }
 }
+
+/* Catalog and private collection filters: one responsive, keyboard-accessible layout. */
+.archiv-filter-bar{
+ display:grid;
+ grid-template-columns:repeat(4,minmax(0,1fr));
+ gap:12px;
+ align-items:end;
+ padding:17px;
+ margin:12px 0 16px;
+ background:#fffdf8;
+ border:1px solid #ddd1c0;
+ border-radius:16px;
+}
+.archiv-filter-control{display:flex;flex-direction:column;gap:6px;min-width:0;font-size:12px;font-weight:750;color:#544a41}
+.archiv-filter-control>span{font-weight:800}
+.archiv-filter-control input,.archiv-filter-control select{
+ width:100%;min-width:0;height:44px;padding:9px 11px;
+ border:1px solid #cfc2b1;border-radius:9px;background:#fff;color:#08243b;font:500 13px Inter,system-ui,sans-serif;
+}
+.archiv-filter-control input:focus-visible,.archiv-filter-control select:focus-visible{
+ outline:2px solid #176553;outline-offset:2px;
+}
+.archiv-filter-search{grid-column:span 2}
+.archiv-filter-reset{height:44px;align-self:end;white-space:nowrap;background:#f1e9dd;color:#08243b}
+.archiv-collector-view .archiv-collector-count{margin:17px 0 14px}
+.archiv-filter-results .archiv-collector-feedback{margin:14px 0 24px}
+@media(max-width:760px){
+ .archiv-filter-bar{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px}
+ .archiv-filter-search{grid-column:1/-1}
+ .archiv-filter-reset{width:100%}
+}
+@media(max-width:410px){
+ .archiv-filter-bar{grid-template-columns:minmax(0,1fr)}
+ .archiv-filter-search{grid-column:auto}
+}
