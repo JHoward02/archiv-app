@@ -643,7 +643,7 @@ function renderProfile(shell:HTMLElement){
 function render(){displayedRouteHash=location.hash;app.replaceChildren();const shell=e("div","lego-shell");app.append(shell);
 const header=e("header","lego-header");
 const logo=e("a","lego-logo");logo.href="#/";logo.onclick=(event)=>{event.preventDefault();goTheme("All LEGO")};logo.setAttribute("aria-label","Archív home");
-const art=e("img");art.src=import.meta.env.BASE_URL+"archiv-lego-logo.png";art.alt="Archív. Your collection lives here.";art.onerror=()=>{art.onerror=null;art.remove();logo.append(e("span","archiv-logo-fallback","Archív"))};logo.append(art);
+const art=e("img");art.src=import.meta.env.BASE_URL+"archiv-toy-brick-logo.webp";art.alt="Archív. Your collection lives here.";art.onerror=()=>{art.onerror=null;art.remove();logo.append(e("span","archiv-logo-fallback","Archív"))};logo.append(art);
 header.append(logo);
 const account=e("details","lego-account-controls");
 const toggle=e("summary","lego-account-toggle");toggle.setAttribute("aria-label","Account menu");toggle.setAttribute("title","Account menu");
