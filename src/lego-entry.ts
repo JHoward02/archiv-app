@@ -3,6 +3,7 @@ import { initializeApp, getApps } from "firebase/app";
 import { getAuth, GoogleAuthProvider, getAdditionalUserInfo, getRedirectResult, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, deleteUser, reauthenticateWithPopup, type User, type UserCredential } from "firebase/auth";
 import { createCollectorProfile, decideGoogleAuth, firstNameFromDisplayName, personalArchiveTitle, signupBannerText } from "./auth-signup-decision";
 import { collectorOverview, collectingThemeTiles, setsWithStatus, absentFromCatalog } from "./collector-home-summary";
+import { filterSets, sortSets, decadeOptions, pieceOptions, setSortOptions, savedThemeCounts, type SetOrder } from "./lego-filters";
 import { collection, doc, getFirestore, onSnapshot, setDoc, deleteDoc, getDoc, getDocs, addDoc, increment, serverTimestamp, updateDoc, writeBatch, type Unsubscribe } from "firebase/firestore";
 type SetRow={number:string;name:string;year:number;theme:string;parts:number;image?:string;images?:string[]};
 type Status="owned"|"wishlist";
@@ -216,7 +217,10 @@ const tileSets:Record<string,string>={
 "Botanicals":"10311-1"
 };
 const setImage=(number:string)=>"https://cdn.rebrickable.com/media/sets/"+number+".jpg";
-let selected="All LEGO",search="",sort="name",page=0;
+let selected="All LEGO",search="",sort:SetOrder="name-asc",page=0;
+let catalogDecade="all",catalogPieces="all",catalogStatus="all",catalogTheme="all";
+let collectorQuery="",collectorThemeFilter="all",collectorDecade="all",collectorPieces="all",collectorSort:SetOrder="theme-asc";
+let collectingThemeStatus="all",collectingThemeSort="name-asc";
 type CollectorView="themes-collecting"|"sets-owned"|"wishlist";
 let collectorPageLimit=40;
 let collectionDetailReturn:CollectorView|null=null;
@@ -226,6 +230,8 @@ function collectorViewFromHash():CollectorView|null{
 }
 function goCollectorView(view:CollectorView){
  collectorPageLimit=40;collectionDetailReturn=null;
+ collectorQuery="";collectorThemeFilter="all";collectorDecade="all";collectorPieces="all";collectorSort="theme-asc";
+ collectingThemeStatus="all";collectingThemeSort="name-asc";
  location.hash="#/"+view;render();
 }
 function setFromHash(){const m=location.hash.match(/^#\/set\/(.+)$/);return m?decodeURIComponent(m[1]):null}
@@ -235,7 +241,7 @@ selected=themeFromHash();
 // Remember the displayed route, not merely the selected theme. Android/browser Back
 // can return to the same theme from a set or admin page without changing selected.
 let displayedRouteHash=location.hash;
-function goTheme(n:string){selected=n;search="";page=0;collectionDetailReturn=null;location.hash=n==="All LEGO"?"#/":"#/"+encodeURIComponent(n.toLowerCase().replace(/\s+/g,"-"));render()}
+function goTheme(n:string){selected=n;search="";page=0;catalogDecade="all";catalogPieces="all";catalogStatus="all";catalogTheme="all";collectionDetailReturn=null;location.hash=n==="All LEGO"?"#/":"#/"+encodeURIComponent(n.toLowerCase().replace(/\s+/g,"-"));render()}
 window.addEventListener("hashchange",()=>{if(location.hash==="#/profile"||location.hash==="#/sign-up"||collectorViewFromHash()){render();return}if(location.hash==="#/admin"){if(adminEnabled)void loadAdmin();else render();return}if(setFromHash()){render();return}const next=themeFromHash();if(next!==selected){selected=next;search="";page=0}if(displayedRouteHash!==location.hash)render()});
 let saved:Record<string,Status>={};
 function applyFirebaseAuthState(user:User|null){
@@ -300,6 +306,17 @@ async function load(){
 }
 function e<K extends keyof HTMLElementTagNameMap>(tag:K,cls="",value=""){const n=document.createElement(tag);n.className=cls;if(value){const parts=value.split("LEGO®");if(parts.length===1)n.textContent=value;else{parts.forEach((part,i)=>{if(i){n.append(document.createTextNode("LEGO"));const mark=document.createElement("sup");mark.className="lego-registered";mark.textContent="®";n.append(mark)}if(part)n.append(document.createTextNode(part))})}}return n}
 function button(label:string,click:()=>void,cls=""){const b=e("button","lego-button "+cls,label);b.onclick=click;return b}
+function filterDropdown(label:string,options:readonly (readonly [string,string])[],value:string,onChange:(value:string)=>void){
+ const wrap=e("label","archiv-filter-control");wrap.append(e("span","",label));
+ const select=e("select") as HTMLSelectElement;select.setAttribute("aria-label",label);
+ for(const [key,name] of options){const option=e("option") as HTMLOptionElement;option.value=key;option.textContent=name;select.append(option)}
+ select.value=value;select.onchange=()=>onChange(select.value);wrap.append(select);return wrap;
+}
+function searchControl(label:string,placeholder:string,value:string,onChange:(value:string)=>void){
+ const wrap=e("label","archiv-filter-control archiv-filter-search");wrap.append(e("span","",label));
+ const input=e("input") as HTMLInputElement;input.type="search";input.setAttribute("aria-label",label);input.placeholder=placeholder;input.value=value;
+ input.oninput=()=>onChange(input.value);wrap.append(input);return wrap;
+}
 async function save(id:string,status:Status){
  if(deletingAccount)return;
  if(!currentUser){accountError="Sign in with Google to track owned sets and your wishlist across devices.";render();return}
