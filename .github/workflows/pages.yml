@@ -67,6 +67,8 @@ jobs:
           grep -q 'lego-header::before{content:none}' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
           grep -q 'lego-header>.lego-account-controls{margin-right:18px}' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
           grep -q 'right:16px;' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
+          # This homepage release combines the former stacked catalog titles into one heading.
+          grep -Fq 'shell.append(e("h2","archiv-catalog-heading","Catalog: Most Popular"))' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
           npm --prefix "$RUNNER_TEMP/archiv-lego-preview" ci
           # The web-only auth candidate deliberately excludes unrelated native/import tooling.
           # Import catalog data using the separately vetted staging importer, not staged UI.
