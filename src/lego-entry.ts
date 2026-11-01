@@ -922,19 +922,34 @@ const main=e("section","lego-main lego-catalog-section");
  if(currentUser)main.append(e("p","archiv-personal-collection-label",personalArchiveTitle(currentUser.displayName||ownProfile?.name)+" · "+selected));
  main.append(e("h2","",selected));
  main.append(button("← Back to Catalog",()=>goTheme("All LEGO"),"archiv-collector-back archiv-set-page-back"));
-const controls=e("div","lego-controls");const input=e("input") as HTMLInputElement;input.placeholder="Search by set name, number, or year";input.value=search;input.setAttribute("aria-label","Search LEGO® sets");input.oninput=()=>{search=input.value;page=0;renderResults()};controls.append(input);
-const select=e("select") as HTMLSelectElement;for(const [v,l] of [["name","Name"],["year","Newest first"],["number","Set number"]]){const o=e("option") as HTMLOptionElement;o.value=v;o.textContent=l;select.append(o)}select.value=sort;select.onchange=()=>{sort=select.value;page=0;renderResults()};controls.append(select);main.append(controls);
+const toolbar=e("div","archiv-filter-bar archiv-catalog-filters");
+toolbar.setAttribute("aria-label","Filter and sort LEGO catalog");
+toolbar.append(searchControl("Search sets","Name, set number, theme, or year",search,v=>{search=v;page=0;renderResults()}));
+if(selected==="Complete Catalog"){
+ const allThemes:[string,string][]=[["all","All themes"],...[...new Set(data.map(row=>row.theme))].sort().map(theme=>[theme,theme] as [string,string])];
+ toolbar.append(filterDropdown("Theme",allThemes,catalogTheme,v=>{catalogTheme=v;page=0;renderResults()}));
+}
+toolbar.append(
+ filterDropdown("Year",decadeOptions(data),catalogDecade,v=>{catalogDecade=v;page=0;renderResults()}),
+ filterDropdown("Pieces",pieceOptions,catalogPieces,v=>{catalogPieces=v;page=0;renderResults()}),
+ filterDropdown("Collection status",[["all","All sets"],["owned","Owned"],["wishlist","Wishlist"],["uncollected","Not owned"]],catalogStatus,v=>{catalogStatus=v;page=0;renderResults()}),
+ filterDropdown("Sort by",setSortOptions,sort,v=>{sort=v as SetOrder;page=0;renderResults()})
+);
+toolbar.append(button("Clear filters",()=>{search="";sort="name-asc";catalogTheme="all";catalogDecade="all";catalogPieces="all";catalogStatus="all";page=0;render()},"archiv-filter-reset"));
+main.append(toolbar);
 const summary=e("div","lego-summary");const results=e("div","lego-results");const pager=e("div","lego-pagination");main.append(summary,results,pager);
 shell.append(main);
 const disclosure=e("p","lego-theme-affiliate-disclosure","Affiliate link: Archív may earn a commission from qualifying purchases. Listings, prices and availability are not verified.");shell.append(disclosure);
 function renderResults(){
 results.replaceChildren();pager.replaceChildren();
-let rows=data.filter(x=>(selected==="Complete Catalog"||x.theme===selected||(selected==="Pokemon"&&(/pokemon|pokémon/i.test(x.name)||/pokemon|pokémon/i.test(x.theme))))&&(!search||[x.name,x.number,String(x.year)].join(" ").toLowerCase().includes(search.toLowerCase())));
-rows.sort((a,b)=>{const ownedDiff=Number(saved[b.number]==="owned")-Number(saved[a.number]==="owned");return ownedDiff|| (sort==="year"?b.year-a.year:sort==="number"?a.number.localeCompare(b.number):a.name.localeCompare(b.name))});
+const rows=sortSets(filterSets(
+ data.filter(x=>selected==="Complete Catalog"||x.theme===selected||(selected==="Pokemon"&&(/pokemon|pokémon/i.test(x.name)||/pokemon|pokémon/i.test(x.theme)))),
+ {query:search,theme:catalogTheme,decade:catalogDecade,pieces:catalogPieces,status:catalogStatus},saved
+),sort);
 const ownedCount=rows.filter(x=>saved[x.number]==="owned").length;
 summary.textContent=`${rows.length.toLocaleString()} sets in view · ${ownedCount} owned · ${Math.max(0,rows.length-ownedCount)} missing`;
 if(!data.length){results.append(e("p","lego-empty","Catalog preview temporarily unavailable."));return}
-if(!rows.length){results.append(e("p","lego-empty","No matching sets. Try another search."));return}
+if(!rows.length){results.append(e("p","lego-empty","No matching sets. Try adjusting or clearing the filters."));return}
 for(const row of rows.slice(page*24,(page+1)*24)){
 const owned=saved[row.number]==="owned",wish=saved[row.number]==="wishlist";
 const card=e("article","lego-set-tile "+(owned?"is-owned":"is-unowned"));
