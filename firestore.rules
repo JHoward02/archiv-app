@@ -64,12 +64,15 @@ service cloud.firestore {
     // Private collector photographs. Never share an unreviewed image publicly.
     // Photos remain editable/removable by their owner while the account is active.
     match /users/{userId}/setPhotos/{setNumber} {
-      allow get, list: if owner(userId) || isReportingAdmin();
+      // Private uploads are owner-only; moderators can inspect submitted photos.
+      allow get: if owner(userId) || (isReportingAdmin() && resource.data.status == 'pending');
+      allow list: if owner(userId);
       allow create, update: if owner(userId) && accountActive(userId)
         && request.resource.data.keys().hasOnly([
           'ownerUid','setNumber','imageData','status','uploadedAt','submittedAt'
         ])
         && request.resource.data.ownerUid == userId
+        && get(/databases/$(database)/documents/users/$(userId)/items/$('archiv-lego-set:' + setNumber)).data.legoStatus == 'owned'
         && request.resource.data.setNumber == setNumber
         && request.resource.data.imageData is string
         && request.resource.data.imageData.size() <= 340000
@@ -93,7 +96,7 @@ service cloud.firestore {
     }
     // Collection-group queries are admin-only, even though owners can read their own path.
     match /{path=**}/setPhotos/{setNumber} {
-      allow list: if isReportingAdmin();
+      allow list: if isReportingAdmin() && resource.data.status == 'pending';
     }
     // Only an admin can publish/copy an approved photo to the community catalog.
     // The UID is used solely to let the contributor withdraw their own publication.
