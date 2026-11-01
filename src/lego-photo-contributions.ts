@@ -1,5 +1,5 @@
 import {
- collectionGroup,deleteDoc,doc,getDoc,getDocs,query,setDoc,updateDoc,where,writeBatch,
+ collectionGroup,deleteDoc,doc,getDoc,getDocs,query,setDoc,where,writeBatch,
  type Firestore
 } from "firebase/firestore";
 
