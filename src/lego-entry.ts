@@ -790,52 +790,86 @@ if(collectorRoute){
   if(catalogError)main.append(button("Retry catalog",()=>{void load()},"archiv-collector-retry"));
  }else{
   const totals=collectorOverview(data,saved);
+  const toolbar=e("div","archiv-filter-bar");
+  toolbar.setAttribute("aria-label","Filter and sort your collection");
+  const body=e("div","archiv-filter-results");
   if(view==="themes-collecting"){
-   const matched=collectingThemeTiles(themes,totals.collectingThemes);
-   main.append(e("p","archiv-collector-count",matched.length+" theme"+(matched.length===1?"":"s")+" collected or wishlisted"));
-   if(matched.length){
-    const tiles=e("div","lego-theme-grid archiv-collecting-themes");
-    for(const theme of matched)tiles.append(themeTile(theme));
-    main.append(tiles);
-   }else main.append(e("p","archiv-collector-feedback","No themes yet. Add an owned or wishlisted set from the catalog to see it here."));
+   const tally=savedThemeCounts(data,saved);
+   const available=collectingThemeTiles(themes,totals.collectingThemes);
+   toolbar.append(
+    searchControl("Search themes","Search your collecting themes",collectorQuery,v=>{collectorQuery=v;refresh()}),
+    filterDropdown("Show themes",[["all","All collecting themes"],["owned","Themes with owned sets"],["wishlist","Themes with wishlisted sets"]],collectingThemeStatus,v=>{collectingThemeStatus=v;refresh()}),
+    filterDropdown("Sort themes",[["name-asc","Name: A–Z"],["name-desc","Name: Z–A"],["owned-desc","Most owned sets"],["wishlist-desc","Most wishlisted sets"]],collectingThemeSort,v=>{collectingThemeSort=v;refresh()})
+   );
+   function refresh(){
+    body.replaceChildren();
+    const q=collectorQuery.trim().toLocaleLowerCase();
+    const filtered=available.filter(theme=>theme.toLocaleLowerCase().includes(q)&&(
+     collectingThemeStatus==="all"||(tally[theme]?.[collectingThemeStatus as "owned"|"wishlist"]||0)>0
+    ));
+    filtered.sort((a,b)=>{
+     if(collectingThemeSort==="name-desc")return b.localeCompare(a);
+     if(collectingThemeSort==="owned-desc")return (tally[b]?.owned||0)-(tally[a]?.owned||0)||a.localeCompare(b);
+     if(collectingThemeSort==="wishlist-desc")return (tally[b]?.wishlist||0)-(tally[a]?.wishlist||0)||a.localeCompare(b);
+     return a.localeCompare(b);
+    });
+    body.append(e("p","archiv-collector-count",filtered.length+" of "+available.length+" collecting themes"));
+    if(filtered.length){const tiles=e("div","lego-theme-grid archiv-collecting-themes");for(const theme of filtered)tiles.append(themeTile(theme));body.append(tiles)}
+    else body.append(e("p","archiv-collector-feedback",available.length?"No themes match your filters. Try clearing them.":"No themes yet. Add an owned or wishlisted set from the catalog to see it here."));
+   }
+   toolbar.append(button("Clear filters",()=>{collectorQuery="";collectingThemeStatus="all";collectingThemeSort="name-asc";render()},"archiv-filter-reset"));
+   main.append(toolbar,body);refresh();
   }else{
    const desired:Status=view==="sets-owned"?"owned":"wishlist";
    const entries=setsWithStatus(data,saved,desired);
    const missing=absentFromCatalog(data,saved,desired);
-   const count=entries.length+missing.length;
-   main.append(e("p","archiv-collector-count",count+" "+(view==="sets-owned"?"owned":"wishlisted")+" set"+(count===1?"":"s")));
-   const list=e("div","archiv-collector-list");
-   list.setAttribute("role","list");
-   for(const row of entries.slice(0,collectorPageLimit)){
-    const item=e("article","archiv-collector-set-row");item.setAttribute("role","listitem");
-    const thumbnail=e("a","archiv-collector-set-photo");thumbnail.href="#/set/"+encodeURIComponent(row.number);
-    thumbnail.onclick=()=>{collectionDetailReturn=view};
-    const photo=e("img") as HTMLImageElement;photo.src=row.image||setImage(row.number);photo.alt=row.name+" LEGO set";photo.loading="lazy";
-    photo.onerror=()=>{photo.remove();thumbnail.append(e("span","archiv-collector-image-empty","No image"))};thumbnail.append(photo);
-    const info=e("div","archiv-collector-set-info");
-    const name=e("a","archiv-collector-set-name",row.name);name.href="#/set/"+encodeURIComponent(row.number);name.onclick=()=>{collectionDetailReturn=view};
-    info.append(e("span","archiv-collector-set-theme",row.theme),name,e("p","archiv-collector-set-meta","Set "+row.number+" · "+(row.year||"Year unknown")+" · "+row.parts.toLocaleString()+" pieces"));
-    const side=e("div","archiv-collector-set-side");
-    side.append(e("span","archiv-collector-status",desired==="owned"?"✓ Owned":"♡ Wishlisted"));
-    const details=e("a","archiv-collector-details","View set details");details.href="#/set/"+encodeURIComponent(row.number);details.onclick=()=>{collectionDetailReturn=view};
-    side.append(details);
-    if(desired==="wishlist"){
-     const buy=e("a","archiv-collector-ebay","Find on eBay ↗");buy.href=ebaySetSearch(row);buy.target="_blank";buy.rel="noopener noreferrer sponsored";
-     buy.setAttribute("aria-label","Find "+row.name+" on eBay (affiliate link)");
-     buy.onclick=()=>{void reportAffiliateClick()};
-     side.append(buy,e("small","archiv-collector-disclosure","Archív may earn a commission if you buy through this eBay link."));
+   const total=entries.length+missing.length;
+   const themeOptions:[string,string][]=[["all","All themes"],...[...new Set(entries.map(row=>row.theme))].sort().map(theme=>[theme,theme] as [string,string])];
+   toolbar.append(
+    searchControl("Search sets","Name, set number, theme, or year",collectorQuery,v=>{collectorQuery=v;collectorPageLimit=40;refresh()}),
+    filterDropdown("Theme",themeOptions,collectorThemeFilter,v=>{collectorThemeFilter=v;collectorPageLimit=40;refresh()}),
+    filterDropdown("Year",decadeOptions(entries),collectorDecade,v=>{collectorDecade=v;collectorPageLimit=40;refresh()}),
+    filterDropdown("Pieces",pieceOptions,collectorPieces,v=>{collectorPieces=v;collectorPageLimit=40;refresh()}),
+    filterDropdown("Sort by",setSortOptions,collectorSort,v=>{collectorSort=v as SetOrder;collectorPageLimit=40;refresh()})
+   );
+   function refresh(){
+    body.replaceChildren();
+    const matching=sortSets(filterSets(entries,{query:collectorQuery,theme:collectorThemeFilter,decade:collectorDecade,pieces:collectorPieces}),collectorSort);
+    // Catalog-free saves have no year, theme or piece metadata to filter against.
+    const missingShown=collectorThemeFilter==="all"&&collectorDecade==="all"&&collectorPieces==="all"
+     ?missing.filter(id=>id.toLocaleLowerCase().includes(collectorQuery.trim().toLocaleLowerCase())):[];
+    const count=matching.length+missingShown.length;
+    body.append(e("p","archiv-collector-count",count+" of "+total+" "+(view==="sets-owned"?"owned":"wishlisted")+" sets"));
+    if(!count){body.append(e("p","archiv-collector-feedback",total?"No saved sets match these filters. Try clearing them.":view==="sets-owned"?"You haven't marked any LEGO sets as owned yet.":"Your wishlist is empty. Browse the catalog to add sets you'd like to collect."));return}
+    const list=e("div","archiv-collector-list");list.setAttribute("role","list");
+    for(const row of matching.slice(0,collectorPageLimit)){
+     const item=e("article","archiv-collector-set-row");item.setAttribute("role","listitem");
+     const thumbnail=e("a","archiv-collector-set-photo");thumbnail.href="#/set/"+encodeURIComponent(row.number);
+     thumbnail.onclick=()=>{collectionDetailReturn=view};
+     const photo=e("img") as HTMLImageElement;photo.src=row.image||setImage(row.number);photo.alt=row.name+" LEGO set";photo.loading="lazy";
+     photo.onerror=()=>{photo.remove();thumbnail.append(e("span","archiv-collector-image-empty","No image"))};thumbnail.append(photo);
+     const info=e("div","archiv-collector-set-info");
+     const name=e("a","archiv-collector-set-name",row.name);name.href="#/set/"+encodeURIComponent(row.number);name.onclick=()=>{collectionDetailReturn=view};
+     info.append(e("span","archiv-collector-set-theme",row.theme),name,e("p","archiv-collector-set-meta","Set "+row.number+" · "+(row.year||"Year unknown")+" · "+row.parts.toLocaleString()+" pieces"));
+     const side=e("div","archiv-collector-set-side");
+     side.append(e("span","archiv-collector-status",desired==="owned"?"✓ Owned":"♡ Wishlisted"));
+     const details=e("a","archiv-collector-details","View set details");details.href="#/set/"+encodeURIComponent(row.number);details.onclick=()=>{collectionDetailReturn=view};side.append(details);
+     if(desired==="wishlist"){
+      const buy=e("a","archiv-collector-ebay","Find on eBay ↗");buy.href=ebaySetSearch(row);buy.target="_blank";buy.rel="noopener noreferrer sponsored";
+      buy.setAttribute("aria-label","Find "+row.name+" on eBay (affiliate link)");buy.onclick=()=>{void reportAffiliateClick()};
+      side.append(buy,e("small","archiv-collector-disclosure","Archív may earn a commission if you buy through this eBay link."));
+     }
+     item.append(thumbnail,info,side);list.append(item);
     }
-    item.append(thumbnail,info,side);list.append(item);
+    for(const id of missingShown.slice(0,Math.max(0,collectorPageLimit-matching.length))){
+     const item=e("article","archiv-collector-set-row archiv-collector-unavailable");item.setAttribute("role","listitem");
+     item.append(e("span","archiv-collector-image-empty","No image"),e("div","archiv-collector-set-info","LEGO set "+id+" · Set details unavailable in the current catalog."));list.append(item);
+    }
+    body.append(list);
+    if(count>collectorPageLimit)body.append(button("Show more sets ("+Math.min(collectorPageLimit,count)+" of "+count+")",()=>{collectorPageLimit+=40;refresh()},"archiv-collector-show-more"));
    }
-   for(const id of missing.slice(0,Math.max(0,collectorPageLimit-entries.length))){
-    const item=e("article","archiv-collector-set-row archiv-collector-unavailable");
-    item.setAttribute("role","listitem");
-    item.append(e("span","archiv-collector-image-empty","No image"),e("div","archiv-collector-set-info","LEGO set "+id+" · Set details unavailable in the current catalog."));
-    list.append(item);
-   }
-   main.append(list);
-   if(count===0)main.append(e("p","archiv-collector-feedback",view==="sets-owned"?"You haven't marked any LEGO sets as owned yet.":"Your wishlist is empty. Browse the catalog to add sets you'd like to collect."));
-   if(count>collectorPageLimit)main.append(button("Show more sets ("+Math.min(collectorPageLimit,count)+" of "+count+")",()=>{collectorPageLimit+=40;render()},"archiv-collector-show-more"));
+   toolbar.append(button("Clear filters",()=>{collectorQuery="";collectorThemeFilter="all";collectorDecade="all";collectorPieces="all";collectorSort="theme-asc";collectorPageLimit=40;render()},"archiv-filter-reset"));
+   main.append(toolbar,body);refresh();
   }
  }
  const bottom=e("a","archiv-collector-bottom-link","Explore the Full LEGO Catalog →");bottom.href="#/complete-catalog";main.append(bottom);
