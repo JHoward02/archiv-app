@@ -34,7 +34,7 @@ describe("photographer-owned LEGO set images and community permissions",()=>{
   expect(COMMUNITY_PHOTO_LICENSE).toContain("I keep my copyright");
   expect(COMMUNITY_PHOTO_LICENSE).toContain("request removal");
   expect(ui).toContain('check.type="checkbox"');
-  expect(ui).toContain("Also submit for community review");
+  expect(ui).toContain("Optional: Submit this photograph for community review");
   expect(ui).not.toContain("copyright assignment");
   expect(service).toContain('status:submitForReview?"pending":"private"');
   expect(service).toContain('communityConsent:submitForReview');
