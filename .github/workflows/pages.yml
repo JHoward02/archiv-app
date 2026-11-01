@@ -62,6 +62,7 @@ jobs:
           grep -Fq 'renderPhotoModeration' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
           grep -Fq 'match /communitySetPhotos/{photoId}' "$RUNNER_TEMP/archiv-lego-preview/firestore.rules"
           grep -Fq 'match /communityPhotoAssignments/{photoId}' "$RUNNER_TEMP/archiv-lego-preview/firestore.rules"
+          test -s "$RUNNER_TEMP/archiv-lego-preview/src/lego-photo-contributions.ts"
           grep -Fq 'PHOTO_ASSIGNMENT_VERSION' "$RUNNER_TEMP/archiv-lego-preview/src/lego-photo-ui.ts"
           grep -Fq 'removeOwnSetPhoto(legoDb,user.uid,photo.id)' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
           grep -Fq 'VITE_PHOTO_BACKEND_READY' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
