@@ -1,66 +1,123 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
     function owner(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
-    // Admin membership can only be provisioned from Firebase Console/Admin SDK.
+
+    // A retained deletion marker prevents old sessions
+    // from recreating an account's records.
+    function accountActive(uid) {
+      return !exists(
+        /databases/$(database)/documents/users/$(uid)/account/deletion
+      );
+    }
+
+    // Admin membership is granted only through
+    // Firebase Console or Admin SDK.
     match /adminAccess/{uid} {
-      allow get: if request.auth != null && request.auth.uid == uid;
+      allow get: if owner(uid);
       allow list, create, update: if false;
-      // Users may revoke their own admin grant when deleting their account.
+
+      // Users may revoke their own admin access.
       allow delete: if owner(uid);
     }
-    // A minimal UID-only marker prevents deleted profiles from being recreated by
-    // other signed-in browser sessions. It is retained after self-deletion.
-    function accountActive(uid) {
-      return !exists(/databases/$(database)/documents/users/$(uid)/account/deletion);
-    }
+
     function isReportingAdmin() {
       return request.auth != null
-        && exists(/databases/$(database)/documents/adminAccess/$(request.auth.uid))
-        && get(/databases/$(database)/documents/adminAccess/$(request.auth.uid)).data.enabled == true;
+        && exists(
+          /databases/$(database)/documents/adminAccess/$(request.auth.uid)
+        )
+        && get(
+          /databases/$(database)/documents/adminAccess/$(request.auth.uid)
+        ).data.enabled == true;
     }
-    // Only aggregated, non-identity collector metrics are shared with the owner.
+
+    // Private collection statistics.
     match /collectorSummaries/{uid} {
-      allow get: if request.auth != null && request.auth.uid == uid || isReportingAdmin();
+      allow get: if owner(uid) || isReportingAdmin();
       allow list: if isReportingAdmin();
+
       allow create, update: if owner(uid) && accountActive(uid)
-        && request.resource.data.keys().hasOnly(['owned','wishlist','themes','affiliateClicks','lastActive'])
-        && request.resource.data.owned is int && request.resource.data.owned >= 0
-        && request.resource.data.wishlist is int && request.resource.data.wishlist >= 0
+        && request.resource.data.keys().hasOnly([
+          'owned',
+          'wishlist',
+          'themes',
+          'affiliateClicks',
+          'lastActive'
+        ])
+        && request.resource.data.owned is int
+        && request.resource.data.owned >= 0
+        && request.resource.data.wishlist is int
+        && request.resource.data.wishlist >= 0
         && request.resource.data.themes is map
-        && (!('affiliateClicks' in request.resource.data) || request.resource.data.affiliateClicks is int);
+        && (
+          !('affiliateClicks' in request.resource.data)
+          || request.resource.data.affiliateClicks is int
+        );
+
       allow delete: if owner(uid);
     }
+
+    // Profile details and optional email preferences.
     match /collectorProfiles/{uid} {
-      allow read: if (request.auth != null && request.auth.uid == uid) || isReportingAdmin();
+      allow read: if owner(uid) || isReportingAdmin();
+
       allow create, update: if owner(uid) && accountActive(uid)
-        && request.resource.data.keys().hasOnly(['name','email','firstSeen','lastSeen','communicationsOptIn'])
+        && request.resource.data.keys().hasOnly([
+          'name',
+          'email',
+          'firstSeen',
+          'lastSeen',
+          'communicationsOptIn'
+        ])
         && request.resource.data.name is string
         && request.resource.data.email is string
         && request.resource.data.firstSeen is string
         && request.resource.data.lastSeen is string
-        && (!('communicationsOptIn' in request.resource.data) || request.resource.data.communicationsOptIn is bool);
+        && (
+          !('communicationsOptIn' in request.resource.data)
+          || request.resource.data.communicationsOptIn is bool
+        );
+
       allow delete: if owner(uid);
     }
+
+    // Personal collection activity.
     match /users/{userId}/activity/{eventId} {
       allow read: if owner(userId) || isReportingAdmin();
+
       allow create: if owner(userId) && accountActive(userId)
-        && request.resource.data.keys().hasOnly(['type','at','setNumber','theme'])
-        && request.resource.data.type in ['owned','wishlist','removed','affiliate_click']
+        && request.resource.data.keys().hasOnly([
+          'type',
+          'at',
+          'setNumber',
+          'theme'
+        ])
+        && request.resource.data.type in [
+          'owned',
+          'wishlist',
+          'removed',
+          'affiliate_click'
+        ]
         && request.resource.data.at is string;
+
       allow update: if false;
       allow delete: if owner(userId);
     }
+
+    // Immutable account deletion marker.
     match /users/{userId}/account/deletion {
       allow read: if owner(userId);
+
       allow create: if owner(userId)
         && request.resource.data.keys().hasOnly(['deleting'])
         && request.resource.data.deleting == true;
-      // Immutable marker prevents stale sessions from recreating deleted records.
+
       allow update, delete: if false;
     }
+
     // Collector photos remain the copyright of their photographers.
     function validPhotoData() {
       return request.resource.data.imageData is string
@@ -140,10 +197,15 @@ service cloud.firestore {
       allow update: if false;
       allow delete: if isReportingAdmin();
     }
+
+    // Personal collection items and groups.
     match /users/{userId}/{section}/{recordId} {
-      allow read, delete: if owner(userId) && section in ['items', 'groups'];
-      allow create, update: if owner(userId) && section in ['items', 'groups']
-        && !exists(/databases/$(database)/documents/users/$(userId)/account/deletion);
+      allow read, delete: if owner(userId)
+        && section in ['items', 'groups'];
+
+      allow create, update: if owner(userId)
+        && section in ['items', 'groups']
+        && accountActive(userId);
     }
   }
 }
