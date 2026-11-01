@@ -656,3 +656,50 @@
  .archiv-home-discover>.archiv-scan-home{font-size:12px}
  .archiv-home-discover .archiv-camera-glyph{width:27px;height:27px}
 }
+
+/* Collector photographs: owner-only images and explicitly approved community media. */
+.archiv-photo-row-upload{background:#edf4ed;border-color:#a8c5ae;color:#155f45;font-size:12px;padding:7px 10px}
+.archiv-owner-photo-panel{margin:16px 0;border:1px solid #ddcfbe;border-radius:13px;padding:15px;background:#fffdf9}
+.archiv-owner-photo-panel h3,.archiv-community-photo-panel h3{font:normal 23px Georgia,serif;margin:0 0 11px;color:#08243b}
+.archiv-owner-photo-contents{display:grid;gap:9px}
+.archiv-photo-owned-image,.archiv-photo-community-image{width:100%;max-height:330px;object-fit:contain;border-radius:12px;background:#f3eee8}
+.archiv-photo-status-tag{font-size:12px;color:#3c6049;font-weight:800}
+.archiv-photo-muted{color:#6b655b;font-size:13px;line-height:1.5}
+.archiv-photo-upload-button{margin-top:10px;border-color:#9fc4a6;background:#e7f2e9;color:#145943}
+.archiv-community-photo-panel:not(:empty){padding:17px;border:1px solid #ded0be;border-radius:14px;background:#fffdf8;margin:18px 0}
+.archiv-photo-backdrop{position:fixed;inset:0;z-index:1250;background:#08243bc9;display:grid;place-items:center;padding:16px}
+.archiv-photo-dialog{width:min(100%,620px);max-height:calc(100dvh - 32px);overflow:auto;background:#fffdf9;border:1px solid #ddcfbe;border-radius:17px;padding:20px;color:#08243b;box-shadow:0 25px 70px #0005}
+.archiv-photo-dialog-head{display:flex;align-items:start;justify-content:space-between;gap:14px}
+.archiv-photo-dialog-head h2{font:normal clamp(24px,4vw,32px) Georgia,serif;margin:0}
+.archiv-photo-close{flex:none;background:#f0e9de}
+.archiv-photo-note,.archiv-photo-privacy{font-size:13px;color:#6c5f52;line-height:1.55}
+.archiv-photo-preview{display:block;width:100%;max-height:230px;object-fit:contain;background:#f4eee5;border-radius:10px}
+.archiv-photo-preview[hidden]{display:none}
+.archiv-photo-dialog input[type=file]{display:block;width:100%;margin:16px 0;padding:8px;border:1px solid #d9cbba;border-radius:9px}
+.archiv-photo-status{font-size:12px;color:#2e5f46;font-weight:750}
+.archiv-photo-consent{display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.5;padding:13px;background:#f6f0e8;border-radius:10px;color:#3f3932}
+.archiv-photo-consent input{margin-top:4px;flex:none}
+.archiv-photo-actions{display:flex;flex-wrap:wrap;gap:10px;margin:15px 0}
+.archiv-photo-save{background:#135d45;color:#fff;border-color:#135d45}
+.archiv-photo-delete,.archiv-photo-reject{background:#f7e9e2;color:#883d2f;border-color:#dbb9ad}
+.archiv-photo-delete[hidden]{display:none}
+.archiv-photo-actions button:disabled{opacity:.6;cursor:wait}
+.archiv-admin-photo-review{padding:20px;margin:25px 0;border:1px solid #ddcfbe;border-radius:15px;background:#fffdf8}
+.archiv-photo-review-queue{display:grid;gap:13px}
+.archiv-photo-review-item{display:grid;grid-template-columns:140px minmax(0,1fr);gap:15px;padding:12px;background:#f6f0e7;border:1px solid #e2d4c1;border-radius:12px}
+.archiv-photo-review-image{width:140px;height:130px;object-fit:contain;background:white;border-radius:9px}
+.archiv-photo-review-copy{display:flex;flex-direction:column;gap:8px}
+.archiv-photo-review-copy span{font-size:12px;color:#655c51}
+.archiv-photo-review-actions{display:flex;flex-wrap:wrap;gap:8px}
+.archiv-photo-approve{background:#e8f4eb;color:#19583c;border-color:#a6c4a8}
+.archiv-photo-review-refresh{margin:10px 0}
+.archiv-photo-published-section{margin-top:25px}
+.archiv-photo-published-row{display:flex;gap:12px;align-items:center;padding:9px;border-bottom:1px solid #e5d9c9}
+.archiv-photo-published-row img{width:70px;height:65px;object-fit:contain}
+.archiv-photo-published-row span{flex:1;min-width:0}
+@media(max-width:620px){
+ .archiv-photo-dialog{padding:14px}
+ .archiv-photo-review-item{grid-template-columns:1fr}
+ .archiv-photo-review-image{width:100%;height:185px}
+ .archiv-photo-published-row{flex-wrap:wrap}
+}
