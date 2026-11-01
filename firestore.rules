@@ -61,58 +61,61 @@ service cloud.firestore {
       // Immutable marker prevents stale sessions from recreating deleted records.
       allow update, delete: if false;
     }
-    // An uploaded photo is always subject to a separately signed copyright assignment.
-    // Private and unapproved copies remain account-scoped; approved community copies do not.
+    // Collector-owned copyrights; upload and display permissions are nonexclusive.
     function validPhotoData() {
       return request.resource.data.imageData is string
         && request.resource.data.imageData.size() <= 340000
-        && request.resource.data.imageData.matches('^data:image/jpeg;base64,[A-Za-z0-9+/=]+$');
+        && request.resource.data.imageData.matches('^data:image/jpeg;base64,[A-Za-z0-9+/=]+
+      allow read, delete: if owner(userId) && section in ['items', 'groups'];
+      allow create, update: if owner(userId) && section in ['items', 'groups']
+        && !exists(/databases/$(database)/documents/users/$(userId)/account/deletion);
+    }
+  }
+}
+);
     }
     match /users/{userId}/setPhotos/{setNumber} {
       allow get: if owner(userId) || (isReportingAdmin() && resource.data.status == 'pending');
       allow list: if owner(userId);
       allow create, update: if owner(userId) && accountActive(userId)
-        && exists(/databases/$(database)/documents/users/$(userId)/items/$( 'archiv-lego-set:' + setNumber ))
-        && get(/databases/$(database)/documents/users/$(userId)/items/$( 'archiv-lego-set:' + setNumber )).data.legoStatus == 'owned'
+        && exists(/databases/$(database)/documents/users/$(userId)/items/$('archiv-lego-set:' + setNumber))
+        && get(/databases/$(database)/documents/users/$(userId)/items/$('archiv-lego-set:' + setNumber)).data.legoStatus == 'owned'
         && request.resource.data.keys().hasOnly([
           'ownerUid','setNumber','imageData','status','uploadedAt','submittedAt',
-          'assignmentVersion','rightsAssigned','signedName','signedAt'
+          'licenseVersion','communityConsent','consentedAt'
         ])
         && request.resource.data.keys().hasAll([
           'ownerUid','setNumber','imageData','status','uploadedAt','submittedAt',
-          'assignmentVersion','rightsAssigned','signedName','signedAt'
+          'licenseVersion','communityConsent','consentedAt'
         ])
         && request.resource.data.ownerUid == userId
         && request.resource.data.setNumber == setNumber
         && validPhotoData()
         && request.resource.data.status in ['private','pending']
         && request.resource.data.uploadedAt is string
-        && (request.resource.data.submittedAt == null || request.resource.data.submittedAt is string)
-        && (request.resource.data.status != 'pending' || request.resource.data.submittedAt is string)
-        && request.resource.data.assignmentVersion == 'archiv-photo-assignment-v1-2026-11-01'
-        && request.resource.data.rightsAssigned == true
-        && request.resource.data.signedName is string
-        && request.resource.data.signedName.size() >= 3
-        && request.resource.data.signedName.size() <= 120
-        && request.resource.data.signedAt is string;
-      // Only moderators may approve or reject existing pending contributions.
-      // Their edits may change only status and the approved community asset ID.
+        && request.resource.data.licenseVersion == 'archiv-community-photo-license-v1-2026-11-01'
+        && request.resource.data.communityConsent is bool
+        && (request.resource.data.status == 'private' ||
+            (request.resource.data.communityConsent == true
+             && request.resource.data.submittedAt is string
+             && request.resource.data.consentedAt is string))
+        && (request.resource.data.status != 'private' ||
+            (request.resource.data.communityConsent == false
+             && request.resource.data.submittedAt == null
+             && request.resource.data.consentedAt == null));
+      // Only moderators can approve or reject a pending image.
       allow update: if isReportingAdmin() && resource.data.status == 'pending'
-        && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['status','communityPhotoId'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','communityPhotoId'])
         && request.resource.data.status in ['approved','rejected']
         && (request.resource.data.status != 'approved' ||
             (request.resource.data.communityPhotoId is string
              && request.resource.data.communityPhotoId.size() >= 12));
       allow delete: if owner(userId);
     }
-    // Collection-group pending review query. Firestore will require a matching
-    // where('status','==','pending') clause for this permission condition.
     match /{path=**}/setPhotos/{setNumber} {
       allow list: if isReportingAdmin() && resource.data.status == 'pending';
     }
-    // Public, independently retained Archív-owned community photos.
-    // Public data never includes the uploader's UID or legal signature.
+    // Approved photos remain public by default, subject to verified removal requests.
     match /communitySetPhotos/{photoId} {
       allow get, list: if true;
       allow create: if isReportingAdmin()
@@ -122,32 +125,27 @@ service cloud.firestore {
         && request.resource.data.approvedAt is string
         && validPhotoData();
       allow update: if false;
-      // Exceptional administrator unpublishing, not a user-account deletion action.
       allow delete: if isReportingAdmin();
     }
-    // Non-public audit evidence that an identified, signed copyright transfer
-    // existed for the particular approved community asset. Retained after deletion.
-    match /communityPhotoAssignments/{photoId} {
+    // Nonpublic evidence of permission, not copyright ownership, may survive
+    // account deletion as needed for rights disputes and removal verification.
+    match /communityPhotoPermissions/{photoId} {
       allow get, list: if isReportingAdmin();
       allow create: if isReportingAdmin()
         && request.resource.data.keys().hasOnly([
-          'ownerUid','setNumber','communityPhotoId','assignmentVersion',
-          'signedName','signedAt','approvedAt'
+          'ownerUid','setNumber','communityPhotoId','licenseVersion','consentedAt','approvedAt'
         ])
         && request.resource.data.keys().hasAll([
-          'ownerUid','setNumber','communityPhotoId','assignmentVersion',
-          'signedName','signedAt','approvedAt'
+          'ownerUid','setNumber','communityPhotoId','licenseVersion','consentedAt','approvedAt'
         ])
         && request.resource.data.communityPhotoId == photoId
         && request.resource.data.ownerUid is string
         && request.resource.data.setNumber is string
-        && request.resource.data.assignmentVersion == 'archiv-photo-assignment-v1-2026-11-01'
-        && request.resource.data.signedName is string
-        && request.resource.data.signedName.size() >= 3
-        && request.resource.data.signedName.size() <= 120
-        && request.resource.data.signedAt is string
+        && request.resource.data.licenseVersion == 'archiv-community-photo-license-v1-2026-11-01'
+        && request.resource.data.consentedAt is string
         && request.resource.data.approvedAt is string;
-      allow update, delete: if false;
+      allow update: if false;
+      allow delete: if isReportingAdmin();
     }
     match /users/{userId}/{section}/{recordId} {
       allow read, delete: if owner(userId) && section in ['items', 'groups'];
