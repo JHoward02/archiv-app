@@ -46,8 +46,8 @@ jobs:
       # Isolated preview refresh after CI-tested Pokémon alias for collecting-theme cards.
       - name: Build isolated LEGO preview
         run: |
-          git fetch origin feature/lego-camera-set-scan-20261031
-          git worktree add "$RUNNER_TEMP/archiv-lego-preview" origin/feature/lego-camera-set-scan-20261031
+          git fetch origin feature/owned-set-photo-review-20261031
+          git worktree add "$RUNNER_TEMP/archiv-lego-preview" origin/feature/owned-set-photo-review-20261031
           PREVIEW_SHA=$(git -C "$RUNNER_TEMP/archiv-lego-preview" rev-parse HEAD)
           echo "Preview source: $PREVIEW_SHA"
           grep -q '/src/lego-entry.ts' "$RUNNER_TEMP/archiv-lego-preview/index.html"
@@ -56,6 +56,11 @@ jobs:
           test -s "$RUNNER_TEMP/archiv-lego-preview/src/lego-filters.ts"
           test -s "$RUNNER_TEMP/archiv-lego-preview/src/lego-camera-scanner.ts"
           test -s "$RUNNER_TEMP/archiv-lego-preview/src/lego-set-number-scan.ts"
+          test -s "$RUNNER_TEMP/archiv-lego-preview/src/lego-photo-contributions.ts"
+          test -s "$RUNNER_TEMP/archiv-lego-preview/src/lego-photo-ui.ts"
+          grep -Fq 'PHOTO_BACKEND_READY=import.meta.env.VITE_PHOTO_BACKEND_READY==="true"' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
+          grep -Fq 'renderPhotoModeration' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
+          grep -Fq 'match /approvedSetPhotos/{setNumber}' "$RUNNER_TEMP/archiv-lego-preview/firestore.rules"
           grep -Fq 'launchSetScanner' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
           # Staging-only: search OR camera scan must appear directly above the catalog heading.
           python3 - "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts" <<'PY'
@@ -111,7 +116,7 @@ jobs:
           VITE_PROFILE_BACKEND_READY=true npm --prefix "$RUNNER_TEMP/archiv-lego-preview" run build:web
           mkdir -p dist-web/lego-preview
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/lego-preview/
-          printf '{"source_commit":"%s","branch":"feature/lego-camera-set-scan-20261031"}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
+          printf '{"source_commit":"%s","branch":"feature/owned-set-photo-review-20261031","photo_backend_ready":false}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
           # Promote the verified LEGO build to the production root, without
           # removing independent preview directories or the rollback branch.
           # Keep the production release pinned while new shopping features are tested.
@@ -187,7 +192,7 @@ jobs:
           cp -R "$RUNNER_TEMP/archiv-lego-production/dist-web/." dist-web/
           # Keep the independently built staging preview after production copy.
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/lego-preview/
-          printf '{"source_commit":"%s","branch":"feature/lego-camera-set-scan-20261031"}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
+          printf '{"source_commit":"%s","branch":"feature/owned-set-photo-review-20261031","photo_backend_ready":false}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
           # Legal policies were previously approved and must remain unchanged.
           git fetch origin release/collector-profile-web-20261031
           POLICY_SHA="997b04bbbba91821f375156519b36038321eed23"
