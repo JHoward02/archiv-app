@@ -617,3 +617,42 @@
  .archiv-scan-manual .lego-button{width:100%}
  .archiv-scan-preview{max-height:200px}
 }
+
+/* Homepage discovery: search the full catalog OR scan a printed LEGO set number. */
+.archiv-home-discover{
+ display:grid;grid-template-columns:minmax(0,1fr) auto minmax(238px,.76fr);
+ align-items:stretch;gap:16px;margin:25px 0 9px;
+}
+.archiv-home-search{display:flex;align-items:stretch;min-width:0;min-height:72px;background:#fffdf8;
+ border:1px solid #d8cab7;border-radius:14px;padding:7px;gap:7px;box-shadow:0 7px 24px -21px #08243b99}
+.archiv-home-search:focus-within{outline:2px solid #176553;outline-offset:2px}
+.archiv-home-search input{flex:1;min-width:0;width:0;border:0;outline:0;background:transparent;
+ color:#08243b;font:500 15px Inter,system-ui,sans-serif;padding:10px 11px}
+.archiv-home-search input::placeholder{color:#80786f;opacity:1}
+.archiv-home-search-submit{flex:none;border:0;border-radius:9px;background:#08243b;
+ color:#fff;padding:0 19px;font:750 14px Inter,system-ui,sans-serif;cursor:pointer}
+.archiv-home-search-submit:hover{background:#16415c}
+.archiv-home-search-submit:focus-visible{outline:2px solid #176553;outline-offset:3px}
+.archiv-home-search-or{display:flex;align-items:center;justify-content:center;color:#756553;font-size:13px;font-weight:900;letter-spacing:.09em}
+.archiv-home-discover>.archiv-scan-home{display:flex;align-items:center;justify-content:center;gap:13px;
+ width:100%;min-height:72px;margin:0;padding:12px 15px;border-radius:14px;
+ background:#e7f2e9;color:#145943;font-size:16px;font-weight:800;line-height:1.25;
+ box-shadow:0 7px 24px -21px #08243b99}
+.archiv-camera-glyph{display:block;width:28px;height:28px;flex:none}
+.archiv-home-discover .archiv-camera-glyph{width:39px;height:39px}
+.archiv-home-discover+.archiv-catalog-heading{margin-top:16px}
+@media(max-width:640px){
+ .archiv-home-discover{grid-template-columns:minmax(0,1.3fr) 24px minmax(129px,1fr);gap:8px;margin:18px 0 8px}
+ .archiv-home-search{min-height:65px;padding:5px;gap:3px}
+ .archiv-home-search input{font-size:13px;padding:7px 5px}
+ .archiv-home-search-submit{font-size:12px;padding:0 9px}
+ .archiv-home-search-or{font-size:11px}
+ .archiv-home-discover>.archiv-scan-home{min-height:65px;gap:7px;padding:8px 6px;font-size:13px}
+ .archiv-home-discover .archiv-camera-glyph{width:31px;height:31px}
+}
+@media(max-width:380px){
+ .archiv-home-search-submit{padding:0 6px}
+ .archiv-home-search input{padding:6px 2px;font-size:12px}
+ .archiv-home-discover>.archiv-scan-home{font-size:12px}
+ .archiv-home-discover .archiv-camera-glyph{width:27px;height:27px}
+}
