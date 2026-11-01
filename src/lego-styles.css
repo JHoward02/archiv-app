@@ -508,3 +508,17 @@
  .archiv-collector-disclosure{flex-basis:100%}
  .archiv-collector-unavailable{grid-template-columns:84px minmax(0,1fr)}
 }
+
+/* The same .lego-header and .lego-logo render on every route, with no theme/detail
+   modifier classes. This retains exactly the homepage logo dimensions and account layout. */
+.archiv-set-page-back{margin:0 0 18px}
+.archiv-set-back-navigation{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:0 0 20px}
+.archiv-set-back-navigation .archiv-set-page-back,
+.archiv-set-back-navigation .archiv-set-context-back{margin:0}
+.archiv-set-back-navigation .archiv-set-context-back{font-size:12px;min-height:38px}
+.lego-catalog-section>.archiv-set-page-back{margin:0 0 20px}
+@media(max-width:640px){
+ .archiv-set-back-navigation{gap:8px}
+ .archiv-set-back-navigation .archiv-set-page-back,
+ .archiv-set-back-navigation .archiv-set-context-back{max-width:100%;white-space:normal}
+}
