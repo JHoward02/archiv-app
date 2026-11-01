@@ -197,3 +197,31 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Verify live production build and photo policies
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://jhoward02.github.io/archiv-app"
+          EXPECTED="202414c2fffffb1edd1c035bc7520cafe30259f2"
+          for attempt in $(seq 1 15); do
+            if curl --fail --silent --show-error --location --max-time 20 --retry 1 -H 'Cache-Control: no-cache' "$BASE/build-info.json?release-check=$GITHUB_RUN_ID-$attempt" -o /tmp/archiv-production-info.json \
+              && python3 -c 'import json,sys; d=json.load(open("/tmp/archiv-production-info.json")); assert d.get("source_commit")==sys.argv[1] and d.get("legal_source_commit")==sys.argv[1] and d.get("photo_backend_ready") is True and d.get("profile_backend_ready") is True, d' "$EXPECTED"; then
+              echo "Live production commit and photo backend confirmed: $EXPECTED"
+              break
+            fi
+            if [ "$attempt" -eq 15 ]; then
+              echo "::error::Published production build-info.json did not match approved release $EXPECTED"
+              exit 1
+            fi
+            sleep 8
+          done
+          curl --fail --silent --show-error --location --max-time 20 "$BASE/terms.html?verify=$GITHUB_RUN_ID" -o /tmp/archiv-production-terms.html
+          curl --fail --silent --show-error --location --max-time 20 "$BASE/privacy.html?verify=$GITHUB_RUN_ID" -o /tmp/archiv-production-privacy.html
+          curl --fail --silent --show-error --location --max-time 20 "$BASE/?verify=$GITHUB_RUN_ID" -o /tmp/archiv-production-index.html
+          grep -Fq 'id="community-photos"' /tmp/archiv-production-terms.html
+          grep -Fq 'id="uploaded-photos"' /tmp/archiv-production-privacy.html
+          grep -Fq 'Archív | LEGO Collections' /tmp/archiv-production-index.html
+          ! grep -Fq 'utt.impactcdn.com' /tmp/archiv-production-index.html
+          ! grep -Fq 'impactStat' /tmp/archiv-production-index.html
+          echo 'Live production homepage, photo terms and privacy policy verified.'
