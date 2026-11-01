@@ -23,7 +23,13 @@ export function openOwnedPhotoDialog(
  const title=element("h2","","Your photo: "+setName);
  const closeButton=action("Close",close,"archiv-photo-close");
  const header=element("div","archiv-photo-dialog-head");header.append(title,closeButton);dialog.append(header);
- dialog.append(element("p","archiv-photo-note","Your photo stays yours. Save privately, or choose to submit it for community review. Approved photos may remain in Archív after account deletion, but photographers may request removal."));
+ dialog.append(element("p","archiv-photo-note","Upload a photo of your LEGO set. Keep it private or optionally submit it for community review."));
+ const termsNotice=element("p","archiv-photo-terms-reference");
+ termsNotice.append(document.createTextNode("You keep your copyright. Approved community photos may remain after account deletion, but you can request removal. "));
+ const termsLink=element("a","","Read Community Photo Terms");
+ termsLink.href=new URL("terms.html#community-photos",window.location.href).href;
+ termsLink.target="_blank";termsLink.rel="noopener noreferrer";
+ termsNotice.append(termsLink);dialog.append(termsNotice);
  const preview=element("img","archiv-photo-preview") as HTMLImageElement;preview.hidden=true;preview.alt="Preview of your set photograph";dialog.append(preview);
  const info=element("p","archiv-photo-status","Loading your existing photo…");info.setAttribute("role","status");dialog.append(info);
  const input=element("input") as HTMLInputElement;input.type="file";input.accept="image/*";input.setAttribute("aria-label","Choose a photograph to upload");
@@ -36,7 +42,7 @@ export function openOwnedPhotoDialog(
  const save=action("Save my photo",()=>{void saveSelected()},"archiv-photo-save");
  const remove=action("Remove my photo",()=>{void deleteSelected()},"archiv-photo-delete");
  remove.hidden=true;buttons.append(save,remove);dialog.append(buttons);
- dialog.append(element("p","archiv-photo-privacy","You retain ownership of your photograph. Private and unapproved photos are deleted with your account. Approved community photos stay available after account deletion unless removed on request or by moderation. Photos are resized to JPEG and embedded camera location metadata is stripped. "+(check.checked?COMMUNITY_PHOTO_LICENSE:"")+" Permission terms: "+PHOTO_LICENSE_VERSION+"."));
+ dialog.append(element("p","archiv-photo-privacy","You retain ownership of your photograph. Private and unapproved photos are deleted with your account. Approved community photos stay available after account deletion unless removed on request or by moderation. Photos are resized to JPEG and embedded camera location metadata is stripped. "+" Permission terms: "+PHOTO_LICENSE_VERSION+"."));
  const licenseDetail=element("p","archiv-photo-license-detail",COMMUNITY_PHOTO_LICENSE);
  licenseDetail.hidden=!check.checked;dialog.append(licenseDetail);
  check.onchange=()=>{licenseDetail.hidden=!check.checked};
