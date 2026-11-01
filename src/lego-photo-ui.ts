@@ -1,8 +1,8 @@
 import {collection,deleteDoc,doc,getDocs,type Firestore} from "firebase/firestore";
 import {
  compressContributorImage,getOwnSetPhoto,getCommunitySetPhotos,saveOwnSetPhoto,removeOwnSetPhoto,
- pendingCommunityPhotos,moderateSetPhoto,PHOTO_ASSIGNMENT_STATEMENT,PHOTO_ASSIGNMENT_VERSION,
- validAssignmentSignature,type PrivateSetPhoto,type CommunitySetPhoto
+ pendingCommunityPhotos,moderateSetPhoto,PHOTO_LICENSE_VERSION,COMMUNITY_PHOTO_LICENSE,
+ removalRequestUrl,type PrivateSetPhoto,type CommunitySetPhoto
 } from "./lego-photo-contributions";
 
 function element<K extends keyof HTMLElementTagNameMap>(tag:K,cls="",value=""):HTMLElementTagNameMap[K]{
@@ -23,40 +23,30 @@ export function openOwnedPhotoDialog(
  const title=element("h2","","Your photo: "+setName);
  const closeButton=action("Close",close,"archiv-photo-close");
  const header=element("div","archiv-photo-dialog-head");header.append(title,closeButton);dialog.append(header);
- dialog.append(element("p","archiv-photo-note","You can keep your photo private, or separately submit it for review. For every upload, you must sign a copyright assignment to Archív's legal operator. Approved community photos remain part of Archív even if you later delete your account."));
+ dialog.append(element("p","archiv-photo-note","Your photo stays yours. Save privately, or choose to submit it for community review. Approved photos may remain in Archív after account deletion, but photographers may request removal."));
  const preview=element("img","archiv-photo-preview") as HTMLImageElement;preview.hidden=true;preview.alt="Preview of your set photograph";dialog.append(preview);
  const info=element("p","archiv-photo-status","Loading your existing photo…");info.setAttribute("role","status");dialog.append(info);
  const input=element("input") as HTMLInputElement;input.type="file";input.accept="image/*";input.setAttribute("aria-label","Choose a photograph to upload");
  dialog.append(input);
- const assignment=element("section","archiv-photo-assignment");
- assignment.append(element("h3","","Required copyright assignment"));
- assignment.append(element("p","archiv-photo-assignment-copy",PHOTO_ASSIGNMENT_STATEMENT));
- const assignmentName=element("label","archiv-photo-signature-label","Full legal name (electronic signature)");
- const signedName=element("input") as HTMLInputElement;
- signedName.type="text";signedName.autocomplete="name";signedName.maxLength=120;signedName.placeholder="Type your legal name";
- signedName.setAttribute("aria-label","Full legal name for copyright assignment");
- assignmentName.append(signedName);assignment.append(assignmentName);
- const agree=element("label","archiv-photo-consent archiv-photo-assignment-consent");
- const agreementCheck=element("input") as HTMLInputElement;agreementCheck.type="checkbox";
- agreementCheck.setAttribute("aria-label","I agree to assign my photo copyright to Archív");
- agree.append(agreementCheck,element("span","","I have read and agree to the copyright assignment above. By entering my name and saving, I electronically sign the assignment for this photograph."));
- assignment.append(agree);dialog.append(assignment);
- const consent=element("label","archiv-photo-consent");
+ const consent=element("label","archiv-photo-consent archiv-photo-community-consent");
  const check=element("input") as HTMLInputElement;check.type="checkbox";
- const labelText=element("span","","Also submit for community review. If approved, my photograph becomes a permanent community catalog photo even if I delete my Archív account. This choice is optional.");
+ const labelText=element("span","","Optional: Submit this photograph for community review. If approved, I give Archív permission to display it in the catalog. I keep my copyright. Approved photos may remain after account deletion, but I can request removal.");
  consent.append(check,labelText);dialog.append(consent);
  const buttons=element("div","archiv-photo-actions");
  const save=action("Save my photo",()=>{void saveSelected()},"archiv-photo-save");
  const remove=action("Remove my photo",()=>{void deleteSelected()},"archiv-photo-delete");
  remove.hidden=true;buttons.append(save,remove);dialog.append(buttons);
- dialog.append(element("p","archiv-photo-privacy","Private and unapproved photos are deleted with your account. Approved community photographs remain published after account deletion and cannot be withdrawn through account controls. Your image is resized to a small JPEG and camera location metadata is stripped before saving. Copyright assignment terms version: "+PHOTO_ASSIGNMENT_VERSION+"."));
+ dialog.append(element("p","archiv-photo-privacy","You retain ownership of your photograph. Private and unapproved photos are deleted with your account. Approved community photos stay available after account deletion unless removed on request or by moderation. Photos are resized to JPEG and embedded camera location metadata is stripped. "+(check.checked?COMMUNITY_PHOTO_LICENSE:"")+" Permission terms: "+PHOTO_LICENSE_VERSION+"."));
+ const licenseDetail=element("p","archiv-photo-license-detail",COMMUNITY_PHOTO_LICENSE);
+ licenseDetail.hidden=!check.checked;dialog.append(licenseDetail);
+ check.onchange=()=>{licenseDetail.hidden=!check.checked};
  back.append(dialog);document.body.append(back);
  let closed=false,busy=false,original:PrivateSetPhoto|null=null;
  function close(){if(closed)return;closed=true;document.removeEventListener("keydown",keyClose);back.remove();previous?.focus()}
  function keyClose(ev:KeyboardEvent){if(ev.key==="Escape"&&!busy)close()}
  closeButton.onclick=close;document.addEventListener("keydown",keyClose);
  back.onclick=e=>{if(e.target===back&&!busy)close()};
- function busySet(value:boolean){busy=value;save.disabled=value;remove.disabled=value;closeButton.disabled=value;input.disabled=value;check.disabled=value;agreementCheck.disabled=value;signedName.disabled=value}
+ function busySet(value:boolean){busy=value;save.disabled=value;remove.disabled=value;closeButton.disabled=value;input.disabled=value;check.disabled=value}
  void getOwnSetPhoto(db,uid,setNumber).then(photo=>{
   if(closed)return;original=photo;remove.hidden=!photo;
   if(photo){preview.src=photo.imageData;preview.hidden=false;info.textContent="Saved photo: "+(photo.status==="pending"?"Awaiting administrator review":photo.status==="approved"?"Already approved as a permanent community photo":photo.status==="rejected"?"Not approved for the catalog":"Private to you");check.checked=photo.status==="pending";}
@@ -70,9 +60,6 @@ export function openOwnedPhotoDialog(
   info.textContent="New photograph selected. Save to store it privately or submit it for review.";
  };
  async function saveSelected(){
-  if(!validAssignmentSignature(signedName.value,agreementCheck.checked)){
-   info.textContent="To upload or change sharing, confirm the copyright assignment and sign with your full legal name.";return;
-  }
   const selected=input.files?.[0];
   if(!selected){
    if(!original){info.textContent="Choose a photograph to upload.";return}
@@ -80,8 +67,8 @@ export function openOwnedPhotoDialog(
    if(check.checked===previouslyShared){info.textContent="No changes to save.";return}
    busySet(true);
    try{
-    await saveOwnSetPhoto(db,uid,setNumber,original.imageData,check.checked,signedName.value,agreementCheck.checked);
-    info.textContent=check.checked?"Submitted for review.":"Photo saved privately; previously approved community photos remain published.";
+    await saveOwnSetPhoto(db,uid,setNumber,original.imageData,check.checked);
+    info.textContent=check.checked?"Submitted for review.":"Photo saved privately. Request removal of any previously approved community copies if needed.";
     onSaved();close();
    }catch(err){info.textContent="Could not update sharing: "+(err instanceof Error?err.message:"Unknown error")}
    finally{if(!closed)busySet(false)}
@@ -90,14 +77,14 @@ export function openOwnedPhotoDialog(
   busySet(true);info.textContent="Resizing your photograph and saving it privately…";
   try{
    const data=await compressContributorImage(selected);
-   await saveOwnSetPhoto(db,uid,setNumber,data,check.checked,signedName.value,agreementCheck.checked);
+   await saveOwnSetPhoto(db,uid,setNumber,data,check.checked);
    info.textContent=check.checked?"Saved and submitted for review.":"Photo saved privately.";
    onSaved();close();
   }catch(err){info.textContent="Upload failed: "+(err instanceof Error?err.message:"Unknown error")}
   finally{if(!closed)busySet(false)}
  }
  async function deleteSelected(){
-  if(!original||!window.confirm("Delete your private/uploaded copy? Any photograph already approved as community content will remain in Archív's catalog."))return;
+  if(!original||!window.confirm("Delete your personal photo? Previously approved community copies remain in the catalog unless you request their removal."))return;
   busySet(true);info.textContent="Removing your photograph…";
   try{await removeOwnSetPhoto(db,uid,setNumber);onSaved();close()}
   catch(err){info.textContent="Removal failed: "+(err instanceof Error?err.message:"Unknown error")}
@@ -124,13 +111,18 @@ export function showPublishedPhoto(slot:HTMLElement,db:Firestore,setNumber:strin
    const image=element("img","archiv-photo-community-image") as HTMLImageElement;
    image.src=photo.imageData;
    image.alt="Archív community photograph of LEGO set "+setNumber;
-   grid.append(image);
+   const item=element("figure","archiv-photo-community-item");
+   const caption=element("figcaption","archiv-photo-community-caption");
+   const removal=element("a","archiv-photo-removal-link","Request removal");
+   removal.href=removalRequestUrl(setNumber,photo.photoId);
+   removal.setAttribute("aria-label","Request removal of community photograph "+photo.photoId);
+   caption.append(removal);item.append(image,caption);grid.append(item);
   }
-  slot.append(grid,element("p","archiv-photo-muted",photos.length+" approved Archív community photograph"+(photos.length===1?"":"s")+". These remain part of the catalog after contributors delete their accounts. Not official LEGO images."));
+  slot.append(grid,element("p","archiv-photo-muted",photos.length+" approved community photograph"+(photos.length===1?"":"s")+". Copyright remains with each photographer. Photos may remain after account deletion, subject to removal requests. Not official LEGO images."));
  }).catch(()=>{});
 }
 export function renderPhotoModeration(slot:HTMLElement,db:Firestore,lookup:(id:string)=>string){
- slot.append(element("h2","","Community photo review"),element("p","lego-admin-note","Only approved photos appear in the shared catalog. Contributors sign the copyright assignment before saving, and approved community photos remain after account deletion."));
+ slot.append(element("h2","","Community photo review"),element("p","lego-admin-note","Only explicitly submitted and approved photos appear publicly. Photographers retain copyright, grant Archív non-exclusive display permission, and may request removal. Approved photos are not automatically erased when an account is deleted."));
  const queue=element("div","archiv-photo-review-queue");
  const message=element("p","lego-admin-note","Loading submitted photographs…");
  slot.append(message,queue);
@@ -172,7 +164,7 @@ export function renderPhotoModeration(slot:HTMLElement,db:Firestore,lookup:(id:s
     const photo=r.data() as CommunitySetPhoto;
     const line=element("div","archiv-photo-published-row");
     const pic=element("img") as HTMLImageElement;pic.src=photo.imageData;pic.alt="Approved photograph for set "+r.id;
-    const del=action("Unpublish",()=>{void (async()=>{if(!window.confirm("Unpublish this Archív-owned community photo for moderation or legal reasons? Account deletion does not unpublish community photos."))return;try{await deleteDoc(doc(db,"communitySetPhotos",r.id));line.remove()}catch(error){window.alert("Could not unpublish: "+(error instanceof Error?error.message:"Unknown error"))}})()},"archiv-photo-reject");
+    const del=action("Unpublish",()=>{void (async()=>{if(!window.confirm("Unpublish this community photo for a verified removal request, legal concerns, or moderation? Account deletion alone does not unpublish community photos."))return;try{await deleteDoc(doc(db,"communitySetPhotos",r.id));line.remove()}catch(error){window.alert("Could not unpublish: "+(error instanceof Error?error.message:"Unknown error"))}})()},"archiv-photo-reject");
     line.append(pic,element("span","",lookup(photo.setNumber)),del);publishedList.append(line);
    }
   }catch{publishedList.append(element("p","archiv-photo-muted","Published photo list unavailable."))}
