@@ -576,7 +576,7 @@ async function deleteOwnProfile(){
   const priorMarker=await getDoc(marker);
   if(!priorMarker.exists())await setDoc(marker,{deleting:true});
   // Erase only the user-account photo copies. Approved community catalog copies and
-  // restricted copyright-assignment audit records are independent and persist.
+  // restricted records of permission to display approved photos may persist for rights and removal requests.
   if(PHOTO_BACKEND_READY){
    const storedPhotos=await getDocs(collection(legoDb,"users",user.uid,"setPhotos"));
    for(const photo of storedPhotos.docs)await removeOwnSetPhoto(legoDb,user.uid,photo.id);
@@ -694,12 +694,12 @@ function renderProfile(shell:HTMLElement){
  main.append(preferences);
  const danger=e("section","archiv-profile-danger");
  danger.append(e("h2","","Delete your profile"));
- danger.append(e("p","","Permanently delete your Archív login, saved sets, wishlist, collection activity, and private or unapproved photo copies. Moderator-approved community photos remain in the Archív catalog, and a restricted copyright-assignment record remains as proof of the transfer. Your Google and eBay accounts are not deleted."));
+ danger.append(e("p","","Permanently delete your Archív login, saved sets, wishlist, collection activity, and personal or unapproved photo copies. Approved community photographs may remain in the catalog after deletion, but photographers may request removal. Limited private permission records may remain for rights and removal requests. Your Google and eBay accounts are not deleted."));
  const trigger=button(deleteConfirmOpen?"Cancel deletion":"Delete profile",()=>{deleteConfirmOpen=!deleteConfirmOpen;deleteConfirmText="";profileError="";render()},"archiv-profile-delete-trigger");
  danger.append(trigger);
  if(deleteConfirmOpen){
   const confirm=e("div","archiv-profile-confirm");confirm.append(e("strong","","Confirm permanent deletion"));
-  confirm.append(e("p","","To confirm, sign in again with Google and type DELETE below. This permanently erases your Archív collection records and non-community photos. Approved community photos stay published and restricted copyright-transfer evidence is retained. A minimal account identifier may also remain to prevent old sessions recreating deleted records."));
+  confirm.append(e("p","","To confirm, sign in again with Google and type DELETE below. This permanently erases your Archív collection records and non-community photos. Approved community photos may remain in the catalog, subject to removal requests, and private permission records may be retained as needed to resolve rights and removal issues. A minimal account identifier may also remain to prevent old sessions recreating deleted records."));
   const field=e("input") as HTMLInputElement;field.type="text";field.placeholder="Type DELETE";field.autocomplete="off";field.value=deleteConfirmText;
   field.oninput=()=>{deleteConfirmText=field.value;final.disabled=deleteConfirmText!=="DELETE"||!PROFILE_BACKEND_READY||profileBusy};
   confirm.append(field);
