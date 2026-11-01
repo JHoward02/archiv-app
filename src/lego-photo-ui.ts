@@ -49,7 +49,7 @@ export function openOwnedPhotoDialog(
  function busySet(value:boolean){busy=value;save.disabled=value;remove.disabled=value;closeButton.disabled=value;input.disabled=value;check.disabled=value}
  void getOwnSetPhoto(db,uid,setNumber).then(photo=>{
   if(closed)return;original=photo;remove.hidden=!photo;
-  if(photo){preview.src=photo.imageData;preview.hidden=false;info.textContent="Saved photo: "+(photo.status==="pending"?"Awaiting administrator review":photo.status==="approved"?"Already approved as a permanent community photo":photo.status==="rejected"?"Not approved for the catalog":"Private to you");check.checked=photo.status==="pending";}
+  if(photo){preview.src=photo.imageData;preview.hidden=false;info.textContent="Saved photo: "+(photo.status==="pending"?"Awaiting administrator review":photo.status==="approved"?"Approved for community display (removal available by request)":photo.status==="rejected"?"Not approved for the catalog":"Private to you");check.checked=photo.status==="pending";}
   else info.textContent="No personal photo saved yet.";
  }).catch(()=>{if(!closed)info.textContent="Could not load your saved photo. Check your connection."});
  input.onchange=()=>{
