@@ -522,3 +522,22 @@
  .archiv-set-back-navigation .archiv-set-page-back,
  .archiv-set-back-navigation .archiv-set-context-back{max-width:100%;white-space:normal}
 }
+
+/* Full-width white header backdrop. Match the uploaded brick logo's near-white canvas,
+   but keep the logo dimensions, page layout and account menu unchanged. */
+.lego-header{isolation:isolate}
+.lego-header::before{
+  content:"";
+  position:absolute;
+  top:-20px;
+  bottom:-14px;
+  left:50%;
+  width:100vw;
+  transform:translateX(-50%);
+  background:#fefefe;
+  z-index:-1;
+  pointer-events:none;
+}
+@media(max-width:640px){
+  .lego-header::before{top:-12px;bottom:-12px}
+}
