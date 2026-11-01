@@ -25,7 +25,8 @@ describe("owned LEGO set photo contributions",()=>{
   expect(source).toContain('if(owned&&currentUser&&legoDb){');
   expect(source).toContain('openOwnedPhotoDialog(legoDb!,currentUser!.uid,row.number,row.name,render)');
   expect(source).toContain('if(desired==="owned"&&legoDb&&currentUser){');
-  expect(source).toContain('side.append(button("Upload photo"');
+  expect(source).toContain('const upload=button("Upload photo"');
+  expect(source).toContain('upload.disabled=!PHOTO_BACKEND_READY');
   expect(source).toContain('showPublishedPhoto(published,legoDb,row.number)');
  });
  it("requires explicit contributor approval and administrator decision",()=>{
