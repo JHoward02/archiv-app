@@ -5,6 +5,7 @@ on:
       - feature/alternate-brick-logo-preview-20261031
       - feature/catalog-filter-sort-20261031
       - feature/lego-camera-set-scan-20261031
+      - feature/owned-set-photo-review-20261031
   workflow_dispatch:
 permissions:
   contents: read
