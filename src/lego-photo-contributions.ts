@@ -39,7 +39,7 @@ function privateRef(db:Firestore,uid:string,setNumber:string){
  return doc(db,"users",uid,"setPhotos",setNumber);
 }
 export const PHOTO_ASSIGNMENT_STATEMENT=
- "By checking the box and signing with my full legal name, I represent that I own the copyright in this photograph and assign to the legal operator of Archív all copyright rights I hold in the uploaded photograph, for the full copyright term, worldwide. This assignment applies even when the photo is private. Submitting for community review is a separate, optional choice. If Archív approves it as a community photo, the approved photo may remain publicly displayed after I delete my account. Removing my private copy or deleting my account does not undo a completed copyright assignment. I understand the legal operator must be identified in the final signed agreement before uploads are enabled.";
+ "By checking the box and signing with my full legal name, I represent that I own the copyright in this photograph and assign to the legal operator of Archív all copyright rights I hold in the uploaded photograph, for the full copyright term, worldwide. This assignment applies even when the photo is private. Submitting for community review is a separate, optional choice. If Archív approves it as a community photo, the approved photo may remain publicly displayed after I delete my account. Removing my private copy or deleting my account does not undo a completed copyright assignment.";
 
 export async function compressContributorImage(file:File):Promise<string>{
  if(!file.type.startsWith("image/"))throw Error("Choose a JPEG, PNG, HEIC, or WebP photograph.");
