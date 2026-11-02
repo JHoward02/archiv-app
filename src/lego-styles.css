@@ -716,3 +716,24 @@
  color:#6c5f52;font-size:12px;line-height:1.5}
 .archiv-photo-terms-reference a{color:#135a49;font-weight:750;text-decoration:underline;text-underline-offset:3px}
 .archiv-photo-terms-reference a:focus-visible{outline:2px solid #176553;outline-offset:3px}
+
+/* Separate Google and email authentication screens, responsive on mobile. */
+.archiv-auth-screen{max-width:790px;margin-inline:auto}
+.archiv-auth-screen .archiv-profile-panel{padding:clamp(22px,4vw,43px)}
+.archiv-auth-screen .archiv-profile-panel h1{margin:8px 0 12px;font:normal clamp(32px,5vw,46px)/1.2 Georgia,serif}
+.archiv-auth-method-title{font:normal 23px Georgia,serif;margin:24px 0 12px}
+.archiv-auth-methods{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.archiv-auth-method{display:block;min-height:52px;border-radius:10px;background:#fffdf8;border:1px solid #b8c6c5;color:#08243b;font-size:14px;font-weight:750;text-align:center;padding:12px 10px}
+.archiv-auth-method:hover,.archiv-auth-method:focus-visible{border-color:#135d45;background:#edf5ef}
+.archiv-auth-google{background:#fff}
+.archiv-auth-email{background:#eef5f0;border-color:#a1c0aa}
+.archiv-auth-email-form{display:grid;gap:13px;margin:20px 0 8px;padding:20px;border:1px solid #e0d5c7;border-radius:12px;background:#f7f3eb}
+.archiv-auth-field{display:grid;gap:6px;font-size:13px;font-weight:700;color:#263b43}
+.archiv-auth-field input{width:100%;padding:12px;min-height:45px;border:1px solid #c5bcae;border-radius:8px;background:#fff;color:#08243b;font:inherit;font-weight:400}
+.archiv-auth-field input:focus-visible{outline:2px solid #137353;outline-offset:2px}
+.archiv-auth-submit{background:#135d45;color:white;border-color:#135d45;margin-top:6px}
+.archiv-auth-reset{justify-self:start;font-size:13px;background:transparent;border:0;padding:5px 0;min-height:auto;color:#135d45;text-decoration:underline}
+.archiv-auth-switch{margin:20px 0 8px;background:transparent;border:0;min-height:36px;color:#145b48;text-decoration:underline;font-size:13px}
+.archiv-auth-legal{margin:14px 0 0;font-size:12px;line-height:1.6}
+.archiv-auth-legal a{color:#145b48;font-weight:750;text-decoration:underline}
+@media(max-width:550px){.archiv-auth-methods{grid-template-columns:1fr}.archiv-auth-email-form{padding:14px}.archiv-auth-method{min-height:48px}}

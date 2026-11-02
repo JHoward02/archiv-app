@@ -1,6 +1,6 @@
 import "./lego-styles.css";
 import { initializeApp, getApps } from "firebase/app";
-import { getAuth, GoogleAuthProvider, getAdditionalUserInfo, getRedirectResult, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, deleteUser, reauthenticateWithPopup, type User, type UserCredential } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, getAdditionalUserInfo, getRedirectResult, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, deleteUser, reauthenticateWithPopup, reauthenticateWithCredential, EmailAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, updateProfile, sendEmailVerification, type User, type UserCredential } from "firebase/auth";
 import { createCollectorProfile, decideGoogleAuth, firstNameFromDisplayName, personalArchiveTitle, signupBannerText } from "./auth-signup-decision";
 import { collectorOverview, collectingThemeTiles, setsWithStatus, absentFromCatalog } from "./collector-home-summary";
 import { filterSets, sortSets, decadeOptions, pieceOptions, setSortOptions, savedThemeCounts, type SetOrder } from "./lego-filters";
@@ -43,6 +43,7 @@ let authAttempt:GoogleAuthIntent|null=getStoredRedirectIntent();
 let signupCommunicationsOptIn=false;
 if(authAttempt==="sign-up")try{signupCommunicationsOptIn=sessionStorage.getItem(redirectSignupConsentKey)==="true"}catch{}
 let authBusy=authAttempt!==null,authNotice="";
+let emailFormIntent:GoogleAuthIntent|null=null,emailDraft="",nameDraft="",authFormNotice="",deletionPassword="";
 let currentUser:User|null=null,authReady=!legoAuth,collectionReady=!legoAuth,accountError="";
 let stopCollection:Unsubscribe|null=null,authGeneration=0;
 type Activity={uid:string;type:string;setNumber?:string;theme?:string;at:string};
@@ -203,9 +204,86 @@ async function runGoogleAuth(intent:GoogleAuthIntent){
   }
  }
 }
+
+function authEmailError(error:unknown,intent:GoogleAuthIntent):string{
+ const code=(error as {code?:string})?.code||"";
+ if(code==="auth/operation-not-allowed")return "Email/password authentication is not enabled yet. Please use Google or contact Archív.";
+ if(code==="auth/email-already-in-use")return "This email is already registered. Choose Sign in and use your existing sign-in method.";
+ if(code==="auth/weak-password")return "Choose a stronger password with at least 8 characters.";
+ if(code==="auth/too-many-requests")return "Too many attempts. Please try again later.";
+ if(code==="auth/network-request-failed")return "Connection failed. Check your internet connection and try again.";
+ if(intent==="sign-in"&&["auth/invalid-credential","auth/wrong-password","auth/user-not-found","auth/invalid-email"].includes(code))
+  return "We couldn't sign you in with that email and password. Check your details or reset your password.";
+ if(code==="auth/invalid-email")return "Enter a valid email address.";
+ return error instanceof Error&&!code?error.message:"We couldn't complete your email "+(intent==="sign-up"?"registration":"sign-in")+". Please try again.";
+}
+async function runEmailAuth(intent:GoogleAuthIntent,email:string,password:string,displayName=""){
+ if(!legoAuth||!legoDb){accountError="Email authentication is not configured.";render();return}
+ if(authBusy)return;
+ authBusy=true;authAttempt=intent;accountError="";authFormNotice="";authNotice="";
+ render();
+ try{
+  const address=email.trim();
+  if(intent==="sign-in"){
+   await signInWithEmailAndPassword(legoAuth,address,password);
+  }else{
+   const result=await createUserWithEmailAndPassword(legoAuth,address,password);
+   try{
+    const name=displayName.trim()||"Collector";
+    await updateProfile(result.user,{displayName:name});
+    await setDoc(doc(legoDb,"collectorProfiles",result.user.uid),
+      createCollectorProfile(name,result.user.email,signupCommunicationsOptIn,new Date().toISOString()),
+      {merge:true});
+   }catch{
+    let deleted=false;
+    try{await deleteUser(result.user);deleted=true}catch{try{await signOut(legoAuth)}catch{}}
+    throw new Error(deleted
+     ?"Your registration could not finish saving your profile. Please try again."
+     :"Registration could not finish. Contact getshelfiecollect@gmail.com to recover or remove the incomplete account.");
+   }
+   authNotice="Your Archív account is ready. Welcome!";
+   try{
+    await sendEmailVerification(result.user);
+    authNotice="Welcome to Archív! Check your inbox for an email verification link.";
+   }catch{ /* A verification email failure must not undo a completed registration. */ }
+  }
+  setSignupRequired(false);
+  emailFormIntent=null;emailDraft="";nameDraft="";
+  location.hash="#/profile";
+ }catch(error){
+  accountError=authEmailError(error,intent);
+ }finally{
+  authAttempt=null;authBusy=false;
+  applyFirebaseAuthState(legoAuth.currentUser);
+  render();
+ }
+}
+async function requestPasswordReset(email:string){
+ if(!legoAuth||authBusy)return;
+ const address=email.trim();
+ if(!address){accountError="Enter your email address first, then select Reset password.";render();return}
+ authBusy=true;accountError="";authFormNotice="";render();
+ try{
+  await sendPasswordResetEmail(legoAuth,address);
+  authFormNotice="If an account uses that address, a password-reset email will arrive shortly. Check your spam folder too.";
+ }catch(error){
+  const code=(error as {code?:string})?.code||"";
+  accountError=code==="auth/operation-not-allowed"
+   ?"Email/password sign-in has not been enabled yet."
+   :code==="auth/too-many-requests"?"Please try again later."
+   :"We couldn't send the reset email. Please try again.";
+ }finally{authBusy=false;render()}
+}
+function goAuthPage(intent:GoogleAuthIntent){
+ emailFormIntent=null;emailDraft="";nameDraft="";accountError="";authFormNotice="";authNotice="";
+ if(intent==="sign-up"){signupCommunicationsOptIn=false;setSignupRequired(false)}
+ location.hash="#/"+intent;
+ render();
+}
+
 async function signInLego(){await runGoogleAuth("sign-in")}
 async function signUpLego(){await runGoogleAuth("sign-up")}
-async function signOutLego(){if(!legoAuth)return;try{await signOut(legoAuth);authNotice=""}catch(error){accountError=error instanceof Error?error.message:"Sign-out failed.";render()}}
+async function signOutLego(){if(!legoAuth)return;try{await signOut(legoAuth);authNotice="";deletionPassword="";emailFormIntent=null}catch(error){accountError=error instanceof Error?error.message:"Sign-out failed.";render()}}
 
 
 // Rebrickable set-image URLs supplied in the downloaded CSV catalog.
@@ -247,7 +325,7 @@ selected=themeFromHash();
 // can return to the same theme from a set or admin page without changing selected.
 let displayedRouteHash=location.hash;
 function goTheme(n:string){selected=n;search="";page=0;catalogDecade="all";catalogPieces="all";catalogStatus="all";catalogTheme="all";collectionDetailReturn=null;location.hash=n==="All LEGO"?"#/":"#/"+encodeURIComponent(n.toLowerCase().replace(/\s+/g,"-"));render()}
-window.addEventListener("hashchange",()=>{if(location.hash==="#/profile"||location.hash==="#/sign-up"||collectorViewFromHash()){render();return}if(location.hash==="#/admin"){if(adminEnabled)void loadAdmin();else render();return}if(setFromHash()){render();return}const next=themeFromHash();if(next!==selected){selected=next;search="";page=0}if(displayedRouteHash!==location.hash)render()});
+window.addEventListener("hashchange",()=>{if(location.hash==="#/profile"||location.hash==="#/sign-in"||location.hash==="#/sign-up"||collectorViewFromHash()){render();return}if(location.hash==="#/admin"){if(adminEnabled)void loadAdmin();else render();return}if(setFromHash()){render();return}const next=themeFromHash();if(next!==selected){selected=next;search="";page=0}if(displayedRouteHash!==location.hash)render()});
 let saved:Record<string,Status>={};
 function applyFirebaseAuthState(user:User|null){
  if(authAttempt)return;
@@ -548,7 +626,12 @@ async function updateCommunicationsOptIn(value:boolean){
  finally{profileBusy=false;if(location.hash==="#/profile")render()}
 }
 async function reauthenticateForDeletion(user:User){
- await reauthenticateWithPopup(user,new GoogleAuthProvider());
+ if(user.providerData.some(provider=>provider.providerId==="password")){
+  if(!user.email||!deletionPassword)throw new Error("Enter your current Archív account password to confirm deletion.");
+  await reauthenticateWithCredential(user,EmailAuthProvider.credential(user.email,deletionPassword));
+ }else{
+  await reauthenticateWithPopup(user,new GoogleAuthProvider());
+ }
 }
 async function deleteUserDocuments(path:string[]){
  if(!legoDb||!currentUser)throw Error("The account is no longer signed in.");
@@ -592,45 +675,89 @@ async function deleteOwnProfile(){
   // Firebase Auth is deleted only after account records have been removed.
   await deleteUser(user);
   try{for(let i=localStorage.length-1;i>=0;i--){const key=localStorage.key(i);if(key?.startsWith("archiv-parts-checked:"))localStorage.removeItem(key)}}catch{}
-  deletingAccount=false;deleteConfirmOpen=false;deleteConfirmText="";ownProfile=null;profileInfo="";
+  deletingAccount=false;deleteConfirmOpen=false;deleteConfirmText="";deletionPassword="";ownProfile=null;profileInfo="";
   goTheme("All LEGO");
  }catch(error){
   deletingAccount=false;
   profileError="Deletion could not finish: "+(error instanceof Error?error.message:"Unknown error")+". Your account may be partially cleared. Please retry or contact getshelfiecollect@gmail.com.";
  }finally{profileBusy=false;if(location.hash==="#/profile")render()}
 }
-function renderSignup(shell:HTMLElement){
- const main=e("main","archiv-profile archiv-sign-up");
+function renderAuthPage(shell:HTMLElement,intent:GoogleAuthIntent){
+ const isSignup=intent==="sign-up";
+ if(emailFormIntent!==intent)emailFormIntent=null;
+ const main=e("main","archiv-profile archiv-sign-up archiv-auth-screen "+(isSignup?"archiv-auth-registration":"archiv-auth-login"));
  main.append(button("← Back to Archív",()=>goTheme("All LEGO"),"archiv-profile-back"));
  const hero=e("section","archiv-profile-panel");
- hero.append(e("span","archiv-profile-kicker","JOIN ARCHÍV"));
- // Show the message in the same place on every visit. The specific "not found"
- // claim is displayed only following an actual unsuccessful sign-in.
- const notice=e("p","archiv-auth-notice",signupBannerText(wasSignupRequired()));
- notice.setAttribute("role","status");hero.append(notice);
- hero.append(e("h1","","Create your Archív account"));
- hero.append(e("p","archiv-profile-intro","Create a free collector account to save your LEGO sets, keep a wishlist, and view your personal collection across devices."));
- if(accountError)hero.append(e("p","archiv-profile-error",accountError));
- const consent=e("label","archiv-profile-optin archiv-sign-up-optin");
- const check=e("input") as HTMLInputElement;check.type="checkbox";check.checked=signupCommunicationsOptIn;check.disabled=authBusy;
- const copy=e("span");
- const consentStatus=e("small","",signupCommunicationsOptIn?"Opted in (optional)":"Not subscribed (optional)");
- copy.append(e("strong","","Email me Archív news and product updates"),consentStatus);
- check.onchange=()=>{signupCommunicationsOptIn=check.checked;consentStatus.textContent=check.checked?"Opted in (optional)":"Not subscribed (optional)"};
- consent.append(check,copy);hero.append(consent);
- const signup=button(authBusy?"Connecting to Google…":"Create Archív account with Google",()=>{void signUpLego()},"archiv-sign-up-submit");
- signup.disabled=authBusy;hero.append(signup);
- const signIn=button("Already have an account? Sign in",()=>{void signInLego()},"archiv-sign-up-existing");
- signIn.disabled=authBusy;hero.append(signIn);
- const legal=e("p","archiv-profile-muted");
- const privacy=e("a","","Privacy Policy") as HTMLAnchorElement;
- privacy.href=import.meta.env.BASE_URL+"privacy.html";
- const terms=e("a","","Terms of Use") as HTMLAnchorElement;
- terms.href=import.meta.env.BASE_URL+"terms.html";
- legal.append("Archív uses Google to verify your identity. We never see your Google password. Read our ",privacy," and ",terms," for account details.");
- hero.append(legal);
- main.append(hero);shell.append(main);
+ hero.append(e("span","archiv-profile-kicker",isSignup?"JOIN ARCHÍV":"WELCOME BACK"));
+ hero.append(e("h1","",isSignup?"Create your Archív account":"Sign in to Archív"));
+ hero.append(e("p","archiv-profile-intro",isSignup
+  ?"Save LEGO sets, build your wishlist and track your collection across devices."
+  :"Access your saved LEGO sets, wishlist and collector profile."));
+ if(isSignup){
+  const notice=e("p","archiv-auth-notice",signupBannerText(wasSignupRequired()));
+  notice.setAttribute("role","status");hero.append(notice);
+ }
+ if(accountError){const problem=e("p","archiv-profile-error",accountError);problem.setAttribute("role","alert");hero.append(problem)}
+ if(authFormNotice){const note=e("p","archiv-auth-notice",authFormNotice);note.setAttribute("role","status");hero.append(note)}
+ if(isSignup){
+  const consent=e("label","archiv-profile-optin archiv-sign-up-optin");
+  const check=e("input") as HTMLInputElement;check.type="checkbox";check.checked=signupCommunicationsOptIn;check.disabled=authBusy;
+  const copy=e("span");const consentStatus=e("small","",signupCommunicationsOptIn?"Opted in (optional)":"Not subscribed (optional)");
+  copy.append(e("strong","","Email me Archív news and product updates"),consentStatus);
+  check.onchange=()=>{signupCommunicationsOptIn=check.checked;consentStatus.textContent=check.checked?"Opted in (optional)":"Not subscribed (optional)"};
+  consent.append(check,copy);hero.append(consent);
+ }
+ hero.append(e("h2","archiv-auth-method-title","Choose how to "+(isSignup?"sign up":"sign in")));
+ const choices=e("div","archiv-auth-methods");
+ const google=button("Continue with Google",()=>{void runGoogleAuth(intent)},"archiv-auth-method archiv-auth-google");
+ const email=button(emailFormIntent===intent?"Email selected":"Continue with email",()=>{emailFormIntent=intent;accountError="";authFormNotice="";render()},"archiv-auth-method archiv-auth-email");
+ google.disabled=authBusy;email.disabled=authBusy;
+ google.setAttribute("aria-label","Continue with Google");
+ email.setAttribute("aria-label","Continue with email");
+ choices.append(google,email);hero.append(choices);
+ if(emailFormIntent===intent){
+  const form=e("form","archiv-auth-email-form") as HTMLFormElement;
+  form.setAttribute("aria-label",isSignup?"Create account with email":"Sign in with email");
+  function field(label:string,type:string,autocomplete:string,value="",required=true){
+   const wrap=e("label","archiv-auth-field");wrap.append(e("span","",label));
+   const input=e("input") as HTMLInputElement;input.type=type;input.autocomplete=autocomplete;
+   input.required=required;input.disabled=authBusy;input.value=value;
+   if(type==="password")input.minLength=isSignup?8:1;
+   wrap.append(input);form.append(wrap);return input;
+  }
+  const name=isSignup?field("Display name","text","name",nameDraft):null;
+  if(name){name.maxLength=100;name.oninput=()=>{nameDraft=name.value}}
+  const emailInput=field("Email address","email","email",emailDraft);
+  emailInput.oninput=()=>{emailDraft=emailInput.value};
+  const pass=field("Password","password",isSignup?"new-password":"current-password");
+  const confirmation=isSignup?field("Confirm password","password","new-password"):null;
+  form.onsubmit=event=>{
+   event.preventDefault();
+   if(authBusy)return;
+   if(confirmation&&pass.value!==confirmation.value){accountError="Passwords do not match.";render();return}
+   void runEmailAuth(intent,emailInput.value,pass.value,name?.value);
+  };
+  const submit=button(authBusy?"Working…":isSignup?"Create account with email":"Sign in with email",()=>{form.requestSubmit()},"archiv-auth-submit");
+  submit.disabled=authBusy;submit.type="submit";submit.onclick=null;
+  form.append(submit);
+  if(!isSignup){
+   const reset=button("Forgot password? Reset it",()=>{void requestPasswordReset(emailInput.value)},"archiv-auth-reset");
+   reset.type="button";reset.disabled=authBusy;form.append(reset);
+  }
+  hero.append(form);
+ }
+ const switcher=button(isSignup?"Already have an account? Sign in":"New to Archív? Sign up",()=>goAuthPage(isSignup?"sign-in":"sign-up"),"archiv-auth-switch");
+ switcher.disabled=authBusy;hero.append(switcher);
+ const legal=e("p","archiv-profile-muted archiv-auth-legal");
+ const privacyLink=e("a","","Privacy Policy") as HTMLAnchorElement;
+ privacyLink.href=import.meta.env.BASE_URL+"privacy.html";
+ const termsLink=e("a","","Terms of Use") as HTMLAnchorElement;
+ termsLink.href=import.meta.env.BASE_URL+"terms.html";
+ legal.append("Your Archív account is secured with Firebase Authentication. By continuing, you agree to the ",termsLink," and can review our ",privacyLink,".");
+ hero.append(legal);main.append(hero);shell.append(main);
 }
+function renderSignup(shell:HTMLElement){renderAuthPage(shell,"sign-up")}
+function renderSignIn(shell:HTMLElement){renderAuthPage(shell,"sign-in")}
 function renderProfile(shell:HTMLElement){
  const main=e("main","archiv-profile");
  const goBack=button("← Back to Archív",()=>goTheme("All LEGO"),"archiv-profile-back");main.append(goBack);
@@ -641,8 +768,8 @@ function renderProfile(shell:HTMLElement){
  main.append(top);
  if(!currentUser){
   const section=e("section","archiv-profile-panel");
-  section.append(e("h2","","Sign in to view your profile"),e("p","","Your profile is private. Sign in with Google to see your collection statistics and account details."));
-  section.append(button("Sign in with Google",()=>{void signInLego()}));main.append(section);shell.append(main);return;
+  section.append(e("h2","","Sign in to view your profile"),e("p","","Your profile is private. Sign in with Google or email to see your collection statistics and account details."));
+  section.append(button("Sign in",()=>goAuthPage("sign-in")));main.append(section);shell.append(main);return;
  }
  const user=currentUser;
  const firstSeen=user.metadata.creationTime||ownProfile?.firstSeen;
@@ -652,7 +779,7 @@ function renderProfile(shell:HTMLElement){
  for(const id of ownedIds){const row=data.find(set=>set.number===id);if(!row)continue;counts.set(row.theme,(counts.get(row.theme)||0)+1);pieces+=row.parts||0}
  const account=e("section","archiv-profile-panel archiv-profile-account");
  const identity=e("div","archiv-profile-identity");
- if(user.photoURL){const photo=e("img","archiv-profile-avatar") as HTMLImageElement;photo.src=user.photoURL;photo.alt="Google account profile picture";photo.referrerPolicy="no-referrer";identity.append(photo)}
+ if(user.photoURL){const photo=e("img","archiv-profile-avatar") as HTMLImageElement;photo.src=user.photoURL;photo.alt="Account profile picture";photo.referrerPolicy="no-referrer";identity.append(photo)}
  const who=e("div");who.append(e("h2","",user.displayName?.trim()||ownProfile?.name||"Collector"),e("p","",user.email||"No email address available"));identity.append(who);account.append(identity);
  const stats=e("div","archiv-profile-stats");
  const tiles:[string,string][]=[
@@ -694,17 +821,25 @@ function renderProfile(shell:HTMLElement){
  main.append(preferences);
  const danger=e("section","archiv-profile-danger");
  danger.append(e("h2","","Delete your profile"));
- danger.append(e("p","","Permanently delete your Archív login, saved sets, wishlist, collection activity, and personal or unapproved photo copies. Approved community photographs may remain in the catalog after deletion, but photographers may request removal. Limited private permission records may remain for rights and removal requests. Your Google and eBay accounts are not deleted."));
- const trigger=button(deleteConfirmOpen?"Cancel deletion":"Delete profile",()=>{deleteConfirmOpen=!deleteConfirmOpen;deleteConfirmText="";profileError="";render()},"archiv-profile-delete-trigger");
+ danger.append(e("p","","Permanently delete your Archív login, saved sets, wishlist, collection activity, and personal or unapproved photo copies. Approved community photographs may remain in the catalog after deletion, but photographers may request removal. Limited private permission records may remain for rights and removal requests. Your external Google and eBay accounts are not deleted."));
+ const trigger=button(deleteConfirmOpen?"Cancel deletion":"Delete profile",()=>{deleteConfirmOpen=!deleteConfirmOpen;deleteConfirmText="";deletionPassword="";profileError="";render()},"archiv-profile-delete-trigger");
  danger.append(trigger);
  if(deleteConfirmOpen){
   const confirm=e("div","archiv-profile-confirm");confirm.append(e("strong","","Confirm permanent deletion"));
-  confirm.append(e("p","","To confirm, sign in again with Google and type DELETE below. This permanently erases your Archív collection records and non-community photos. Approved community photos may remain in the catalog, subject to removal requests, and private permission records may be retained as needed to resolve rights and removal issues. A minimal account identifier may also remain to prevent old sessions recreating deleted records."));
+  confirm.append(e("p","","To confirm, type DELETE below and verify using your sign-in method. This permanently erases your Archív collection records and non-community photos. Approved community photos may remain in the catalog, subject to removal requests, and private permission records may be retained as needed to resolve rights and removal issues. A minimal account identifier may also remain to prevent old sessions recreating deleted records."));
   const field=e("input") as HTMLInputElement;field.type="text";field.placeholder="Type DELETE";field.autocomplete="off";field.value=deleteConfirmText;
-  field.oninput=()=>{deleteConfirmText=field.value;final.disabled=deleteConfirmText!=="DELETE"||!PROFILE_BACKEND_READY||profileBusy};
+  field.oninput=()=>{deleteConfirmText=field.value;final.disabled=deleteConfirmText!=="DELETE"||(user.providerData.some(p=>p.providerId==="password")&&!deletionPassword)||!PROFILE_BACKEND_READY||profileBusy};
   confirm.append(field);
+  if(user.providerData.some(provider=>provider.providerId==="password")){
+   const passLabel=e("label","archiv-auth-field");
+   passLabel.append(e("span","","Current account password"));
+   const password=e("input") as HTMLInputElement;password.type="password";password.autocomplete="current-password";
+   password.setAttribute("aria-label","Current account password");password.value=deletionPassword;
+   password.oninput=()=>{deletionPassword=password.value;final.disabled=deleteConfirmText!=="DELETE"||!deletionPassword||!PROFILE_BACKEND_READY||profileBusy};
+   passLabel.append(password);confirm.append(passLabel);
+  }
   const final=button(profileBusy?"Deleting…":"Permanently delete my Archív profile",()=>void deleteOwnProfile(),"archiv-profile-delete-final");
-  final.disabled=deleteConfirmText!=="DELETE"||!PROFILE_BACKEND_READY||profileBusy;confirm.append(final);
+  final.disabled=deleteConfirmText!=="DELETE"||(user.providerData.some(p=>p.providerId==="password")&&!deletionPassword)||!PROFILE_BACKEND_READY||profileBusy;confirm.append(final);
   if(!PROFILE_BACKEND_READY)confirm.append(e("p","archiv-profile-staging-note","Final deletion is disabled in this preview. Firebase security changes must be approved and deployed first."));
   danger.append(confirm);
  }
@@ -724,17 +859,18 @@ const menu=e("div","lego-account-dropdown");
 if(!authReady)menu.append(e("span","lego-account-label","Checking sign-in…"));
 else if(currentUser){menu.append(button("My profile",()=>{account.open=false;goProfile()},"lego-account-button"));if(adminEnabled)menu.append(button("Admin dashboard",()=>{account.open=false;location.hash="#/admin";void loadAdmin()},"lego-account-button"));menu.append(button("Sign out",()=>{account.open=false;void signOutLego()},"lego-account-button"))}
 else {
- const googleMark=()=>{const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");svg.setAttribute("viewBox","0 0 48 48");svg.setAttribute("aria-hidden","true");svg.classList.add("gsi-material-button-icon");for(const [fill,d] of [["#EA4335","M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"],["#4285F4","M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"],["#FBBC05","M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"],["#34A853","M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"]] ){const p=document.createElementNS("http://www.w3.org/2000/svg","path");p.setAttribute("fill",fill);p.setAttribute("d",d);svg.append(p)}return svg};
-
- for(const label of ["Sign in with Google","Sign up with Google"]){const b=button("",()=>{account.open=false;if(label.startsWith("Sign up")){signupCommunicationsOptIn=false;setSignupRequired(false);authNotice="";accountError="";location.hash="#/sign-up";render()}else void signInLego()},"gsi-material-button");b.disabled=authBusy;b.setAttribute("aria-label",label);const content=e("span","gsi-material-button-content-wrapper");content.append(googleMark(),e("span","gsi-material-button-contents",label));b.append(content);menu.append(b)}
+ menu.append(button("Sign in",()=>{account.open=false;goAuthPage("sign-in")},"lego-account-button"));
+ menu.append(button("Sign up",()=>{account.open=false;goAuthPage("sign-up")},"lego-account-button"));
 }
 account.append(menu);
 header.append(account);
 shell.append(header);
-if(accountError&&location.hash!=="#/sign-up")shell.append(e("p","lego-account-message",accountError));
+if(accountError&&location.hash!=="#/sign-up"&&location.hash!=="#/sign-in")shell.append(e("p","lego-account-message",accountError));
 if(authNotice&&currentUser&&location.hash==="#/profile")shell.append(e("p","archiv-auth-notice",authNotice));
 if(currentUser&&!collectionReady)shell.append(e("p","lego-account-message","Loading your saved collection…"));
+if(location.hash==="#/sign-in"&&!currentUser){renderSignIn(shell);return}
 if(location.hash==="#/sign-up"&&!currentUser){renderSignup(shell);return}
+if((location.hash==="#/sign-in"||location.hash==="#/sign-up")&&currentUser){location.hash="#/profile";render();return}
 if(location.hash==="#/profile"){renderProfile(shell);const foot=e("footer","lego-footer");const nav=e("nav","lego-footer-links");for(const [label,file] of [["Contact","contact.html"],["Attribution","attribution.html"],["Terms of Use","terms.html"],["Privacy","privacy.html"]]){const link=e("a","",label);link.href=import.meta.env.BASE_URL+file;nav.append(link)}foot.append(nav,e("p","lego-copyright","© 2026 Archív. All rights reserved."));shell.append(foot);return}
 if(location.hash==="#/admin"){
  const main=e("main","lego-admin");
@@ -839,10 +975,10 @@ if(collectorRoute){
  main.append(headerRow);
  main.append(button("← Back to Catalog",()=>goTheme("All LEGO"),"archiv-collector-back"));
  if(!authReady){
-  main.append(e("p","archiv-collector-feedback","Checking your Google account…"));
+  main.append(e("p","archiv-collector-feedback","Checking your account…"));
  }else if(!currentUser){
-  main.append(e("p","archiv-collector-feedback","Sign in with Google to view your private collection."));
-  main.append(button("Sign in with Google",()=>{void signInLego()},"archiv-collector-sign-in"));
+  main.append(e("p","archiv-collector-feedback","Sign in to view your private collection."));
+  main.append(button("Sign in",()=>goAuthPage("sign-in"),"archiv-collector-sign-in"));
  }else if(!collectionReady){
   main.append(e("p","archiv-collector-feedback","Loading your saved sets and wishlist…"));
  }else if(!catalogReady){
