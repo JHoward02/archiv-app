@@ -138,11 +138,11 @@ jobs:
           mkdir -p dist-web/lego-preview
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/lego-preview/
           printf '{"source_commit":"%s","branch":"feature/owned-set-photo-review-20261031","photo_backend_ready":true}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
-          # Approved release (2026-11-02 Pacific): promote the verified Archív
-          # support@archivcollect.com update, preserving existing account and photo features.
+          # Approved release (2026-11-02 Pacific): publish the reviewed responsive
+          # eBay shopping layouts and single-count affiliate click reporting.
           # Pin production to an immutable tested commit; future preview changes
           # must NOT silently update production.
-          RELEASE_SHA="d7451fb36f5551c3ba120fbd37d8a8e540779d87"
+          RELEASE_SHA="df4f889e06a1dd7a5e996661260a771d286ff504"
           test "$(git rev-parse "$RELEASE_SHA^{commit}")" = "$RELEASE_SHA"
           git worktree add "$RUNNER_TEMP/archiv-lego-production" "$RELEASE_SHA"
           npm --prefix "$RUNNER_TEMP/archiv-lego-production" ci
@@ -179,7 +179,15 @@ jobs:
           grep -Fq 'match /communitySetPhotos/{photoId}' "$RUNNER_TEMP/archiv-lego-production/firestore.rules"
           grep -Fq 'catalogLink.href="#/complete-catalog"' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
           grep -Fq 'bottom.href="#/complete-catalog"' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
-          grep -Fq 'Archív may earn a commission if you buy through this eBay link.' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
+          # The three reviewed eBay presentations share search links and nearby disclosures.
+          test -s "$RUNNER_TEMP/archiv-lego-production/tests/ebay-marketplace-ui.test.ts"
+          for placement in detail catalog wishlist; do
+            grep -Fq "ebayShopping(row,\"$placement\")" "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
+            grep -Fq ".archiv-marketplace-$placement" "$RUNNER_TEMP/archiv-lego-production/src/lego-styles.css"
+          done
+          grep -Fq 'Affiliate link: Archív may earn a commission from qualifying purchases.' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
+          grep -Fq 'link.href=ebaySetSearch(row);link.target="_blank";link.rel="noopener noreferrer sponsored"' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
+          ! grep -Fq 'buy.onclick=()=>{void reportAffiliateClick()}' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
           # Confirm every published support, privacy, and photo-removal contact uses the correct domain.
           test -s "$RUNNER_TEMP/archiv-lego-production/public/contact.html"
           for file in src/lego-entry.ts src/lego-photo-contributions.ts public/contact.html public/terms.html public/privacy.html; do
@@ -240,7 +248,7 @@ jobs:
         run: |
           set -euo pipefail
           BASE="https://jhoward02.github.io/archiv-app"
-          EXPECTED="d7451fb36f5551c3ba120fbd37d8a8e540779d87"
+          EXPECTED="df4f889e06a1dd7a5e996661260a771d286ff504"
           for attempt in $(seq 1 15); do
             if curl --fail --silent --show-error --location --max-time 20 --retry 1 -H 'Cache-Control: no-cache' "$BASE/build-info.json?release-check=$GITHUB_RUN_ID-$attempt" -o /tmp/archiv-production-info.json \
               && python3 -c 'import json,sys; d=json.load(open("/tmp/archiv-production-info.json")); assert d.get("source_commit")==sys.argv[1] and d.get("legal_source_commit")==sys.argv[1] and d.get("photo_backend_ready") is True and d.get("profile_backend_ready") is True, d' "$EXPECTED"; then
