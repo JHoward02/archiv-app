@@ -255,9 +255,27 @@
 .archiv-ebay-disclosure{font-size:12px;color:#75695a;line-height:1.5;margin:14px 0 0}
 @media(max-width:640px){.archiv-ebay-shopping{padding:17px}}
 
-.archiv-ebay-inline{display:flex;flex-direction:column;align-items:center;gap:6px;padding:13px 12px}
-.archiv-ebay-inline-link{color:#08243b;font-weight:800;font-size:16px;text-decoration:underline;text-underline-offset:3px}
-.archiv-ebay-inline-disclosure{font-size:11px;color:#7c6955;line-height:1.45;margin:4px 0 0;text-align:center}
+/* Consistent, accessible eBay shopping actions. These are searches, never live offer cards. */
+.archiv-marketplace{box-sizing:border-box;min-width:0}
+.archiv-marketplace-cta{display:flex;align-items:center;justify-content:center;gap:8px;min-height:46px;width:100%;padding:11px 12px;border-radius:12px;border:1px solid transparent;text-align:center;text-decoration:none;font-size:14px;font-weight:800;line-height:1.3;transition:background-color .15s ease,border-color .15s ease,transform .15s ease}
+.archiv-marketplace-cta:focus-visible{outline:3px solid #d48a2c;outline-offset:3px}
+.archiv-marketplace-disclosure{font-size:11px;color:#6e6254;line-height:1.5;margin:9px 0 0}
+.archiv-marketplace-detail{margin:17px 0 0;padding:19px 19px 16px;border:1px solid #dfd0b9;border-radius:15px;background:linear-gradient(120deg,#fffdf8,#f6e9d6)}
+.archiv-marketplace-eyebrow{margin:0 0 8px;font-size:10px;letter-spacing:.16em;font-weight:800;color:#a36b30}
+.archiv-marketplace-heading{margin:0 0 8px;font:normal clamp(23px,2.5vw,29px)/1.2 Georgia,serif;color:#08243b}
+.archiv-marketplace-intro{font-size:13px;line-height:1.55;color:#534c44;margin:0 0 15px}
+.archiv-marketplace-detail .archiv-marketplace-cta{min-height:48px;background:#08243b;color:#fffdf8}
+.archiv-marketplace-detail .archiv-marketplace-cta:hover{background:#174665;color:#fff}
+.archiv-marketplace-catalog{padding-top:3px}
+.archiv-marketplace-catalog .archiv-marketplace-cta{background:#e7f2ec;border-color:#b4cdbd;color:#145943;font-size:13px}
+.archiv-marketplace-catalog .archiv-marketplace-cta:hover{background:#d6e9df;border-color:#78ad90}
+.archiv-marketplace-catalog .archiv-marketplace-disclosure{font-size:10px;text-align:center;margin:7px 0 0}
+.archiv-marketplace-wishlist{width:100%;margin-top:5px;padding-top:10px;border-top:1px solid #e5d9c9}
+.archiv-marketplace-wishlist .archiv-marketplace-cta{min-height:44px;background:#fff8ea;border-color:#dbc6a1;color:#75511d;font-size:12px}
+.archiv-marketplace-wishlist .archiv-marketplace-cta:hover{background:#f6ebd3;border-color:#c59d64}
+.archiv-marketplace-wishlist .archiv-marketplace-disclosure{font-size:10px;margin:7px 0 0}
+@media(max-width:700px){.archiv-collector-set-side .archiv-marketplace-wishlist{flex-basis:100%;max-width:290px}}
+@media(max-width:640px){.archiv-marketplace-detail{padding:16px}.archiv-marketplace-catalog .archiv-marketplace-cta{font-size:12px;padding:10px 6px}.archiv-marketplace-catalog .archiv-marketplace-disclosure{font-size:10px}}
 
 /* Ownership controls sit beneath the set photo, within its card. */
 .lego-image-collection{width:100%;align-self:stretch;border-top:1px solid #e6ddd0;padding-top:16px;margin-top:8px}

@@ -523,6 +523,33 @@ function ebaySetSearch(row:SetRow){
  u.searchParams.set("toolid","10001");
  return u.toString();
 }
+type EbayPlacement="detail"|"catalog"|"wishlist";
+
+// Every eBay entry point uses the same unaltered EPN search URL and a nearby disclosure.
+// The destination is an eBay search, not a verified item offer or price.
+function ebayShopping(row:SetRow,placement:EbayPlacement){
+ const shop=e("section","archiv-marketplace archiv-marketplace-"+placement);
+ shop.setAttribute("aria-label","eBay shopping options for "+row.name);
+ if(placement==="detail"){
+  shop.append(
+   e("p","archiv-marketplace-eyebrow","SHOPPING OPTIONS"),
+   e("h2","archiv-marketplace-heading","Looking for this set?"),
+   e("p","archiv-marketplace-intro","Explore eBay search results for LEGO set "+row.number+".")
+  );
+ }
+ const label=placement==="detail"?"Find this set on eBay ↗":placement==="catalog"?"Search on eBay ↗":"Search eBay listings ↗";
+ const link=e("a","archiv-marketplace-cta",label);
+ link.href=ebaySetSearch(row);link.target="_blank";link.rel="noopener noreferrer sponsored";
+ link.setAttribute("aria-label",label.replace(" ↗","")+" for "+row.name+" (affiliate link)");
+ link.dataset.affiliatePlacement=placement;
+ shop.append(link);
+ shop.append(e("p","archiv-marketplace-disclosure",
+  placement==="detail"
+   ?"Affiliate link: Archív may earn a commission from qualifying purchases. Listings, prices and availability are not verified."
+   :"Affiliate link: Archív may earn a commission from qualifying purchases. Listings and prices are not verified."
+ ));
+ return shop;
+}
 function renderSetDetail(shell:HTMLElement,id:string){
  const row=data.find(x=>x.number===id);
  const wrap=e("main","lego-set-detail");
@@ -579,15 +606,7 @@ function renderSetDetail(shell:HTMLElement,id:string){
   figure.append(photoPanel);
   if(PHOTO_BACKEND_READY)showOwnPhoto(savedImage,legoDb,currentUser.uid,row.number);
  }
- if(!owned){
-  const seller=e("div","lego-shop-pending archiv-ebay-inline");
-  const link=e("a","archiv-ebay-inline-link","Find on eBay ↗");
-  link.href=ebaySetSearch(row);link.target="_blank";link.rel="noopener noreferrer sponsored";
-  link.setAttribute("aria-label","Find "+row.name+" on eBay (affiliate link)");
-  seller.append(link,e("small","","Search eBay listings for this exact set"));
-  seller.append(e("p","archiv-ebay-inline-disclosure","Affiliate link: Archív may earn a commission from qualifying purchases. Seller listings, prices and availability are not verified."));
-  details.append(seller);
- }
+ if(!owned)details.append(ebayShopping(row,"detail"));
 
  hero.append(figure,details);wrap.append(hero);
  if(legoDb&&PHOTO_BACKEND_READY){
@@ -1057,11 +1076,7 @@ if(collectorRoute){
       side.append(upload);
      }
      const details=e("a","archiv-collector-details","View set details");details.href="#/set/"+encodeURIComponent(row.number);details.onclick=()=>{collectionDetailReturn=view};side.append(details);
-     if(desired==="wishlist"){
-      const buy=e("a","archiv-collector-ebay","Find on eBay ↗");buy.href=ebaySetSearch(row);buy.target="_blank";buy.rel="noopener noreferrer sponsored";
-      buy.setAttribute("aria-label","Find "+row.name+" on eBay (affiliate link)");buy.onclick=()=>{void reportAffiliateClick()};
-      side.append(buy,e("small","archiv-collector-disclosure","Archív may earn a commission if you buy through this eBay link."));
-     }
+     if(desired==="wishlist")side.append(ebayShopping(row,"wishlist"));
      item.append(thumbnail,info,side);list.append(item);
     }
     for(const id of missingShown.slice(0,Math.max(0,collectorPageLimit-matching.length))){
@@ -1177,7 +1192,7 @@ const details=e("a","lego-set-details lego-set-open");details.href="#/set/"+enco
 const actions=e("div","lego-set-actions");actions.append(button(owned?"✓ Owned":"Mark owned",()=>save(row.number,"owned"),owned?"on":""));
 if(!owned){
 actions.append(button(wish?"✓ Wishlisted":"♡ Wishlist",()=>save(row.number,"wishlist"),wish?"on":""));
-const shop=e("div","lego-shop-pending archiv-ebay-inline");const link=e("a","archiv-ebay-inline-link","Find on eBay ↗");link.href=ebaySetSearch(row);link.target="_blank";link.rel="noopener noreferrer sponsored";link.setAttribute("aria-label","Find "+row.name+" on eBay (affiliate link)");shop.append(link,e("small","","Archív may earn a commission if you buy through this eBay link."));actions.append(shop);
+actions.append(ebayShopping(row,"catalog"));
 }
 card.append(actions);results.append(card);
 }
