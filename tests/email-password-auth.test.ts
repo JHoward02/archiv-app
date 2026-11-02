@@ -35,6 +35,11 @@ describe("Archív Google and email authentication",()=>{
   expect(app).toContain('reauthenticateWithCredential(user,EmailAuthProvider.credential(user.email,deletionPassword))');
   expect(app).toContain('await reauthenticateWithPopup(user,new GoogleAuthProvider())');
  });
+ it("routes signed-out save requests to the method choice rather than Google-only sign-in",()=>{
+  expect(app).toContain('if(!currentUser){goAuthPage("sign-in");return}');
+  expect(app).toContain('const clearingStarted=deletingAccount');
+  expect(app).toContain('"Identity confirmation failed: "');
+ });
  it("discloses both credential methods in policies",()=>{
   expect(privacy).toContain("using Google or an email address and password");
   expect(privacy).toContain("Archív does not store passwords");

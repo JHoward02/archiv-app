@@ -426,7 +426,7 @@ function searchControl(label:string,placeholder:string,value:string,onChange:(va
 }
 async function save(id:string,status:Status){
  if(deletingAccount)return;
- if(!currentUser){accountError="Sign in with Google to track owned sets and your wishlist across devices.";render();return}
+ if(!currentUser){goAuthPage("sign-in");return}
  if(!collectionReady||!legoDb){accountError="Your collection is still loading. Try again.";render();return}
  const userId=currentUser.uid,ref=doc(legoDb,"users",userId,"items",legoRecordPrefix+id);
  const nextStatus=saved[id]===status?null:status;
@@ -676,8 +676,11 @@ async function deleteOwnProfile(){
   deletingAccount=false;deleteConfirmOpen=false;deleteConfirmText="";deletionPassword="";ownProfile=null;profileInfo="";
   goTheme("All LEGO");
  }catch(error){
-  deletingAccount=false;
-  profileError="Deletion could not finish: "+(error instanceof Error?error.message:"Unknown error")+". Your account may be partially cleared. Please retry or contact getshelfiecollect@gmail.com.";
+  const clearingStarted=deletingAccount;
+  deletingAccount=false;deletionPassword="";
+  profileError=clearingStarted
+   ?"Deletion could not finish: "+(error instanceof Error?error.message:"Unknown error")+". Your account may be partially cleared. Please retry or contact getshelfiecollect@gmail.com."
+   :"Identity confirmation failed: "+(error instanceof Error?error.message:"Unknown error")+". Your account data was not deleted.";
  }finally{profileBusy=false;if(location.hash==="#/profile")render()}
 }
 function renderAuthPage(shell:HTMLElement,intent:GoogleAuthIntent){
