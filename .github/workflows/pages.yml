@@ -57,6 +57,7 @@ jobs:
           grep -Fq 'menu.append(button("Sign in",()=>{account.open=false;goAuthPage("sign-in")}' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
           grep -Fq 'menu.append(button("Sign up",()=>{account.open=false;goAuthPage("sign-up")}' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
           grep -Fq 'signInWithEmailAndPassword(legoAuth,address,password)' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
+          grep -Fq 'if(!currentUser){goAuthPage("sign-in");return}' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
           grep -Fq 'createUserWithEmailAndPassword(legoAuth,address,password)' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
           grep -Fq 'sendPasswordResetEmail(legoAuth,address)' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
           grep -Fq 'reauthenticateWithCredential(user,EmailAuthProvider.credential(user.email,deletionPassword))' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
