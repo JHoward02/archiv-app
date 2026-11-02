@@ -138,11 +138,11 @@ jobs:
           mkdir -p dist-web/lego-preview
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/lego-preview/
           printf '{"source_commit":"%s","branch":"feature/owned-set-photo-review-20261031","photo_backend_ready":true}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
-          # Approved release (2026-11-01 Pacific): promote verified Google/email
-          # sign-in, sign-up, and account recovery while preserving photo features.
+          # Approved release (2026-11-02 Pacific): promote the verified Archív
+          # support@archivcollect.com update, preserving existing account and photo features.
           # Pin production to an immutable tested commit; future preview changes
           # must NOT silently update production.
-          RELEASE_SHA="f4d311952a5594df795ff645ff0589c5952a267c"
+          RELEASE_SHA="d7451fb36f5551c3ba120fbd37d8a8e540779d87"
           test "$(git rev-parse "$RELEASE_SHA^{commit}")" = "$RELEASE_SHA"
           git worktree add "$RUNNER_TEMP/archiv-lego-production" "$RELEASE_SHA"
           npm --prefix "$RUNNER_TEMP/archiv-lego-production" ci
@@ -180,6 +180,12 @@ jobs:
           grep -Fq 'catalogLink.href="#/complete-catalog"' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
           grep -Fq 'bottom.href="#/complete-catalog"' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
           grep -Fq 'Archív may earn a commission if you buy through this eBay link.' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
+          # Confirm every published support, privacy, and photo-removal contact uses the correct domain.
+          test -s "$RUNNER_TEMP/archiv-lego-production/public/contact.html"
+          for file in src/lego-entry.ts src/lego-photo-contributions.ts public/contact.html public/terms.html public/privacy.html; do
+            grep -Fq 'support@archivcollect.com' "$RUNNER_TEMP/archiv-lego-production/$file"
+            ! grep -Fq 'support@archivecollect.com' "$RUNNER_TEMP/archiv-lego-production/$file"
+          done
           # Tests run against the exact source that will be published.
           npm --prefix "$RUNNER_TEMP/archiv-lego-production" run check
           VITE_PROFILE_BACKEND_READY=true VITE_PHOTO_BACKEND_READY=true npm --prefix "$RUNNER_TEMP/archiv-lego-production" run build:web
@@ -191,6 +197,11 @@ jobs:
           # and privacy notices, not the old legal snapshot.
           test -s dist-web/privacy.html
           test -s dist-web/terms.html
+          test -s dist-web/contact.html
+          for file in contact.html privacy.html terms.html; do
+            grep -Fq 'support@archivcollect.com' "dist-web/$file"
+            ! grep -Fq 'support@archivecollect.com' "dist-web/$file"
+          done
           grep -Fq 'id="community-photos"' dist-web/terms.html
           grep -Fq 'id="uploaded-photos"' dist-web/privacy.html
           grep -Fq 'non-exclusive, worldwide, royalty-free license' dist-web/terms.html
@@ -229,7 +240,7 @@ jobs:
         run: |
           set -euo pipefail
           BASE="https://jhoward02.github.io/archiv-app"
-          EXPECTED="f4d311952a5594df795ff645ff0589c5952a267c"
+          EXPECTED="d7451fb36f5551c3ba120fbd37d8a8e540779d87"
           for attempt in $(seq 1 15); do
             if curl --fail --silent --show-error --location --max-time 20 --retry 1 -H 'Cache-Control: no-cache' "$BASE/build-info.json?release-check=$GITHUB_RUN_ID-$attempt" -o /tmp/archiv-production-info.json \
               && python3 -c 'import json,sys; d=json.load(open("/tmp/archiv-production-info.json")); assert d.get("source_commit")==sys.argv[1] and d.get("legal_source_commit")==sys.argv[1] and d.get("photo_backend_ready") is True and d.get("profile_backend_ready") is True, d' "$EXPECTED"; then
@@ -244,6 +255,11 @@ jobs:
           done
           curl --fail --silent --show-error --location --max-time 20 "$BASE/terms.html?verify=$GITHUB_RUN_ID" -o /tmp/archiv-production-terms.html
           curl --fail --silent --show-error --location --max-time 20 "$BASE/privacy.html?verify=$GITHUB_RUN_ID" -o /tmp/archiv-production-privacy.html
+          curl --fail --silent --show-error --location --max-time 20 "$BASE/contact.html?verify=$GITHUB_RUN_ID" -o /tmp/archiv-production-contact.html
+          for file in /tmp/archiv-production-contact.html /tmp/archiv-production-privacy.html /tmp/archiv-production-terms.html; do
+            grep -Fq 'support@archivcollect.com' "$file"
+            ! grep -Fq 'support@archivecollect.com' "$file"
+          done
           curl --fail --silent --show-error --location --max-time 20 "$BASE/?verify=$GITHUB_RUN_ID" -o /tmp/archiv-production-index.html
           grep -Fq 'id="community-photos"' /tmp/archiv-production-terms.html
           grep -Fq 'id="uploaded-photos"' /tmp/archiv-production-privacy.html
