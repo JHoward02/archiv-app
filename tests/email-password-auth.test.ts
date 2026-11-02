@@ -52,10 +52,11 @@ describe("Archív branded support contact",()=>{
   const contact=readFileSync("public/contact.html","utf8");
   const photos=readFileSync("src/lego-photo-contributions.ts","utf8");
   for(const page of [app,privacy,terms,contact,photos]){
-   expect(page).toContain("support@archivecollect.com");
+   expect(page).toContain("support@archivcollect.com");
    expect(page).not.toContain(["getshelfiecollect","gmail.com"].join("@"));
+   expect(page).not.toContain(["support","archivecollect.com"].join("@"));
   }
   expect(contact).toContain("archiv-red-brick-accent-logo.webp");
-  expect(contact).toContain('mailto:support@archivecollect.com');
+  expect(contact).toContain('mailto:support@archivcollect.com');
  });
 });

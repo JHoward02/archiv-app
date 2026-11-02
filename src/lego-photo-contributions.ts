@@ -11,7 +11,7 @@ export type PhotoStatus="private"|"pending"|"approved"|"rejected";
 export const PHOTO_LICENSE_VERSION="archiv-community-photo-license-v1-2026-11-01";
 export const MAX_PHOTO_DATA_LENGTH=340000;
 export const PHOTO_LIMIT_BYTES=15*1024*1024;
-export const COMMUNITY_PHOTO_REMOVAL_EMAIL="support@archivecollect.com";
+export const COMMUNITY_PHOTO_REMOVAL_EMAIL="support@archivcollect.com";
 export const COMMUNITY_PHOTO_LICENSE=
  "I own this photograph or have the necessary rights to share it. I give Archív a non-exclusive, worldwide, royalty-free permission to store, resize, reproduce, and publicly display it in the Archív community catalog after moderator approval. I keep my copyright. Approved photos may remain after I delete my account, but I can request removal by contacting Archív. Archív may verify that I am the photographer or rights holder before processing the request.";
 export type PrivateSetPhoto={

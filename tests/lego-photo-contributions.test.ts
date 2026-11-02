@@ -45,7 +45,7 @@ describe("photographer-owned LEGO set images and community permissions",()=>{
  });
  it("supports identifying and requesting removal of an individual approved photo",()=>{
   const uri=removalRequestUrl("60412-1","photo-abc123");
-  expect(uri).toContain("mailto:support@archivecollect.com");
+  expect(uri).toContain("mailto:support@archivcollect.com");
   expect(decodeURIComponent(uri)).toContain("photo-abc123");
   expect(decodeURIComponent(uri)).toContain("60412-1");
   expect(ui).toContain("Request removal");

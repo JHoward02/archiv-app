@@ -144,7 +144,7 @@ async function acceptGoogleAuth(result:UserCredential,intent:GoogleAuthIntent){
   catch(error){
    try{await signOut(legoAuth!)}catch{}
    location.hash="#/sign-up";
-   throw new Error("We couldn't clean up the temporary sign-in. Please contact support@archivecollect.com before trying again. No collection data was saved.");
+   throw new Error("We couldn't clean up the temporary sign-in. Please contact support@archivcollect.com before trying again. No collection data was saved.");
   }
   signupCommunicationsOptIn=false;
   setSignupRequired(true);
@@ -166,7 +166,7 @@ async function acceptGoogleAuth(result:UserCredential,intent:GoogleAuthIntent){
    location.hash="#/sign-up";
    throw new Error(deleted
      ?"Your account could not be created because its communication preference could not be saved. Please try again."
-     :"Registration could not finish or verify cleanup. Please contact support@archivecollect.com before retrying.");
+     :"Registration could not finish or verify cleanup. Please contact support@archivcollect.com before retrying.");
   }
  }
  setSignupRequired(false);
@@ -239,7 +239,7 @@ async function runEmailAuth(intent:GoogleAuthIntent,email:string,password:string
     try{await deleteUser(result.user);deleted=true}catch{try{await signOut(legoAuth)}catch{}}
     throw new Error(deleted
      ?"Your registration could not finish saving your profile. Please try again."
-     :"Registration could not finish. Contact support@archivecollect.com to recover or remove the incomplete account.");
+     :"Registration could not finish. Contact support@archivcollect.com to recover or remove the incomplete account.");
    }
    authNotice="Your Archív account is ready. Welcome!";
    try{
@@ -679,7 +679,7 @@ async function deleteOwnProfile(){
   const clearingStarted=deletingAccount;
   deletingAccount=false;deletionPassword="";
   profileError=clearingStarted
-   ?"Deletion could not finish: "+(error instanceof Error?error.message:"Unknown error")+". Your account may be partially cleared. Please retry or contact support@archivecollect.com."
+   ?"Deletion could not finish: "+(error instanceof Error?error.message:"Unknown error")+". Your account may be partially cleared. Please retry or contact support@archivcollect.com."
    :"Identity confirmation failed: "+(error instanceof Error?error.message:"Unknown error")+". Your account data was not deleted.";
  }finally{profileBusy=false;if(location.hash==="#/profile")render()}
 }
