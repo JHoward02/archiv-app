@@ -281,8 +281,6 @@ function goAuthPage(intent:GoogleAuthIntent){
  render();
 }
 
-async function signInLego(){await runGoogleAuth("sign-in")}
-async function signUpLego(){await runGoogleAuth("sign-up")}
 async function signOutLego(){if(!legoAuth)return;try{await signOut(legoAuth);authNotice="";deletionPassword="";emailFormIntent=null}catch(error){accountError=error instanceof Error?error.message:"Sign-out failed.";render()}}
 
 
@@ -720,7 +718,7 @@ function renderAuthPage(shell:HTMLElement,intent:GoogleAuthIntent){
   form.setAttribute("aria-label",isSignup?"Create account with email":"Sign in with email");
   function field(label:string,type:string,autocomplete:string,value="",required=true){
    const wrap=e("label","archiv-auth-field");wrap.append(e("span","",label));
-   const input=e("input") as HTMLInputElement;input.type=type;input.autocomplete=autocomplete;
+   const input=e("input") as HTMLInputElement;input.type=type;input.setAttribute("autocomplete",autocomplete);
    input.required=required;input.disabled=authBusy;input.value=value;
    if(type==="password")input.minLength=isSignup?8:1;
    wrap.append(input);form.append(wrap);return input;

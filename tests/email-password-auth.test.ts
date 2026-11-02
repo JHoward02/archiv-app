@@ -28,7 +28,7 @@ describe("Archív Google and email authentication",()=>{
   expect(app).toContain('await sendEmailVerification(result.user)');
   expect(app).toContain('await sendPasswordResetEmail(legoAuth,address)');
   expect(app).toContain('check.checked=signupCommunicationsOptIn');
-  expect(app).toContain('input.autocomplete=autocomplete');
+  expect(app).toContain('input.setAttribute("autocomplete",autocomplete)');
  });
  it("reauthenticates email users for deletion and preserves Google deletion",()=>{
   expect(app).toContain('user.providerData.some(provider=>provider.providerId==="password")');
