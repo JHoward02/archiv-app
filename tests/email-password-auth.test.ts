@@ -46,3 +46,16 @@ describe("Archív Google and email authentication",()=>{
   expect(terms).toContain("using Google or an email address and password");
  });
 });
+
+describe("Archív branded support contact",()=>{
+ it("uses the current support inbox in account errors, photo removal and legal/contact pages",()=>{
+  const contact=readFileSync("public/contact.html","utf8");
+  const photos=readFileSync("src/lego-photo-contributions.ts","utf8");
+  for(const page of [app,privacy,terms,contact,photos]){
+   expect(page).toContain("support@archivecollect.com");
+   expect(page).not.toContain(["getshelfiecollect","gmail.com"].join("@"));
+  }
+  expect(contact).toContain("archiv-red-brick-accent-logo.webp");
+  expect(contact).toContain('mailto:support@archivecollect.com');
+ });
+});
