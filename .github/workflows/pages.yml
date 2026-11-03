@@ -234,6 +234,12 @@ jobs:
           # Publish the complete pinned release and restore the independently built preview.
           cp -R "$RUNNER_TEMP/archiv-lego-production/dist-web/." dist-web/
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/lego-preview/
+          # The app and legal release are pinned; publish the separately reviewed
+          # static Attribution page from this workflow commit (missing in release snapshot).
+          # Replace the older preview attribution to keep both links consistent.
+          test -s public/attribution.html
+          cp public/attribution.html dist-web/attribution.html
+          cp public/attribution.html dist-web/lego-preview/attribution.html
           cp dist-web/catalog-refresh.json dist-web/lego-preview/catalog-refresh.json
           printf '{"source_commit":"%s","branch":"feature/owned-set-photo-review-20261031","photo_backend_ready":true}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
           # The production release must carry its matching approved photo terms
@@ -241,6 +247,12 @@ jobs:
           test -s dist-web/privacy.html
           test -s dist-web/terms.html
           test -s dist-web/contact.html
+          test -s dist-web/attribution.html
+          grep -Fq 'href="./archiv-red-brick-accent-logo.webp"' dist-web/attribution.html || grep -Fq 'src="./archiv-red-brick-accent-logo.webp"' dist-web/attribution.html
+          grep -Fq 'https://rebrickable.com/' dist-web/attribution.html
+          grep -Fq 'eBay Partner Network' dist-web/attribution.html
+          grep -Fq 'href="./attribution.html"' dist-web/terms.html
+          grep -Fq '"Attribution","attribution.html"' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
           for file in contact.html privacy.html terms.html; do
             grep -Fq 'support@archivcollect.com' "dist-web/$file"
             ! grep -Fq 'support@archivecollect.com' "dist-web/$file"
@@ -313,6 +325,21 @@ jobs:
           curl --fail --silent --show-error --location --max-time 20 "$BASE/terms.html?verify=$GITHUB_RUN_ID" -o /tmp/archiv-production-terms.html
           curl --fail --silent --show-error --location --max-time 20 "$BASE/privacy.html?verify=$GITHUB_RUN_ID" -o /tmp/archiv-production-privacy.html
           curl --fail --silent --show-error --location --max-time 20 "$BASE/contact.html?verify=$GITHUB_RUN_ID" -o /tmp/archiv-production-contact.html
+          # Do not accept a GitHub Pages 404 or SPA fallback as a successful page.
+          for attempt in $(seq 1 15); do
+            if curl --fail --silent --show-error --location --max-time 20 -H 'Cache-Control: no-cache' "$BASE/attribution.html?verify=$GITHUB_RUN_ID-$attempt" -o /tmp/archiv-production-attribution.html \
+              && grep -Fq '<title>Attribution | Archív</title>' /tmp/archiv-production-attribution.html \
+              && grep -Fq 'Rebrickable catalog and inventories' /tmp/archiv-production-attribution.html \
+              && grep -Fq 'src="./archiv-red-brick-accent-logo.webp"' /tmp/archiv-production-attribution.html; then
+              echo "Live Attribution page and linked sources verified"
+              break
+            fi
+            if [ "$attempt" -eq 15 ]; then
+              echo "::error::The live Attribution page did not publish correctly"
+              exit 1
+            fi
+            sleep 8
+          done
           for file in /tmp/archiv-production-contact.html /tmp/archiv-production-privacy.html /tmp/archiv-production-terms.html; do
             grep -Fq 'support@archivcollect.com' "$file"
             ! grep -Fq 'support@archivecollect.com' "$file"
