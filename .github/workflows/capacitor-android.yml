@@ -14,10 +14,20 @@ jobs:
   native-apk:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out native Archív staging code
+      - name: Check out approved native Archív Android release
         uses: actions/checkout@v4
         with:
-          ref: archiv-2-lego-staging
+          ref: 4328cdeafd4254968a57dd0c40c972f92913219c
+      - name: Verify native app contains approved production UI and shell
+        run: |
+          node -e 'const fs=require("fs");const d=JSON.parse(fs.readFileSync("android-native/build-source.json"));if(d.android_ui_base!=="df4f889e06a1dd7a5e996661260a771d286ff504"||d.preserve_package!=="app.archiv.collector")throw Error("Unapproved Android source");console.log("Verified Android UI source",d.android_ui_base)'
+          grep -Fq 'details.append(ebayShopping(row,"detail"))' src/lego-entry.ts
+          grep -Fq 'side.append(ebayShopping(row,"wishlist"))' src/lego-entry.ts
+          grep -Fq 'nativeBridge.nativePromise("Browser","open",{url:url.href})' src/lego-entry.ts
+          grep -Fq 'nativeBridge.nativePromise("FirebaseAuthentication","signInWithGoogle",{})' src/lego-entry.ts
+          test -s public/archiv-red-brick-accent-logo.webp
+          test -s android-native/MainActivity.java
+          test -s android-native/back-button.ts
 
       # Rebuild after owner configured the permanent Android signing secrets.
       - name: Confirm private Android release credentials are configured
@@ -47,8 +57,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p native-pages pages-archive
-          gh run download 41140359983 -R JHoward02/archiv-app -n github-pages -D pages-archive
+          # Find latest successful Pages artifact, not the expired October snapshot.
+          PAGES_RUN="$(gh run list -R JHoward02/archiv-app --workflow pages.yml --branch main --status success --limit 1 --json databaseId --jq '.[0].databaseId')"
+          test -n "$PAGES_RUN"
+          gh run download "$PAGES_RUN" -R JHoward02/archiv-app -n github-pages -D pages-archive
           tar -xf pages-archive/artifact.tar -C native-pages
+          node -e 'const fs=require("fs");const info=JSON.parse(fs.readFileSync("native-pages/build-info.json"));if(info.source_commit!=="df4f889e06a1dd7a5e996661260a771d286ff504")throw Error("Catalog artifact does not match approved production code");const data=JSON.parse(fs.readFileSync("native-pages/catalog-refresh.json"));if(data.set_count<28000||data.inventory_shard_count!==128)throw Error("Incomplete Rebrickable catalog");console.log("Bundling refreshed catalog:",data.set_count,"sets, run",data.github_run_id)'
           node scripts/prepare-native-web.mjs
 
       - name: Install existing web dependencies
@@ -70,8 +84,12 @@ jobs:
           # Only the native Android build imports the hardware Back handler.
           cp android-native/back-button.ts src/android-back-button.ts
           sed -i '1i import "./android-back-button";' src/lego-entry.ts
-          # Existing theme catalog code has unrelated strict TS warnings; Vite transpiles it.
-          npm run build:web
+          # Require native compatibility and enable all approved account/photo features.
+          npm run typecheck
+          VITE_PROFILE_BACKEND_READY=true VITE_PHOTO_BACKEND_READY=true npm run build:web
+          grep -Rql 'Looking for this set?' dist-web/assets || { echo "::error::Latest eBay shopping UI missing from APK"; exit 1; }
+          grep -Rql 'Continue with email' dist-web/assets || { echo "::error::Email sign-in UI missing from APK"; exit 1; }
+          grep -Rql 'archiv-red-brick-accent-logo.webp' dist-web/assets || { echo "::error::Red brick Archív logo missing from APK"; exit 1; }
           grep -Rql 'backButton' dist-web/assets || { echo "::error::Android Back handler missing from native bundle"; exit 1; }
           test -f dist-web/index.html
           test -f dist-web/lego-parts/0.json
