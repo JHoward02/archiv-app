@@ -1,0 +1,13 @@
+{
+  "android_ui_base": "df4f889e06a1dd7a5e996661260a771d286ff504",
+  "native_shell_base": "65fd4ff04885a4d9624842af8c287b94a8058743",
+  "includes": [
+    "eBay shopping redesign",
+    "Google/email sign-in",
+    "community photos",
+    "collection pages",
+    "shared Red Brick branding"
+  ],
+  "catalog": "latest verified GitHub Pages CSV snapshot; offline assets",
+  "preserve_package": "app.archiv.collector"
+}
