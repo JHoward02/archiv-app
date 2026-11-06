@@ -1,0 +1,44 @@
+name: Archív Admin Analytics Staging QA
+
+on:
+  push:
+    branches:
+      - feature/admin-analytics-redesign-20261106
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-admin-analytics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Restore generated catalog data for offline staging verification
+        run: |
+          git fetch origin archiv-2-lego-staging
+          git worktree add "$RUNNER_TEMP/archiv-catalog" origin/archiv-2-lego-staging
+          cp "$RUNNER_TEMP/archiv-catalog/src/lego-catalog.json" src/lego-catalog.json
+          cp "$RUNNER_TEMP/archiv-catalog/src/lego-themes.json" src/lego-themes.json
+          mkdir -p public/lego-parts
+          cp -R "$RUNNER_TEMP/archiv-catalog/public/lego-parts/." public/lego-parts/
+      - name: Full TypeScript, Vitest, bundle and smoke checks
+        run: npm run check
+      - name: Compile complete preview with Firebase features
+        run: VITE_PROFILE_BACKEND_READY=true VITE_PHOTO_BACKEND_READY=true npm run build:web
+      - name: Verify analytics and affiliate instrumentation in compiled staging bundle
+        run: |
+          grep -Rql 'archiv_visitor_status' dist-web/assets
+          grep -Rql 'affiliate_click' dist-web/assets
+          grep -Rql 'Your audience, at a glance' dist-web/assets
+          grep -Rql 'Google Analytics' dist-web/assets
+          test -s dist-web/privacy.html
+          test -s dist-web/terms.html
