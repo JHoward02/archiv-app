@@ -112,6 +112,9 @@ jobs:
           # Stop preview publication if the LEGO-specific logo asset is missing again.
           test -s "$RUNNER_TEMP/archiv-lego-preview/public/archiv-lego-logo.png"
           test -s "$RUNNER_TEMP/archiv-lego-preview/public/archiv-red-brick-accent-logo.webp"
+          # The staging site now uses the exact user-approved corrected orange sketch.
+          # Its uploaded art says "Your collection lives here"; production stays pinned.
+          test "$(git -C "$RUNNER_TEMP/archiv-lego-preview" hash-object public/archiv-red-brick-accent-logo.webp)" = "bb2cb8b4e56ddf010028da16609f36a2aab5bb4f"
           grep -Fq 'archiv-red-brick-accent-logo.webp' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
           # Staging-only: let the alternate logo blend into the cream page and inset the account control.
           grep -q 'mix-blend-mode:multiply' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
@@ -190,6 +193,8 @@ jobs:
           test -s "$RUNNER_TEMP/archiv-lego-production/src/lego-photo-ui.ts"
           test -s "$RUNNER_TEMP/archiv-lego-production/src/lego-photo-contributions.ts"
           test -s "$RUNNER_TEMP/archiv-lego-production/public/archiv-red-brick-accent-logo.webp"
+          # Never promote the orange sketch logo to production without an explicit approval.
+          test "$(git -C "$RUNNER_TEMP/archiv-lego-production" hash-object public/archiv-red-brick-accent-logo.webp)" = "6f1cacc29189c094077057f029794d96c3661d06"
           grep -Fq 'const collectorRoute=collectorViewFromHash()' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
           grep -Fq 'const navigation=e("nav","archiv-set-back-navigation")' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
           grep -Fq 'launchSetScanner' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
@@ -240,6 +245,11 @@ jobs:
           test -s public/attribution.html
           cp public/attribution.html dist-web/attribution.html
           cp public/attribution.html dist-web/lego-preview/attribution.html
+          # Correct intrinsic dimensions only for the staging attribution page.
+          sed -i 's/width="1400" height="466"/width="720" height="360"/g' dist-web/lego-preview/attribution.html
+          # Both public sites have the same asset filename but distinct approved contents.
+          printf '%s  %s\n' "7ef92907b5f43d5f6ff4f351f3b6a732e48d9e24581a1d3b4c4c714a82cfc368" "dist-web/lego-preview/archiv-red-brick-accent-logo.webp" | sha256sum --check
+          ! cmp -s dist-web/archiv-red-brick-accent-logo.webp dist-web/lego-preview/archiv-red-brick-accent-logo.webp
           cp dist-web/catalog-refresh.json dist-web/lego-preview/catalog-refresh.json
           printf '{"source_commit":"%s","branch":"feature/owned-set-photo-review-20261031","photo_backend_ready":true}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
           # The production release must carry its matching approved photo terms
@@ -353,6 +363,10 @@ jobs:
           grep -Fq 'archiv-red-brick-accent-logo.webp' /tmp/archiv-production-privacy.html
           curl --fail --silent --show-error --location --max-time 20 "$BASE/archiv-red-brick-accent-logo.webp?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-logo.webp
           python3 -c 'from pathlib import Path; b=Path("/tmp/archiv-live-logo.webp").read_bytes(); assert len(b)>10000 and b[:4]==b"RIFF" and b[8:12]==b"WEBP", "Missing red-brick artwork"'
+          # The staging asset must load from the /lego-preview/ subpath, not the production root.
+          curl --fail --silent --show-error --location --max-time 20 "$BASE/lego-preview/archiv-red-brick-accent-logo.webp?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-preview-logo.webp
+          printf '%s  %s\n' "7ef92907b5f43d5f6ff4f351f3b6a732e48d9e24581a1d3b4c4c714a82cfc368" "/tmp/archiv-live-preview-logo.webp" | sha256sum --check
+          echo 'Live staging orange-sketch logo verified; production logo unchanged.'
           grep -Fq 'Archív | LEGO Collections' /tmp/archiv-production-index.html
           ! grep -Fq 'utt.impactcdn.com' /tmp/archiv-production-index.html
           ! grep -Fq 'impactStat' /tmp/archiv-production-index.html
