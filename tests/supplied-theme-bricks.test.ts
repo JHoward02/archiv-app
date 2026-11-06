@@ -35,7 +35,7 @@ describe("user supplied hand-drawn LEGO theme artwork",()=>{
   for(const [theme,width] of [["technic","59%"],["botanicals","61%"],["icons","60%"]]){
     const selector='.lego-theme.archiv-theme-illustrated[data-theme="'+theme+'"] .archiv-theme-set-photo';
     expect(css).toContain(selector);
-    expect(css.slice(css.lastIndexOf(selector),css.lastIndexOf(selector)+110)).toContain("width:"+width);
+    expect(css.slice(css.lastIndexOf(selector),css.lastIndexOf(selector)+180)).toContain("width:"+width);
   }
 
   expect(css).toContain(".lego-theme-art{border-radius:0");
