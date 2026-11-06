@@ -325,6 +325,8 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
+        # Fresh deployment id for GitHub Pages stalled sync (2026-11-06).
+        # Production app/logo remain pinned; only staging's six illustrated bricks differ.
         uses: actions/deploy-pages@v4
 
       - name: Verify live production build and photo policies
