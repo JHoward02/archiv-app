@@ -206,11 +206,12 @@ jobs:
           mkdir -p dist-web/lego-preview
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/lego-preview/
           printf '{"source_commit":"%s","branch":"feature/owned-set-photo-review-20261031","photo_backend_ready":true}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
-          # Approved release (2026-11-02 Pacific): publish the reviewed responsive
-          # eBay shopping layouts and single-count affiliate click reporting.
+          # Approved release (2026-11-06 Pacific): promote the exact reviewed
+          # hand-sketched orange logo and six supplied illustrated theme bricks.
+          # Includes the final spacing and set-photo positioning, eBay UI and photo rules.
           # Pin production to an immutable tested commit; future preview changes
           # must NOT silently update production.
-          RELEASE_SHA="df4f889e06a1dd7a5e996661260a771d286ff504"
+          RELEASE_SHA="75f2647aaddf77bdef166a14d7e86cb0b3f2db8e"
           test "$(git rev-parse "$RELEASE_SHA^{commit}")" = "$RELEASE_SHA"
           git worktree add "$RUNNER_TEMP/archiv-lego-production" "$RELEASE_SHA"
           npm --prefix "$RUNNER_TEMP/archiv-lego-production" ci
@@ -223,9 +224,21 @@ jobs:
           # Protect collector dashboard, catalog controls, scanner, and photo permissions.
           test -s "$RUNNER_TEMP/archiv-lego-production/src/lego-photo-ui.ts"
           test -s "$RUNNER_TEMP/archiv-lego-production/src/lego-photo-contributions.ts"
-          test -s "$RUNNER_TEMP/archiv-lego-production/public/archiv-red-brick-accent-logo.webp"
-          # Never promote the orange sketch logo to production without an explicit approval.
-          test "$(git -C "$RUNNER_TEMP/archiv-lego-production" hash-object public/archiv-red-brick-accent-logo.webp)" = "6f1cacc29189c094077057f029794d96c3661d06"
+          # Owner explicitly approved the corrected orange sketch and its exact source asset.
+          test -s "$RUNNER_TEMP/archiv-lego-production/public/archiv-orange-sketch-20261106.webp"
+          test "$(git -C "$RUNNER_TEMP/archiv-lego-production" hash-object public/archiv-orange-sketch-20261106.webp)" = "bb2cb8b4e56ddf010028da16609f36a2aab5bb4f"
+          # The product photographs remain overlaid on the supplied six illustrated bricks.
+          grep -Fq 'const illustratedThemeBricks:Record<string,string>' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
+          grep -Fq 'b.append(brick,photo)' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
+          grep -Fq 'isolation:auto;' "$RUNNER_TEMP/archiv-lego-production/src/lego-styles.css"
+          grep -Fq 'nth-child(n+4){margin-top:-24px}' "$RUNNER_TEMP/archiv-lego-production/src/lego-styles.css"
+          grep -Fq 'nth-child(n+3){margin-top:-9px}' "$RUNNER_TEMP/archiv-lego-production/src/lego-styles.css"
+          grep -Fq 'left:19.5%;top:27.5%;width:61%;height:33%;' "$RUNNER_TEMP/archiv-lego-production/src/lego-styles.css"
+          grep -Fq 'left:20%;top:27.5%;width:60%;height:33%;' "$RUNNER_TEMP/archiv-lego-production/src/lego-styles.css"
+          for name in city pokemon star-wars technic botanicals icons; do
+            test -s "$RUNNER_TEMP/archiv-lego-production/public/theme-bricks/theme-$name.webp"
+            cmp "$RUNNER_TEMP/archiv-lego-production/public/theme-bricks/theme-$name.webp" "$RUNNER_TEMP/archiv-lego-preview/public/theme-bricks/theme-$name.webp"
+          done
           grep -Fq 'const collectorRoute=collectorViewFromHash()' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
           grep -Fq 'const navigation=e("nav","archiv-set-back-navigation")' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
           grep -Fq 'launchSetScanner' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
@@ -233,9 +246,9 @@ jobs:
           grep -Fq 'Submit for community review (optional).' "$RUNNER_TEMP/archiv-lego-production/src/lego-photo-ui.ts"
           grep -Fq 'new URL("terms.html#community-photos",window.location.href)' "$RUNNER_TEMP/archiv-lego-production/src/lego-photo-ui.ts"
           grep -Fq 'new URL("privacy.html#uploaded-photos",window.location.href)' "$RUNNER_TEMP/archiv-lego-production/src/lego-photo-ui.ts"
-          grep -Fq 'archiv-red-brick-accent-logo.webp' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
-          grep -Fq 'archiv-red-brick-accent-logo.webp' "$RUNNER_TEMP/archiv-lego-production/public/terms.html"
-          grep -Fq 'archiv-red-brick-accent-logo.webp' "$RUNNER_TEMP/archiv-lego-production/public/privacy.html"
+          grep -Fq 'archiv-orange-sketch-20261106.webp' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
+          grep -Fq 'archiv-orange-sketch-20261106.webp' "$RUNNER_TEMP/archiv-lego-production/public/terms.html"
+          grep -Fq 'archiv-orange-sketch-20261106.webp' "$RUNNER_TEMP/archiv-lego-production/public/privacy.html"
           # Ensure the production release includes the reviewed method-selection and recovery flows.
           test -s "$RUNNER_TEMP/archiv-lego-production/tests/email-password-auth.test.ts"
           grep -Fq 'menu.append(button("Sign in",()=>{account.open=false;goAuthPage("sign-in")}' "$RUNNER_TEMP/archiv-lego-production/src/lego-entry.ts"
@@ -270,21 +283,25 @@ jobs:
           # Publish the complete pinned release and restore the independently built preview.
           cp -R "$RUNNER_TEMP/archiv-lego-production/dist-web/." dist-web/
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/lego-preview/
-          # The app and legal release are pinned; publish the separately reviewed
-          # static Attribution page from this workflow commit (missing in release snapshot).
-          # Replace the older preview attribution to keep both links consistent.
+          # Attribution is a separate reviewed static page stored on main and
+          # copied into BOTH released sites; the approved app source pin is unchanged.
           test -s public/attribution.html
           cp public/attribution.html dist-web/attribution.html
           cp public/attribution.html dist-web/lego-preview/attribution.html
-          # Attribution is copied from main, so fix its staging logo reference too.
-          sed -i 's/archiv-red-brick-accent-logo.webp/archiv-orange-sketch-20261106.webp/g;s/width="1400" height="466"/width="720" height="360"/g' dist-web/lego-preview/attribution.html
+          # Attribution now uses the same approved logo in both environments.
+          grep -Fq 'src="./archiv-orange-sketch-20261106.webp"' dist-web/attribution.html
+          grep -Fq 'src="./archiv-orange-sketch-20261106.webp"' dist-web/lego-preview/attribution.html
           # The preview must load the unique orange sketch across ALL pages.
           printf '%s  %s\n' "7ef92907b5f43d5f6ff4f351f3b6a732e48d9e24581a1d3b4c4c714a82cfc368" "dist-web/lego-preview/archiv-orange-sketch-20261106.webp" | sha256sum --check
           for file in terms.html privacy.html contact.html attribution.html; do
             grep -Fq 'src="./archiv-orange-sketch-20261106.webp"' "dist-web/lego-preview/$file"
           done
           grep -Rql 'archiv-orange-sketch-20261106.webp' dist-web/lego-preview/assets
-          ! cmp -s dist-web/archiv-red-brick-accent-logo.webp dist-web/lego-preview/archiv-orange-sketch-20261106.webp
+          cmp -s dist-web/archiv-orange-sketch-20261106.webp dist-web/lego-preview/archiv-orange-sketch-20261106.webp
+          # The production site must ship all six approved hand-drawn theme bricks, too.
+          for name in city pokemon star-wars technic botanicals icons; do
+            cmp "dist-web/theme-bricks/theme-$name.webp" "dist-web/lego-preview/theme-bricks/theme-$name.webp"
+          done
           cp dist-web/catalog-refresh.json dist-web/lego-preview/catalog-refresh.json
           printf '{"source_commit":"%s","branch":"feature/owned-set-photo-review-20261031","photo_backend_ready":true}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
           # The production release must carry its matching approved photo terms
@@ -293,7 +310,7 @@ jobs:
           test -s dist-web/terms.html
           test -s dist-web/contact.html
           test -s dist-web/attribution.html
-          grep -Fq 'href="./archiv-red-brick-accent-logo.webp"' dist-web/attribution.html || grep -Fq 'src="./archiv-red-brick-accent-logo.webp"' dist-web/attribution.html
+          grep -Fq 'src="./archiv-orange-sketch-20261106.webp"' dist-web/attribution.html
           grep -Fq 'https://rebrickable.com/' dist-web/attribution.html
           grep -Fq 'eBay Partner Network' dist-web/attribution.html
           grep -Fq 'href="./attribution.html"' dist-web/terms.html
@@ -309,9 +326,9 @@ jobs:
           grep -Fq 'request removal' dist-web/privacy.html
           grep -Fq 'using Google or an email address and password' dist-web/privacy.html
           grep -Fq 'using Google or an email address and password' dist-web/terms.html
-          grep -Fq 'src="./archiv-red-brick-accent-logo.webp"' dist-web/privacy.html
-          grep -Fq 'src="./archiv-red-brick-accent-logo.webp"' dist-web/terms.html
-          test -s dist-web/archiv-red-brick-accent-logo.webp
+          grep -Fq 'src="./archiv-orange-sketch-20261106.webp"' dist-web/privacy.html
+          grep -Fq 'src="./archiv-orange-sketch-20261106.webp"' dist-web/terms.html
+          test -s dist-web/archiv-orange-sketch-20261106.webp
           # No legacy Impact tracking snippet may be reintroduced at production root.
           ! grep -Fq 'utt.impactcdn.com' dist-web/index.html
           ! grep -Fq 'impactStat' dist-web/index.html
@@ -341,8 +358,8 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        # Fresh deployment id for GitHub Pages stalled sync (2026-11-06).
-        # Production app/logo remain pinned; only staging's six illustrated bricks differ.
+        # GitHub Pages may take longer on full catalog deployments.
+        # The approved production app is pinned to the reviewed November 6 source.
         uses: actions/deploy-pages@v4
 
       - name: Verify live production build and photo policies
@@ -350,7 +367,7 @@ jobs:
         run: |
           set -euo pipefail
           BASE="https://jhoward02.github.io/archiv-app"
-          EXPECTED="df4f889e06a1dd7a5e996661260a771d286ff504"
+          EXPECTED="75f2647aaddf77bdef166a14d7e86cb0b3f2db8e"
           for attempt in $(seq 1 15); do
             if curl --fail --silent --show-error --location --max-time 20 --retry 1 -H 'Cache-Control: no-cache' "$BASE/build-info.json?release-check=$GITHUB_RUN_ID-$attempt" -o /tmp/archiv-production-info.json \
               && python3 -c 'import json,sys; d=json.load(open("/tmp/archiv-production-info.json")); assert d.get("source_commit")==sys.argv[1] and d.get("legal_source_commit")==sys.argv[1] and d.get("photo_backend_ready") is True and d.get("profile_backend_ready") is True, d' "$EXPECTED"; then
@@ -385,7 +402,7 @@ jobs:
             if curl --fail --silent --show-error --location --max-time 20 -H 'Cache-Control: no-cache' "$BASE/attribution.html?verify=$GITHUB_RUN_ID-$attempt" -o /tmp/archiv-production-attribution.html \
               && grep -Fq '<title>Attribution | Archív</title>' /tmp/archiv-production-attribution.html \
               && grep -Fq 'Rebrickable catalog and inventories' /tmp/archiv-production-attribution.html \
-              && grep -Fq 'src="./archiv-red-brick-accent-logo.webp"' /tmp/archiv-production-attribution.html; then
+              && grep -Fq 'src="./archiv-orange-sketch-20261106.webp"' /tmp/archiv-production-attribution.html; then
               echo "Live Attribution page and linked sources verified"
               break
             fi
@@ -404,10 +421,41 @@ jobs:
           grep -Fq 'id="uploaded-photos"' /tmp/archiv-production-privacy.html
           grep -Fq 'using Google or an email address and password' /tmp/archiv-production-terms.html
           grep -Fq 'using Google or an email address and password' /tmp/archiv-production-privacy.html
-          grep -Fq 'archiv-red-brick-accent-logo.webp' /tmp/archiv-production-terms.html
-          grep -Fq 'archiv-red-brick-accent-logo.webp' /tmp/archiv-production-privacy.html
-          curl --fail --silent --show-error --location --max-time 20 "$BASE/archiv-red-brick-accent-logo.webp?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-logo.webp
-          python3 -c 'from pathlib import Path; b=Path("/tmp/archiv-live-logo.webp").read_bytes(); assert len(b)>10000 and b[:4]==b"RIFF" and b[8:12]==b"WEBP", "Missing red-brick artwork"'
+          grep -Fq 'archiv-orange-sketch-20261106.webp' /tmp/archiv-production-terms.html
+          grep -Fq 'archiv-orange-sketch-20261106.webp' /tmp/archiv-production-privacy.html
+          curl --fail --silent --show-error --location --max-time 20 "$BASE/archiv-orange-sketch-20261106.webp?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-logo.webp
+          python3 -c 'from pathlib import Path; import hashlib; b=Path("/tmp/archiv-live-logo.webp").read_bytes(); assert len(b)>10000 and b[:4]==b"RIFF" and b[8:12]==b"WEBP", "Missing approved orange sketch"; assert hashlib.sha256(b).hexdigest()=="7ef92907b5f43d5f6ff4f351f3b6a732e48d9e24581a1d3b4c4c714a82cfc368", "Wrong production logo"'
+          # Verify actual live production bundles, not just uploaded static files.
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          html=Path("/tmp/archiv-production-index.html").read_text()
+          js=re.findall(r'<script[^>]+src="(\./assets/[^"]+\.js)"',html)
+          css=re.findall(r'href="(\./assets/[^"]+\.css)"',html)
+          assert js and css, "Production app script or stylesheet missing"
+          Path("/tmp/archiv-production-js-path").write_text(js[0][2:])
+          Path("/tmp/archiv-production-css-path").write_text(css[0][2:])
+          PY
+          curl --fail --silent --show-error --location --max-time 20 "$BASE/$(cat /tmp/archiv-production-js-path)?verify=$GITHUB_RUN_ID" -o /tmp/archiv-production-script.js
+          curl --fail --silent --show-error --location --max-time 20 "$BASE/$(cat /tmp/archiv-production-css-path)?verify=$GITHUB_RUN_ID" -o /tmp/archiv-production-style.css
+          grep -Fq 'archiv-orange-sketch-20261106.webp' /tmp/archiv-production-script.js
+          grep -Fq 'theme-city.webp' /tmp/archiv-production-script.js
+          grep -Fq 'theme-icons.webp' /tmp/archiv-production-script.js
+          grep -Fq 'margin-top:-24px' /tmp/archiv-production-style.css
+          grep -Fq 'margin-top:-9px' /tmp/archiv-production-style.css
+          grep -Fq 'top:27.5%' /tmp/archiv-production-style.css
+          for entry in \
+            'city cc373db24bfb2e8938dbc0f8f561265e6a07b6deef3e7850a98bad6c1f870ec4' \
+            'pokemon 8f92d2d5ccd95bf013b5ba4b65ff250fff35f511f31efe6c5eef99414fcd9676' \
+            'star-wars 3ff29ca62a9c05af99daaa7fa360b3b6f18c9189c04769ca6b336f79b4e0c7bc' \
+            'technic 7b878c01c73ae3f01e7e812708c8ae9c1dcc915e4d86902c812a9e636c55e387' \
+            'botanicals 055fd6654dae156365f3565de36f9700b639eeea4d1d4465ea12023373c9c72f' \
+            'icons 15f5e889e03bdee65a2e6b66f8ac031bf52421bd56506667d39492d8e4cc9131'; do
+            set -- $entry
+            curl --fail --silent --show-error --location --max-time 20 "$BASE/theme-bricks/theme-$1.webp?verify=$GITHUB_RUN_ID" -o "/tmp/archiv-production-theme-$1.webp"
+            printf '%s  %s\n' "$2" "/tmp/archiv-production-theme-$1.webp" | sha256sum --check
+          done
+          echo "Live production uses the approved orange logo, six brick illustrations and final spacing."
           # Confirm the actual STAGING application JS references the new cache-busted asset,
           # not merely that an unused file exists in the published output.
           curl --fail --silent --show-error --location --max-time 20 -H 'Cache-Control: no-cache' "$BASE/lego-preview/?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-preview-index.html
