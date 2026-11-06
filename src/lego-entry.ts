@@ -1,4 +1,7 @@
 import "./lego-styles.css";
+import {renderAdminInsights} from "./archiv-admin-insights";
+import {analyticsConfiguration, authorizeGoogleAnalytics, loadGoogleAnalytics, prepareGoogleAnalyticsSignIn, type AudiencePeriod, type SiteAnalytics} from "./archiv-ga4-dashboard";
+import {trackPublicEvent, trackVisitorStatus, trackSetVisit, trackCatalogSearch, trackAffiliateLink} from "./archiv-public-events";
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth, GoogleAuthProvider, getAdditionalUserInfo, getRedirectResult, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, deleteUser, reauthenticateWithPopup, reauthenticateWithCredential, EmailAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, updateProfile, sendEmailVerification, type User, type UserCredential } from "firebase/auth";
 import { createCollectorProfile, decideGoogleAuth, firstNameFromDisplayName, personalArchiveTitle, signupBannerText } from "./auth-signup-decision";
@@ -55,9 +58,43 @@ const PHOTO_BACKEND_READY=import.meta.env.VITE_PHOTO_BACKEND_READY==="true";
 let ownProfile:Profile|null=null,ownProfileLoaded=false,profileBusy=false,profileError="",profileInfo="",deleteConfirmOpen=false,deleteConfirmText="",deletingAccount=false;
 let stopOwnProfile:Unsubscribe|null=null;
 let profiles:Profile[]=[],events:Activity[]=[],chosenUid="";
-let adminEnabled=false,adminStatus="Checking access…",adminRows:Array<{owned?:number;wishlist?:number;themes?:Record<string,number>;affiliateClicks?:number}>=[],adminLoading=false,adminError="";
+let adminEnabled=false,adminStatus="Checking access…",adminRows:Array<{owned?:number;wishlist?:number;themes?:Record<string,number>;affiliateClicks?:number}>=[],adminLoading=false,adminError="",adminLoaded=false;
+let insightsPeriod:AudiencePeriod=30,insightsAnalytics:SiteAnalytics|null=null,insightsBusy=false,insightsError="",insightsAccessToken="";
+async function refreshInsights(){
+ if(!adminEnabled||!currentUser||!insightsAccessToken||insightsBusy)return;
+ const uid=currentUser.uid;
+ insightsBusy=true;insightsError="";render();
+ try{
+  const config=analyticsConfiguration();
+  const result=await loadGoogleAnalytics(insightsAccessToken,config.propertyId,insightsPeriod);
+  if(adminEnabled&&currentUser?.uid===uid)insightsAnalytics=result;
+ }catch(error){
+  if(adminEnabled&&currentUser?.uid===uid)insightsError=error instanceof Error?error.message:"Analytics could not load.";
+ }finally{insightsBusy=false;if(adminEnabled&&currentUser?.uid===uid&&location.hash==="#/admin")render()}
+}
+async function connectInsights(){
+ if(!adminEnabled||!currentUser||insightsBusy)return;
+ const uid=currentUser.uid;
+ insightsBusy=true;insightsError="";render();
+ try{
+  const config=analyticsConfiguration();
+  if(!config.ready)throw new Error("The GA4 property ID or OAuth client ID is not configured.");
+  const token=await authorizeGoogleAnalytics(config.clientId);
+  if(!adminEnabled||currentUser?.uid!==uid)return;
+  insightsAccessToken=token;
+ }catch(error){
+  if(adminEnabled&&currentUser?.uid===uid)insightsError=error instanceof Error?error.message:"Analytics authorization failed.";
+ }finally{
+  insightsBusy=false;
+  if(adminEnabled&&currentUser?.uid===uid){
+   if(insightsAccessToken)void refreshInsights();
+   else render();
+  }
+ }
+}
+
 async function checkAdmin(user:User|null,gen:number){
- adminEnabled=false;adminRows=[];adminStatus="Checking access…";
+ adminEnabled=false;adminRows=[];adminLoaded=false;adminStatus="Checking access…";insightsAccessToken="";insightsAnalytics=null;insightsError="";
  if(!user||!legoDb)return;
  try{
   const a=await getDoc(doc(legoDb,"adminAccess",user.uid));
@@ -65,6 +102,7 @@ async function checkAdmin(user:User|null,gen:number){
   adminEnabled=a.exists()&&a.data().enabled===true;
   adminStatus=adminEnabled?"Authorized":"Restricted";
   if(adminEnabled&&location.hash==="#/admin")void loadAdmin();
+  if(adminEnabled&&analyticsConfiguration().ready)void prepareGoogleAnalyticsSignIn().catch(()=>{});
  }catch{adminStatus="Admin access not configured"}
  if(gen===authGeneration)render();
 }
@@ -75,6 +113,7 @@ async function loadAdmin(){
   const [summaries,people]=await Promise.all([getDocs(collection(legoDb,"collectorSummaries")),getDocs(collection(legoDb,"collectorProfiles"))]);
   adminRows=summaries.docs.map(d=>d.data());
   profiles=people.docs.map(d=>({uid:d.id,...d.data()}));
+  adminLoaded=true;
   events=[];
   for(const person of profiles.slice(0,50)){
    const logs=await getDocs(collection(legoDb,"users",person.uid,"activity"));
@@ -118,15 +157,22 @@ async function reportCollector(user:User,items:Record<string,Status>){
   themes,lastActive:serverTimestamp()
  },{merge:true})}catch(err){console.warn("Analytics summary unavailable",err)}
 }
-async function reportAffiliateClick(){
+async function reportAffiliateClick(setNumber?:string){
  if(deletingAccount||!currentUser||!legoDb)return;
- try{await setDoc(doc(legoDb,"collectorSummaries",currentUser.uid),{affiliateClicks:increment(1),lastActive:serverTimestamp()},{merge:true});void recordActivity("affiliate_click")}
+ try{await setDoc(doc(legoDb,"collectorSummaries",currentUser.uid),{affiliateClicks:increment(1),lastActive:serverTimestamp()},{merge:true});void recordActivity("affiliate_click",setNumber)}
  catch(err){console.warn("Click reporting unavailable",err)}
 }
 document.addEventListener("click",ev=>{
  const el=ev.target;if(!(el instanceof Element))return;
  const a=el.closest("a[href]");if(!(a instanceof HTMLAnchorElement))return;
- try{const host=new URL(a.href).hostname;if(host==="ebay.com"||host.endsWith(".ebay.com"))void reportAffiliateClick()}catch{}
+ try{
+  const host=new URL(a.href).hostname;
+  if(host!=="ebay.com"&&!host.endsWith(".ebay.com"))return;
+  const placement=a.dataset.affiliatePlacement||"",setNumber=a.dataset.affiliateSetNumber||"";
+  if(!["detail","catalog","wishlist"].includes(placement)||!setNumber)return;
+  trackAffiliateLink(setNumber,placement,Boolean(currentUser));
+  if(currentUser)void reportAffiliateClick(setNumber);
+ }catch{}
 },true);
 
 // Google/Firebase creates an identity on its first OAuth sign-in. When the visitor
@@ -170,6 +216,8 @@ async function acceptGoogleAuth(result:UserCredential,intent:GoogleAuthIntent){
   }
  }
  setSignupRequired(false);
+ if(intent==="sign-up"&&decision==="created")trackPublicEvent("sign_up",{method:"google"});
+ if(intent==="sign-in")trackPublicEvent("login",{method:"google"});
  authNotice=intent==="sign-up"
   ?decision==="created"?"Your Archív account has been created. Welcome!":"You already have an Archív account. Welcome back!"
   :"";
@@ -248,6 +296,7 @@ async function runEmailAuth(intent:GoogleAuthIntent,email:string,password:string
    }catch{ /* A verification email failure must not undo a completed registration. */ }
   }
   setSignupRequired(false);
+  trackPublicEvent(intent==="sign-up"?"sign_up":"login",{method:"email"});
   emailFormIntent=null;emailDraft="";nameDraft="";
   location.hash="#/profile";
  }catch(error){
@@ -316,6 +365,13 @@ function goCollectorView(view:CollectorView){
  location.hash="#/"+view;render();
 }
 function setFromHash(){const m=location.hash.match(/^#\/set\/(.+)$/);return m?decodeURIComponent(m[1]):null}
+let lastReportedSetView="";
+function recordSetNavigation(){
+ const number=setFromHash();
+ if(!number){lastReportedSetView="";return}
+ if(number===lastReportedSetView)return;
+ lastReportedSetView=number;trackSetVisit(number);
+}
 function themeFromHash(){const slug=decodeURIComponent(location.hash.replace(/^#\/?/,""));return themes.slice(1).find(n=>n.toLowerCase().replace(/\s+/g,"-")===slug)||"All LEGO"}
 function goProfile(){profileError="";profileInfo="";deleteConfirmOpen=false;deleteConfirmText="";location.hash="#/profile";render()}
 selected=themeFromHash();
@@ -323,14 +379,15 @@ selected=themeFromHash();
 // can return to the same theme from a set or admin page without changing selected.
 let displayedRouteHash=location.hash;
 function goTheme(n:string){selected=n;search="";page=0;catalogDecade="all";catalogPieces="all";catalogStatus="all";catalogTheme="all";collectionDetailReturn=null;location.hash=n==="All LEGO"?"#/":"#/"+encodeURIComponent(n.toLowerCase().replace(/\s+/g,"-"));render()}
-window.addEventListener("hashchange",()=>{if(location.hash==="#/profile"||location.hash==="#/sign-in"||location.hash==="#/sign-up"||collectorViewFromHash()){render();return}if(location.hash==="#/admin"){if(adminEnabled)void loadAdmin();else render();return}if(setFromHash()){render();return}const next=themeFromHash();if(next!==selected){selected=next;search="";page=0}if(displayedRouteHash!==location.hash)render()});
+window.addEventListener("hashchange",()=>{recordSetNavigation();if(location.hash==="#/profile"||location.hash==="#/sign-in"||location.hash==="#/sign-up"||collectorViewFromHash()){render();return}if(location.hash==="#/admin"){if(adminEnabled)void loadAdmin();else render();return}if(setFromHash()){render();return}const next=themeFromHash();if(next!==selected){selected=next;search="";page=0}if(displayedRouteHash!==location.hash)render()});
 let saved:Record<string,Status>={};
 function applyFirebaseAuthState(user:User|null){
  if(authAttempt)return;
  if(authReady&&currentUser?.uid===user?.uid)return;
  const generation=++authGeneration;stopCollection?.();stopCollection=null;stopOwnProfile?.();stopOwnProfile=null;currentUser=user;saved={};ownProfile=null;ownProfileLoaded=!user;profileError="";profileInfo="";deleteConfirmOpen=false;deleteConfirmText="";authReady=true;collectionReady=!user;accountError="";render();
  void checkAdmin(user,generation);
- if(!user)return;
+ if(!user){trackVisitorStatus(false);return}
+ trackVisitorStatus(true);
  const uid=user.uid;
  void registerCollector(user);
  stopOwnProfile=onSnapshot(doc(legoDb!,"collectorProfiles",uid),snapshot=>{
@@ -391,6 +448,7 @@ function searchFullCatalogFromHome(query:string){
  selected="Complete Catalog";search=term;page=0;sort="name-asc";
  catalogTheme="all";catalogDecade="all";catalogPieces="all";catalogStatus="all";
  collectionDetailReturn=null;
+ trackCatalogSearch();
  location.hash="#/complete-catalog";
  render();
 }
@@ -409,6 +467,7 @@ async function load(){
   catalogReady=true;
  }catch{catalogError="The LEGO catalog could not be loaded. Please try again.";catalogReady=false}
  if(!setFromHash())selected=themeFromHash();
+ recordSetNavigation();
  render();
 }
 function e<K extends keyof HTMLElementTagNameMap>(tag:K,cls="",value=""){const n=document.createElement(tag);n.className=cls;if(value){const parts=value.split("LEGO®");if(parts.length===1)n.textContent=value;else{parts.forEach((part,i)=>{if(i){n.append(document.createTextNode("LEGO"));const mark=document.createElement("sup");mark.className="lego-registered";mark.textContent="®";n.append(mark)}if(part)n.append(document.createTextNode(part))})}}return n}
@@ -542,6 +601,7 @@ function ebayShopping(row:SetRow,placement:EbayPlacement){
  link.href=ebaySetSearch(row);link.target="_blank";link.rel="noopener noreferrer sponsored";
  link.setAttribute("aria-label",label.replace(" ↗","")+" for "+row.name+" (affiliate link)");
  link.dataset.affiliatePlacement=placement;
+ link.dataset.affiliateSetNumber=row.number;
  shop.append(link);
  shop.append(e("p","archiv-marketplace-disclosure",
   placement==="detail"
@@ -893,75 +953,29 @@ if(location.hash==="#/sign-up"&&!currentUser){renderSignup(shell);return}
 if((location.hash==="#/sign-in"||location.hash==="#/sign-up")&&currentUser){location.hash="#/profile";render();return}
 if(location.hash==="#/profile"){renderProfile(shell);const foot=e("footer","lego-footer");const nav=e("nav","lego-footer-links");for(const [label,file] of [["Contact","contact.html"],["Attribution","attribution.html"],["Terms of Use","terms.html"],["Privacy","privacy.html"]]){const link=e("a","",label);link.href=import.meta.env.BASE_URL+file;nav.append(link)}foot.append(nav,e("p","lego-copyright","© 2026 Archív. All rights reserved."));shell.append(foot);return}
 if(location.hash==="#/admin"){
- const main=e("main","lego-admin");
- main.append(e("h1","","Archív analytics"));
- if(!currentUser)main.append(e("p","","Please sign in to access analytics."));
- else if(!adminEnabled)main.append(e("p","",adminStatus));
- else{
-  main.append(e("p","lego-admin-note","Counts reflect signed-in collectors recorded after reporting was enabled. They exclude anonymous browsing, unreported registered accounts, and guest affiliate clicks."));
-  const totals=[["Reporting collectors",adminRows.length],["Owned sets",adminRows.reduce((n,x)=>n+(Number(x.owned)||0),0)],["Wishlisted sets",adminRows.reduce((n,x)=>n+(Number(x.wishlist)||0),0)],["Signed-in affiliate clicks",adminRows.reduce((n,x)=>n+(Number(x.affiliateClicks)||0),0)]] as const;
-  const cards=e("div","lego-admin-cards");
-  for(const [label,total] of totals){const card=e("div","lego-admin-card");card.append(e("strong","",total.toLocaleString()),e("span","",label));cards.append(card)}
-  main.append(cards);
-  const registry=e("div","lego-admin-card");registry.append(e("strong","",profiles.length.toLocaleString()),e("span","","Accounts seen since registration tracking began"));main.append(registry);
-  const authHelp=e("p","lego-admin-note","This count includes accounts seen by Archív since tracking began. For the complete Firebase Authentication account list, open Firebase Console.");
-  const authLink=e("a","lego-admin-auth-link","View all Firebase Authentication users ↗");authLink.href="https://console.firebase.google.com/project/archiv-3f5df/authentication/users";authLink.target="_blank";authLink.rel="noopener noreferrer";authHelp.append(" ",authLink);main.append(authHelp);
-  main.append(e("h2","","Daily activity (last 14 days)"));
-  const trend=e("div","lego-admin-themes");
-  for(let d=13;d>=0;d--){
-   const date=new Date();date.setUTCHours(0,0,0,0);date.setUTCDate(date.getUTCDate()-d);
-   const day=date.toISOString().slice(0,10),dayEvents=events.filter(x=>x.at?.slice(0,10)===day);
-   const changes=dayEvents.filter(x=>["owned","wishlist","removed"].includes(x.type)).length;
-   const clicks=dayEvents.filter(x=>x.type==="affiliate_click").length;
-   const line=e("div","lego-admin-day");line.append(e("span","",day),e("span","",changes+" collection changes"),e("strong","",clicks+" affiliate clicks"));trend.append(line);
-  }main.append(trend);
-  main.append(e("p","lego-admin-note","Daily activity reflects recorded events, not unique visitors. Event history begins with this release. First 50 reporting profiles are included."));
-  main.append(e("h2","","Individual user activity"));
-  const people=e("div","lego-admin-people");
-  for(const person of profiles){
-   const pick=button(firstNameFromDisplayName(person.name),()=>{chosenUid=person.uid;render()},"lego-admin-person");
-   if(chosenUid===person.uid)pick.classList.add("active");
-   people.append(pick);
-  }main.append(people);
-  const selectedPerson=profiles.find(p=>p.uid===chosenUid)||profiles[0];
-  if(selectedPerson){
-   const details=e("div","lego-admin-themes");
-   details.append(e("h3","",firstNameFromDisplayName(selectedPerson.name)));
-   details.append(e("p","",selectedPerson.email||selectedPerson.uid));
-   details.append(e("p","", "First seen: "+(selectedPerson.firstSeen||"Unknown")));
-   const personalEvents=events.filter(x=>x.uid===selectedPerson.uid).sort((a,b)=>(b.at||"").localeCompare(a.at||"")).slice(0,50);
-   if(!personalEvents.length)details.append(e("p","","No recorded activity yet."));
-   for(const evt of personalEvents){
-    const line=e("div","lego-admin-day");
-    const verbs:Record<string,string>={owned:"Added to collection",wishlist:"Added to wishlist",removed:"Removed from collection",affiliate_click:"Clicked eBay affiliate link"};
-    line.append(e("span","",new Date(evt.at).toLocaleString()),e("span","",verbs[evt.type]||evt.type.replace(/_/g," ")));
-    const cell=e("strong","");
-    if(evt.setNumber){
-     const row=data.find(x=>x.number===evt.setNumber);
-     const link=e("a","lego-admin-set-link",row?row.name+" ("+evt.setNumber+")":"LEGO set "+evt.setNumber);
-     link.href="#/set/"+encodeURIComponent(evt.setNumber);
-     cell.append(link);
-    }else cell.textContent=evt.theme||"";
-    line.append(cell);details.append(line);
-   }
-   main.append(details);
-  }
-
-  const refresh=button(adminLoading?"Refreshing…":"Refresh data",()=>{void loadAdmin()});refresh.disabled=adminLoading;main.append(refresh);
-  if(adminError)main.append(e("p","lego-account-message",adminError));
+ const main=e("main","lego-admin archiv-insights");
+ if(!currentUser){
+  main.append(e("h1","","Private analytics"),e("p","","Sign in to access Archív reporting."));
+ }else if(!adminEnabled){
+  main.append(e("h1","","Private analytics"),e("p","",adminStatus));
+ }else{
+  renderAdminInsights(main,{
+   days:insightsPeriod,analytics:insightsAnalytics,analyticsBusy:insightsBusy,
+   analyticsError:insightsError,analyticsConfigured:analyticsConfiguration().ready,
+   analyticsConnected:Boolean(insightsAccessToken),
+   backendBusy:adminLoading,backendLoaded:adminLoaded,backendError:adminError,
+   profiles,summaries:adminRows,events,selectedUid:chosenUid,
+   onPeriod:(days)=>{insightsPeriod=days;render();if(insightsAccessToken)void refreshInsights()},
+   onConnect:()=>{void connectInsights()},
+   onRefresh:()=>{void loadAdmin();if(insightsAccessToken)void refreshInsights()},
+   onSelectUid:(uid)=>{chosenUid=uid;render()}
+  });
   if(legoDb){
-   const photoModeration=e("section","archiv-admin-photo-review");
-   main.append(photoModeration);
-   if(PHOTO_BACKEND_READY)renderPhotoModeration(photoModeration,legoDb,id=>{const set=data.find(x=>x.number===id);return set?set.name+" ("+id+")":"LEGO set "+id});
-   else photoModeration.append(e("h2","","Community photo review"),e("p","lego-admin-note","Photo moderation is staged but will only activate after secure Firebase rules and updated photo policies have been deployed."));
+   const moderation=e("section","archiv-admin-photo-review archiv-insight-moderation");
+   main.append(moderation);
+   if(PHOTO_BACKEND_READY)renderPhotoModeration(moderation,legoDb,id=>{const set=data.find(x=>x.number===id);return set?set.name+" ("+id+")":"LEGO set "+id});
+   else moderation.append(e("h2","","Community photo review"),e("p","lego-admin-note","Photo moderation becomes available when the approved backend configuration is enabled."));
   }
-  main.append(e("h2","","Popular themes in owned collections"));
-  const themes:Record<string,number>={};
-  for(const item of adminRows)for(const [name,count] of Object.entries(item.themes||{}))themes[name]=(themes[name]||0)+(Number(count)||0);
-  const list=e("div","lego-admin-themes"),rank=Object.entries(themes).sort((a,b)=>b[1]-a[1]).slice(0,12),top=rank[0]?.[1]||1;
-  if(!rank.length)list.append(e("p","","No collection summaries recorded yet."));
-  for(const [name,count] of rank){const row=e("div","lego-admin-theme"),track=e("div","lego-admin-track"),bar=e("div","lego-admin-bar");bar.style.width=100*count/top+"%";track.append(bar);row.append(e("span","",name),track,e("strong","",count.toLocaleString()));list.append(row)}
-  main.append(list);
  }
  main.append(button("← Return to Archív",()=>goTheme("All LEGO")));
  shell.append(main);return;
