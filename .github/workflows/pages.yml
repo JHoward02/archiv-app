@@ -172,7 +172,12 @@ jobs:
           cp -R "$RUNNER_TEMP/archiv-data-source/public/lego-parts/." "$RUNNER_TEMP/archiv-lego-preview/public/lego-parts/"
           # Enable profile preferences and self-service deletion for the staging preview.
           # Production is compiled separately using the approved immutable release.
+          # CSS-only colored-pencil theme bricks. Keep original theme palettes and photographs.
+          grep -Fq 'Staging: colored-pencil LEGO theme bricks' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
+          grep -Fq 'background-color:var(--brick);' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
+          grep -Fq 'background-color:var(--brick-light);' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
           VITE_PROFILE_BACKEND_READY=true VITE_PHOTO_BACKEND_READY=true npm --prefix "$RUNNER_TEMP/archiv-lego-preview" run build:web
+          grep -Rql '162deg' "$RUNNER_TEMP/archiv-lego-preview/dist-web/assets" || { echo "::error::Colored pencil styles missing from staging assets"; exit 1; }
           mkdir -p dist-web/lego-preview
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/lego-preview/
           printf '{"source_commit":"%s","branch":"feature/owned-set-photo-review-20261031","photo_backend_ready":true}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
