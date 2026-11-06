@@ -213,9 +213,10 @@ jobs:
           # Approved release (2026-11-06 Pacific): promote the exact reviewed
           # hand-sketched orange logo and six supplied illustrated theme bricks.
           # Includes the final spacing and set-photo positioning, eBay UI and photo rules.
+          # Owner approved analytics dashboard and affiliate click tracking on Nov 6.
           # Pin production to an immutable tested commit; future preview changes
           # must NOT silently update production.
-          RELEASE_SHA="75f2647aaddf77bdef166a14d7e86cb0b3f2db8e"
+          RELEASE_SHA="2a1f0dcdb4de3d4446b4ef995dd30fb564b4a9f7"
           test "$(git rev-parse "$RELEASE_SHA^{commit}")" = "$RELEASE_SHA"
           git worktree add "$RUNNER_TEMP/archiv-lego-production" "$RELEASE_SHA"
           npm --prefix "$RUNNER_TEMP/archiv-lego-production" ci
@@ -284,6 +285,13 @@ jobs:
           # Tests run against the exact source that will be published.
           npm --prefix "$RUNNER_TEMP/archiv-lego-production" run check
           VITE_PROFILE_BACKEND_READY=true VITE_PHOTO_BACKEND_READY=true npm --prefix "$RUNNER_TEMP/archiv-lego-production" run build:web
+          # Approved 2026-11-06: verify the production app includes owner insights,
+          # affiliate click instrumentation, and the readonly GA4 OAuth configuration.
+          grep -Rql 'Your audience, at a glance' "$RUNNER_TEMP/archiv-lego-production/dist-web/assets"
+          grep -Rql 'affiliate_click' "$RUNNER_TEMP/archiv-lego-production/dist-web/assets"
+          grep -Rql 'archiv_visitor_status' "$RUNNER_TEMP/archiv-lego-production/dist-web/assets"
+          grep -Rql '562944371' "$RUNNER_TEMP/archiv-lego-production/dist-web/assets"
+          grep -Rql '226810242425-v9lem1u8p2q5qaenvco1ldbi354rglm5.apps.googleusercontent.com' "$RUNNER_TEMP/archiv-lego-production/dist-web/assets"
           # Publish the complete pinned release and restore the independently built preview.
           cp -R "$RUNNER_TEMP/archiv-lego-production/dist-web/." dist-web/
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/lego-preview/
@@ -338,8 +346,8 @@ jobs:
           ! grep -Fq 'impactStat' dist-web/index.html
           printf '{"source_commit":"%s","branch":"feature/owned-set-photo-review-20261031","profile_backend_ready":true,"photo_backend_ready":true,"legal_source_commit":"%s"}\n' "$RELEASE_SHA" "$RELEASE_SHA" > dist-web/build-info.json
           echo "Production approved release: $RELEASE_SHA"
-      # GA4 is an audited post-build overlay. The approved app commit stays pinned;
-      # no analytics code is added to LEGO preview or the collector application.
+      # GA4 is injected only into the production HTML, so the new public
+      # event instrumentation runs live without measuring staging browsers.
       - name: Install Archív GA4 and publish privacy disclosure
         run: |
           node scripts/install-archiv-ga4.mjs dist-web
@@ -371,7 +379,7 @@ jobs:
         run: |
           set -euo pipefail
           BASE="https://jhoward02.github.io/archiv-app"
-          EXPECTED="75f2647aaddf77bdef166a14d7e86cb0b3f2db8e"
+          EXPECTED="2a1f0dcdb4de3d4446b4ef995dd30fb564b4a9f7"
           for attempt in $(seq 1 15); do
             if curl --fail --silent --show-error --location --max-time 20 --retry 1 -H 'Cache-Control: no-cache' "$BASE/build-info.json?release-check=$GITHUB_RUN_ID-$attempt" -o /tmp/archiv-production-info.json \
               && python3 -c 'import json,sys; d=json.load(open("/tmp/archiv-production-info.json")); assert d.get("source_commit")==sys.argv[1] and d.get("legal_source_commit")==sys.argv[1] and d.get("photo_backend_ready") is True and d.get("profile_backend_ready") is True, d' "$EXPECTED"; then
