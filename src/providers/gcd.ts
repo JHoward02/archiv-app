@@ -1,6 +1,7 @@
 import type { Candidate, SearchQuery } from "../types.ts";
 import { asArray, asRecord, asString, fetchJson, type Provider } from "./types.ts";
 
+const RELAY = "https://shelfie-api.jason-howard02.workers.dev/comics/search";
 const GCD = "https://www.comics.org";
 
 function records(payload: unknown): unknown[] {
@@ -19,13 +20,20 @@ export const gcdProvider: Provider = {
   id: "gcd", label: "Grand Comics Database", categories: ["comic"],
   prefers: (query) => query.category === "comic",
   async search(query: SearchQuery, signal) {
-    const series = (query.title || query.providerQuery).trim();
-    const number = query.number?.replace(/^#/, "").trim();
+    let series = (query.title || query.providerQuery).trim();
+    let number = query.number?.replace(/^#/, "").trim();
+    // Selected Comics queries may omit the # marker. Keep this interpretation
+    // local to comics so book titles and card numbers are not changed.
+    if (!number) {
+      const trailing = series.match(/^(.+?)\s+(\d{1,3}[a-z]?)$/i);
+      if (trailing) { series = trailing[1].trim(); number = trailing[2]; }
+    }
     if (!number) {
       return { candidates: [], warning: "Add an issue number, for example Amazing Spider-Man #300, to search the Grand Comics Database." };
     }
-    const base = `${GCD}/api/series/name/${encodeURIComponent(series)}/issue/${encodeURIComponent(number)}`;
-    const url = query.year ? `${base}/year/${query.year}/` : `${base}/`;
+    const params = new URLSearchParams({ series, number });
+    if (query.year) params.set("year", String(query.year));
+    const url = `${RELAY}?${params}`;
     const payload = await fetchJson(url, signal);
     const candidates: Candidate[] = [];
     for (const value of records(payload).slice(0, 40)) {
@@ -38,7 +46,7 @@ export const gcdProvider: Provider = {
       const issueNumber = descriptor?.match(/#?([0-9]+[A-Za-z]?)/)?.[1] ?? number;
       const seriesUrl = asString(issue.series);
       const sourceUrl = idFromApiUrl(apiUrl) ? `${GCD}/issue/${id}/` : GCD;
-      const year = publicationDate ? Number.parseInt(publicationDate.slice(0,4),10) : query.year;
+      const year = publicationDate ? Number.parseInt(publicationDate.match(/\b(1[89]\d{2}|20\d{2})\b/)?.[1] ?? "",10) : query.year;
       candidates.push({
         id:`gcd:${id}`, provider:"gcd", providerLabel:"Grand Comics Database", providerKey:id,
         title:seriesName, subtitle:[descriptor ?? `#${issueNumber}`, publicationDate].filter(Boolean).join(" • ") || null,
