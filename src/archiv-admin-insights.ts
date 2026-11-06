@@ -178,7 +178,12 @@ export function renderAdminInsights(main:HTMLElement,state:AdminDashboardState):
   grid.append(channels);
   const pages=el("section","archiv-insight-panel");
   pages.append(el("h3","","Most visited pages"));
-  pages.append(rankedList(ga?.pages||[],"GA4 page performance will appear after connection."));
+  pages.append(rankedList(ga?.pages||[],"GA4 page performance will appear after connection.",value=>{
+    try{
+      const url=new URL(value);
+      return url.hash.startsWith("#/")?url.hash.slice(1):url.pathname.replace(/^\\/archiv-app\\/?/,"/")||"/";
+    }catch{return value;}
+  }));
   grid.append(pages);main.append(grid);
 
   main.append(sectionTitle("Affiliate shopping","Every eligible eBay click is measured separately from actual orders and commission."));
@@ -255,6 +260,7 @@ export function renderAdminInsights(main:HTMLElement,state:AdminDashboardState):
 
   const coverage=el("section","archiv-insight-footnote");
   coverage.append(el("strong","","How to read these numbers"));
+  coverage.append(link("https://console.firebase.google.com/project/archiv-3f5df/authentication/users","View complete account list in Firebase Authentication"));
   coverage.append(info("GA4 visitor, session and event counts reflect measurable web traffic and may exclude visitors who block analytics. Guest means not signed in at the time of measurement, not necessarily a person without an account. Guest and signed-in visitor groups can overlap. Firestore totals include only collector profiles and summaries the app has recorded, not every Firebase Authentication identity. Never add GA4 clicks and Firestore clicks together; they measure overlapping activity."));
   if(ga&&!ga.customDimensionsAvailable)coverage.append(info("Visitor status and click-by-set/placement reporting need GA4 event-scoped custom dimensions named visitor_status, set_number and link_placement. Those fields cannot be backfilled."));
   main.append(coverage);
