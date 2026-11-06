@@ -56,7 +56,7 @@ describe("Archív branded support contact",()=>{
    expect(page).not.toContain(["getshelfiecollect","gmail.com"].join("@"));
    expect(page).not.toContain(["support","archivecollect.com"].join("@"));
   }
-  expect(contact).toContain("archiv-red-brick-accent-logo.webp");
+  expect(contact).toContain("archiv-orange-sketch-20261106.webp");
   expect(contact).toContain('mailto:support@archivcollect.com');
  });
 });
