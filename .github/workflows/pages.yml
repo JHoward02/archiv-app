@@ -173,11 +173,13 @@ jobs:
           # Enable profile preferences and self-service deletion for the staging preview.
           # Production is compiled separately using the approved immutable release.
           # CSS-only colored-pencil theme bricks. Keep original theme palettes and photographs.
-          grep -Fq 'Staging: colored-pencil LEGO theme bricks' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
+          # Stage only the redesigned brick element, never the set photos or approved app code.
+          grep -Fq 'Staging sketch v2: individually drawn pencil strokes' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
           grep -Fq 'background-color:var(--brick);' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
           grep -Fq 'background-color:var(--brick-light);' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
+          ! grep -Fq 'repeating-linear-gradient(162deg' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
           VITE_PROFILE_BACKEND_READY=true VITE_PHOTO_BACKEND_READY=true npm --prefix "$RUNNER_TEMP/archiv-lego-preview" run build:web
-          grep -Rql '162deg' "$RUNNER_TEMP/archiv-lego-preview/dist-web/assets" || { echo "::error::Colored pencil styles missing from staging assets"; exit 1; }
+          grep -Rql 'data:image/svg+xml' "$RUNNER_TEMP/archiv-lego-preview/dist-web/assets" || { echo "::error::Drawn pencil strokes missing from staging assets"; exit 1; }
           mkdir -p dist-web/lego-preview
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/lego-preview/
           printf '{"source_commit":"%s","branch":"feature/owned-set-photo-review-20261031","photo_backend_ready":true}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
@@ -386,6 +388,19 @@ jobs:
           Path("/tmp/archiv-preview-script-path").write_text(scripts[0][2:])
           PY
           SCRIPT_PATH="$(cat /tmp/archiv-preview-script-path)"
+          # Verify the live stylesheet, not just the separate asset or source branch.
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          page=Path("/tmp/archiv-live-preview-index.html").read_text()
+          css=re.findall(r'href="(\./assets/[^"]+\.css)"',page)
+          assert css, "No preview stylesheet link found in live HTML"
+          Path("/tmp/archiv-preview-style-path").write_text(css[0][2:])
+          PY
+          STYLE_PATH="$(cat /tmp/archiv-preview-style-path)"
+          curl --fail --silent --show-error --location --max-time 20 "$BASE/lego-preview/$STYLE_PATH?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-preview-styles.css
+          grep -Fq 'data:image/svg+xml' /tmp/archiv-live-preview-styles.css
+          grep -Fq '.lego-theme .lego-brick-stud' /tmp/archiv-live-preview-styles.css
           curl --fail --silent --show-error --location --max-time 20 "$BASE/lego-preview/$SCRIPT_PATH?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-preview-script.js
           grep -Fq 'archiv-orange-sketch-20261106.webp' /tmp/archiv-live-preview-script.js
           ! grep -Fq 'BASE_URL+"archiv-red-brick-accent-logo.webp"' /tmp/archiv-live-preview-script.js
