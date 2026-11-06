@@ -181,7 +181,7 @@ export function renderAdminInsights(main:HTMLElement,state:AdminDashboardState):
   pages.append(rankedList(ga?.pages||[],"GA4 page performance will appear after connection.",value=>{
     try{
       const url=new URL(value);
-      return url.hash.startsWith("#/")?url.hash.slice(1):url.pathname.replace(/^\\/archiv-app\\/?/,"/")||"/";
+      return url.hash.startsWith("#/")?url.hash.slice(1):(url.pathname.startsWith("/archiv-app/")?url.pathname.slice("/archiv-app".length):url.pathname)||"/";
     }catch{return value;}
   }));
   grid.append(pages);main.append(grid);
