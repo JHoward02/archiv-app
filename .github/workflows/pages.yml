@@ -180,6 +180,13 @@ jobs:
           # The user-supplied bricks contain white pixels outside the drawing.
           # Keep the multiply-blended images non-isolated so the white matches the page.
           grep -Fq 'isolation:auto;' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
+          # Retain the sketched bricks, narrow row spacing and resize only three set photos.
+          grep -Fq 'Staging: closer hand-drawn brick rows' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
+          grep -Fq 'nth-child(n+4){margin-top:-24px}' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
+          grep -Fq 'nth-child(n+3){margin-top:-9px}' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
+          for theme in technic botanicals icons; do
+            grep -Fq "[data-theme=\"$theme\"] .archiv-theme-set-photo" "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
+          done
           grep -Fq '.lego-theme.archiv-theme-illustrated:hover{transform:none;filter:none;box-shadow:none}' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
           ! grep -Fq 'Staging sketch v2: individually drawn pencil strokes' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
           for name in city pokemon star-wars technic botanicals icons; do
@@ -422,6 +429,8 @@ jobs:
           curl --fail --silent --show-error --location --max-time 20 "$BASE/lego-preview/$STYLE_PATH?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-preview-styles.css
           grep -Fq '.archiv-theme-brick-art' /tmp/archiv-live-preview-styles.css
           grep -Fq '.archiv-theme-set-photo' /tmp/archiv-live-preview-styles.css
+          grep -Fq 'margin-top:-24px' /tmp/archiv-live-preview-styles.css
+          grep -Fq 'margin-top:-9px' /tmp/archiv-live-preview-styles.css
           curl --fail --silent --show-error --location --max-time 20 "$BASE/lego-preview/$SCRIPT_PATH?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-preview-script.js
           grep -Fq 'archiv-orange-sketch-20261106.webp' /tmp/archiv-live-preview-script.js
           grep -Fq 'theme-city.webp' /tmp/archiv-live-preview-script.js
