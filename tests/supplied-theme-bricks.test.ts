@@ -38,6 +38,12 @@ describe("user supplied hand-drawn LEGO theme artwork",()=>{
     expect(css.slice(css.lastIndexOf(selector),css.lastIndexOf(selector)+180)).toContain("width:"+width);
   }
 
+  // Shift only Botanicals and Icons photos upward, retaining existing sizes.
+  // Technic and the three other featured themes stay in their prior positions.
+  const featuredCSS=css.slice(css.indexOf("/* Staging: closer hand-drawn brick rows"));
+  expect(featuredCSS).toContain('left:19.5%;top:27.5%;width:61%;height:33%;');
+  expect(featuredCSS).toContain('left:20%;top:27.5%;width:60%;height:33%;');
+  expect(featuredCSS).toContain('left:20.5%;top:31.7%;width:59%;height:32%;');
   expect(css).toContain(".lego-theme-art{border-radius:0");
  });
 });
