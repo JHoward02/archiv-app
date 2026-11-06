@@ -760,7 +760,9 @@
 
 /* Six featured LEGO theme cards use the user's hand-drawn brick artwork,
    rather than simulated studs, hatching, or generic CSS label panels.
-   No changes to the Rebrickable set photos or their source URLs. */
+   No changes to the Rebrickable set photos or their source URLs.
+   Keep isolation:auto so multiply blending removes the white matte against the cream page.
+   Avoid transform/filter hover stacking contexts that isolate the white matte again. */
 .lego-theme.archiv-theme-illustrated,
 .lego-theme.archiv-theme-illustrated:nth-child(even),
 .lego-theme.archiv-theme-illustrated.current{
@@ -780,7 +782,7 @@
   box-shadow:none;
   filter:none;
   transform:none;
-  isolation:isolate;
+  isolation:auto;
   line-height:0;
   text-align:left;
   appearance:none;
@@ -810,8 +812,8 @@
   mix-blend-mode:multiply;
   pointer-events:none;
 }
-.lego-theme.archiv-theme-illustrated:hover{transform:translateY(-2px);filter:brightness(1.025);box-shadow:none}
-.lego-theme.archiv-theme-illustrated:active{transform:translateY(1px);filter:none}
+.lego-theme.archiv-theme-illustrated:hover{transform:none;filter:none;box-shadow:none}
+.lego-theme.archiv-theme-illustrated:active{transform:none;filter:none}
 .lego-theme.archiv-theme-illustrated:focus-visible{
   outline:3px solid #135d45!important;
   outline-offset:1px!important;

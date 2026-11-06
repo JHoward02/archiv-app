@@ -21,6 +21,12 @@ describe("user supplied hand-drawn LEGO theme artwork",()=>{
   expect(app).toContain('b.append(brick,photo)');
   expect(css).toContain('.lego-theme.archiv-theme-illustrated .archiv-theme-set-photo');
   expect(css).toContain('mix-blend-mode:multiply');
+  // Supplied RGB artwork's white matte must blend into the page, not form white tiles.
+  const illustrated=css.slice(css.indexOf("/* Six featured LEGO theme cards"));
+  expect(illustrated).toContain("isolation:auto;");
+  expect(illustrated).not.toContain("isolation:isolate;");
+  expect(illustrated).toContain(".lego-theme.archiv-theme-illustrated:hover{transform:none;filter:none;box-shadow:none}");
+  expect(illustrated).toContain(".lego-theme.archiv-theme-illustrated:active{transform:none;filter:none}");
   expect(css).not.toContain("Staging sketch v2");
   expect(css).toContain(".lego-theme-art{border-radius:0");
  });
