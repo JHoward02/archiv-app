@@ -755,3 +755,104 @@
 .archiv-auth-legal{margin:14px 0 0;font-size:12px;line-height:1.6}
 .archiv-auth-legal a{color:#145b48;font-weight:750;text-decoration:underline}
 @media(max-width:550px){.archiv-auth-methods{grid-template-columns:1fr}.archiv-auth-email-form{padding:14px}.archiv-auth-method{min-height:48px}}
+
+/* Staging: colored-pencil LEGO theme bricks, matching the hand-sketched orange
+   Archív logo. Only the tile shell, studs and label change. Keep each theme's
+   original --brick / --brick-light / --brick-dark palette and its photo intact. */
+.lego-theme {
+  border:2px solid #2d2927;
+  border-radius:9px 7px 11px 8px / 8px 12px 8px 10px;
+  background-color:var(--brick);
+  background-image:
+    repeating-linear-gradient(162deg,transparent 0 3px,#fff7e523 3px 4px,transparent 4px 8px),
+    repeating-linear-gradient(24deg,transparent 0 5px,#221d1b19 5px 6px,transparent 6px 11px),
+    repeating-linear-gradient(172deg,transparent 0 9px,#fff6df19 9px 10px,transparent 10px 15px);
+  box-shadow:1px 2px 0 #292522b3,3px 5px 0 var(--brick-dark),5px 10px 17px -13px #2925228c;
+  transform:rotate(-.28deg);
+  transition:transform .16s ease,box-shadow .16s ease;
+}
+.lego-theme:nth-child(2n) {
+  transform:rotate(.28deg);
+  border-radius:7px 11px 8px 12px / 11px 8px 11px 8px;
+}
+.lego-theme::after {
+  content:"";
+  position:absolute;
+  inset:3px;
+  z-index:0;
+  pointer-events:none;
+  border:1px solid #241f1c30;
+  border-radius:8px 9px 7px 9px / 9px 7px 11px 7px;
+  box-shadow:inset 0 0 1px #fffdf845;
+}
+.lego-theme .lego-brick-window {
+  position:relative;
+  z-index:1;
+  border:2px solid #39312a;
+  border-radius:7px 5px 8px 6px;
+  background:#fffdf8;
+  box-shadow:1px 1px 0 #231f1b3b;
+}
+/* Photographs remain untouched: no change to .lego-theme-art. */
+.lego-theme .lego-brick-studs {
+  z-index:2;
+  top:-15px;
+  height:19px;
+}
+.lego-theme .lego-brick-stud {
+  height:19px;
+  border:1.5px solid #302c28;
+  border-radius:49% 53% 7px 8px / 57% 57% 7px 8px;
+  background-color:var(--brick);
+  background-image:
+    repeating-linear-gradient(168deg,transparent 0 3px,#fff5df42 3px 4px,transparent 4px 8px),
+    repeating-linear-gradient(22deg,transparent 0 6px,#211c1a1f 6px 7px,transparent 7px 11px);
+  box-shadow:1px 1px 0 #211e1a66;
+}
+.lego-theme .lego-brick-stud::before {
+  inset:-4px -1.5px 7px;
+  border:1.5px solid #302c28;
+  border-radius:51% 47% 52% 48% / 47% 53% 48% 52%;
+  background-color:var(--brick-light);
+  background-image:repeating-linear-gradient(157deg,transparent 0 3px,#fff5e05e 3px 4px,transparent 4px 8px);
+  box-shadow:none;
+  transform:rotate(-2deg);
+}
+.lego-theme .lego-brick-stud:nth-child(even)::before {
+  transform:rotate(2deg);
+}
+.lego-theme .lego-theme-name {
+  position:relative;
+  z-index:1;
+  color:#fffdf8;
+  font-style:italic;
+  font-weight:700;
+  letter-spacing:.005em;
+  text-shadow:1px 1px 0 #211c1c93;
+}
+.lego-theme:hover {
+  transform:translateY(-3px) rotate(0deg);
+  box-shadow:1px 3px 0 #292522cc,4px 8px 0 var(--brick-dark),7px 14px 17px -12px #2925228c;
+}
+.lego-theme:active {transform:translateY(1px) rotate(0)}
+.lego-theme.current {
+  background-color:var(--brick);
+  background-image:
+    repeating-linear-gradient(162deg,transparent 0 3px,#fff7e523 3px 4px,transparent 4px 8px),
+    repeating-linear-gradient(24deg,transparent 0 5px,#221d1b19 5px 6px,transparent 6px 11px);
+  filter:none;
+  box-shadow:1px 2px 0 #292522b3,3px 5px 0 var(--brick-dark),0 0 0 3px #fffdf8,0 0 0 5px #2d2927;
+}
+.lego-theme .lego-theme-selected {z-index:2}
+.lego-theme:focus-visible {
+  outline:3px solid #0f5648!important;
+  outline-offset:5px!important;
+}
+@media(max-width:640px){
+  .lego-theme .lego-brick-studs {top:-11px;height:13px}
+  .lego-theme .lego-brick-stud {height:13px}
+  .lego-theme .lego-brick-stud::before {bottom:5px;inset-block-start:-3px}
+}
+@media(prefers-reduced-motion:reduce){
+  .lego-theme {transition:none}
+}
