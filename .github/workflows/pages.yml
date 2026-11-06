@@ -294,6 +294,14 @@ jobs:
           ! grep -Fq 'impactStat' dist-web/index.html
           printf '{"source_commit":"%s","branch":"feature/owned-set-photo-review-20261031","profile_backend_ready":true,"photo_backend_ready":true,"legal_source_commit":"%s"}\n' "$RELEASE_SHA" "$RELEASE_SHA" > dist-web/build-info.json
           echo "Production approved release: $RELEASE_SHA"
+      # GA4 is an audited post-build overlay. The approved app commit stays pinned;
+      # no analytics code is added to LEGO preview or the collector application.
+      - name: Install Archív GA4 and publish privacy disclosure
+        run: |
+          node scripts/install-archiv-ga4.mjs dist-web
+          grep -Fq 'G-HY619R4T32' dist-web/index.html
+          grep -Fq 'Google Analytics 4:' dist-web/privacy.html
+          node -e 'const m=require("./dist-web/build-info.json"); if(m.ga4_measurement_id!=="G-HY619R4T32") process.exit(1)'
       - uses: actions/configure-pages@v5
         with:
           enablement: true
@@ -410,6 +418,9 @@ jobs:
           curl --fail --silent --show-error --location --max-time 20 "$BASE/lego-preview/terms.html?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-preview-terms.html
           grep -Fq 'src="./archiv-orange-sketch-20261106.webp"' /tmp/archiv-live-preview-terms.html
           echo 'Live staging JS, legal-page reference and orange-sketch asset verified; production unchanged.'
+          # Verify published root measurements and legal disclosure (not just build output).
+          grep -Fq 'G-HY619R4T32' /tmp/archiv-production-index.html
+          grep -Fq 'Google Analytics 4:' /tmp/archiv-production-privacy.html
           grep -Fq 'Archív | LEGO Collections' /tmp/archiv-production-index.html
           ! grep -Fq 'utt.impactcdn.com' /tmp/archiv-production-index.html
           ! grep -Fq 'impactStat' /tmp/archiv-production-index.html
