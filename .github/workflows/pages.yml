@@ -373,6 +373,10 @@ jobs:
         # GitHub Pages may take longer on full catalog deployments.
         # The approved production app is pinned to the reviewed November 6 source.
         uses: actions/deploy-pages@v4
+        with:
+          # Full two-copy LEGO catalog takes longer than the action's default 10 min.
+          # This changes only the deployment time limit, not the approved app code.
+          timeout: 1800000
 
       - name: Verify live production build and photo policies
         shell: bash
