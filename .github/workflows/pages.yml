@@ -172,11 +172,15 @@ jobs:
           cp -R "$RUNNER_TEMP/archiv-data-source/public/lego-parts/." "$RUNNER_TEMP/archiv-lego-preview/public/lego-parts/"
           # Enable profile preferences and self-service deletion for the staging preview.
           # Production is compiled separately using the approved immutable release.
-          # CSS-only colored-pencil theme bricks. Keep original theme palettes and photographs.
+          # Original user-illustrated theme bricks, with set photographs unchanged.
           # Six user-provided illustrated bricks replace the faux CSS studs and labels.
           # Keep their Rebrickable set photographs unchanged.
           grep -Fq 'Six featured LEGO theme cards use the user' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
           grep -Fq 'b.append(brick,photo)' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
+          # The user-supplied bricks contain white pixels outside the drawing.
+          # Keep the multiply-blended images non-isolated so the white matches the page.
+          grep -Fq 'isolation:auto;' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
+          grep -Fq '.lego-theme.archiv-theme-illustrated:hover{transform:none;filter:none;box-shadow:none}' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
           ! grep -Fq 'Staging sketch v2: individually drawn pencil strokes' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
           for name in city pokemon star-wars technic botanicals icons; do
             test -s "$RUNNER_TEMP/archiv-lego-preview/public/theme-bricks/theme-$name.webp"
