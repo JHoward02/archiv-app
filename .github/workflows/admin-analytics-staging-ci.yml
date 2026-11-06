@@ -41,5 +41,8 @@ jobs:
           grep -Rql 'affiliate_click' dist-web/assets
           grep -Rql 'Your audience, at a glance' dist-web/assets
           grep -Rql 'Google Analytics' dist-web/assets
+          # Confirm both public OAuth client and property settings were baked into staging.
+          grep -Rql '562944371' dist-web/assets
+          grep -Rql '226810242425-v9lem1u8p2q5qaenvco1ldbi354rglm5.apps.googleusercontent.com' dist-web/assets
           test -s dist-web/privacy.html
           test -s dist-web/terms.html
