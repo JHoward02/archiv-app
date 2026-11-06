@@ -845,3 +845,96 @@
 .lego-theme.archiv-theme-illustrated[data-theme="icons"] .archiv-theme-set-photo{
   left:20%;top:27.5%;width:60%;height:33%;
 }
+
+
+/* Archív private Insights dashboard. Responsive, accessible and data-first. */
+.archiv-insights{max-width:1240px;margin:20px auto 65px;color:#203340;min-height:460px}
+.archiv-insight-hero{display:flex;align-items:end;justify-content:space-between;gap:26px;padding:26px 0 21px;border-bottom:1px solid #dbd4c8}
+.archiv-insight-eyebrow{font-size:11px;letter-spacing:.17em;text-transform:uppercase;font-weight:800;color:#ae6428;margin:0 0 7px}
+.archiv-insight-hero h1{font-family:Georgia,serif;font-size:clamp(30px,3.4vw,47px);font-weight:normal;letter-spacing:-.035em;margin:0 0 8px}
+.archiv-insight-small{font-size:13px;line-height:1.55;color:#726a5e;margin:0}
+.archiv-insight-actions{display:flex;flex-direction:column;align-items:flex-end;gap:9px;flex-shrink:0}
+.archiv-insight-periods{display:flex;background:#eee7dd;border-radius:8px;padding:4px;gap:3px}
+.archiv-insight-periods button{border:0;background:transparent;border-radius:6px;min-width:60px;min-height:35px;font-size:12px;font-weight:700;color:#66584b;padding:7px 12px;cursor:pointer}
+.archiv-insight-periods button.active{background:#fffdf7;color:#203340;box-shadow:0 1px 4px #2d1b071a}
+.archiv-insight-refresh,.archiv-insight-connect{font:inherit;font-size:13px;font-weight:700;padding:9px 15px;min-height:40px;border-radius:7px;border:1px solid #c9bfb1;background:#fffdfa;color:#203340;cursor:pointer}
+.archiv-insight-refresh:hover,.archiv-insight-connect:hover{border-color:#9b662b;background:#fff7e9}
+.archiv-insights button:disabled{opacity:.5;cursor:not-allowed}
+.archiv-insights button:focus-visible,.archiv-insights a:focus-visible,.archiv-insights summary:focus-visible{outline:3px solid #ad6420;outline-offset:3px}
+.archiv-insight-banner{margin:22px 0;border:1px solid #dcc8ac;border-left:4px solid #aa6d2f;padding:17px 21px;border-radius:9px;background:#fdf9f1;display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+.archiv-insight-banner>strong{font-size:16px}
+.archiv-insight-banner .archiv-insight-small{max-width:890px}
+.archiv-insight-connect{color:white;background:#233e4f;border-color:#233e4f}
+.archiv-insight-connect:hover{background:#142e40;color:#fff}
+.archiv-insight-link{font-size:13px;color:#28495d;text-decoration:underline;text-underline-offset:3px}
+.archiv-insight-error{background:#fff1ee;border:1px solid #e3aba0;color:#8d3028;border-radius:8px;padding:12px 15px;margin:14px 0}
+.archiv-insight-section-header{margin:35px 0 17px}
+.archiv-insight-section-header h2{margin:0 0 5px!important;font:normal 25px Georgia,serif!important;color:#253947}
+.archiv-insight-metrics{display:grid;gap:14px}
+.archiv-insight-audience{grid-template-columns:repeat(3,minmax(0,1fr))}
+.archiv-insight-quick{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:14px}
+.archiv-insight-metric{min-width:0;min-height:145px;padding:22px 22px 20px;border-radius:10px;border:1px solid #ded4c5;background:#fffdf9;display:flex;flex-direction:column;align-items:flex-start;gap:9px}
+.archiv-insight-metric.is-featured{background:#243e4e;color:#fff;border-color:#243e4e}
+.archiv-insight-metric-label{font-size:12px;font-weight:750;letter-spacing:.015em;color:#5e625e}
+.archiv-insight-metric-number{font:normal clamp(29px,3vw,42px) Georgia,serif;letter-spacing:-.035em;color:#203a4b}
+.archiv-insight-metric .archiv-insight-small{margin-top:auto}
+.archiv-insight-metric.is-featured .archiv-insight-metric-label{color:#f1d2a9}
+.archiv-insight-metric.is-featured .archiv-insight-metric-number{color:#fff}
+.archiv-insight-metric.is-featured .archiv-insight-small{color:#d2dadd}
+.archiv-insight-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+.archiv-insight-panel{background:#fffdf9;border:1px solid #ded4c5;border-radius:10px;padding:23px 24px;min-width:0}
+.archiv-insight-panel h3{font-size:16px;font-weight:750;margin:0 0 21px;color:#233d4c}
+.archiv-insight-muted{font-size:13px;line-height:1.6;color:#807669;margin:20px 0}
+.archiv-insight-chart-panel{min-height:250px}
+.archiv-insight-chart{height:210px;display:flex;align-items:stretch;gap:3px;overflow-x:auto;max-width:100%;padding:0 0 5px}
+.archiv-insight-chart-day{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;flex:1 0 7px;min-width:7px;max-width:42px}
+.archiv-insight-chart-day>span{font-size:9px;color:#82796c;white-space:nowrap;transform:rotate(-55deg);transform-origin:center;min-height:33px;padding-top:12px}
+.archiv-insight-chart-rail{display:flex;align-items:flex-end;width:100%;max-width:31px;height:150px;background:#f1ebe1;border-radius:3px 3px 0 0;overflow:hidden}
+.archiv-insight-chart-fill{width:100%;background:#a66d31;border-radius:3px 3px 0 0}
+.archiv-insight-statlines{display:grid;grid-template-columns:1fr;gap:0}
+.archiv-insight-statlines>div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #eee7dd;padding:10px 0;font-size:13px}
+.archiv-insight-statlines>div:last-child{border-bottom:0}
+.archiv-insight-statlines span{color:#70695e}
+.archiv-insight-statlines strong{color:#203a4b;font-variant-numeric:tabular-nums}
+.archiv-insight-rankings{display:flex;flex-direction:column;gap:13px}
+.archiv-insight-ranked-top{display:flex;justify-content:space-between;gap:15px;font-size:13px;margin-bottom:5px}
+.archiv-insight-ranked-top span{overflow-wrap:anywhere}
+.archiv-insight-ranked-top strong{font-variant-numeric:tabular-nums;color:#233d4c}
+.archiv-insight-rail{height:7px;border-radius:9px;background:#efe9df;overflow:hidden}
+.archiv-insight-fill{display:block;height:100%;background:#a37138;border-radius:9px}
+.archiv-insight-annotation{font-size:12px;line-height:1.6;color:#6b655b;margin:15px 3px 28px}
+.archiv-insight-drilldown{background:#fffdf9;border:1px solid #ded4c5;border-radius:10px;margin:24px 0;overflow:hidden}
+.archiv-insight-drilldown>summary{padding:18px 22px;font-size:15px;font-weight:700;cursor:pointer}
+.archiv-insight-drilldown-content{padding:0 22px 22px}
+.archiv-insight-people{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.archiv-insight-people button{border:1px solid #d1c5b5;border-radius:6px;background:#fffdf9;padding:8px 11px;cursor:pointer;font-size:12px}
+.archiv-insight-people button.active{background:#243e4e;border-color:#243e4e;color:white}
+.archiv-insight-person-detail{background:#faf4e9;border-radius:8px;padding:18px}
+.archiv-insight-person-detail>strong{display:block;margin-bottom:5px}
+.archiv-insight-person-event{display:grid;grid-template-columns:130px minmax(100px,1fr) minmax(90px,1fr);gap:10px;font-size:12px;padding:10px 0;border-top:1px solid #e2d9cb}
+.archiv-insight-person-event span{overflow-wrap:anywhere}
+.archiv-insight-footnote{padding:18px 23px;border-top:1px solid #d9d1c4;margin:25px 0 27px}
+.archiv-insight-footnote strong{font-size:13px}
+.archiv-insight-footnote p{margin-top:8px}
+.archiv-insight-moderation{margin:25px 0 30px}
+.archiv-insight-moderation>h2{font:normal 24px Georgia,serif;margin:0 0 13px}
+@media(max-width:960px){
+ .archiv-insight-quick{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .archiv-insight-grid{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+ .archiv-insights{margin:10px auto 50px}
+ .archiv-insight-hero{flex-direction:column;align-items:flex-start;padding-top:14px;gap:16px}
+ .archiv-insight-actions{width:100%;flex-direction:row;justify-content:space-between;align-items:center;gap:10px}
+ .archiv-insight-periods button{padding:8px;min-width:46px}
+ .archiv-insight-section-header{margin-top:28px}
+ .archiv-insight-section-header h2{font-size:23px!important}
+ .archiv-insight-audience{grid-template-columns:1fr}
+ .archiv-insight-quick{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:10px}
+ .archiv-insight-metric{min-height:0;padding:17px;gap:8px}
+ .archiv-insight-metric-number{font-size:31px}
+ .archiv-insight-metric .archiv-insight-small{font-size:11px}
+ .archiv-insight-panel{padding:19px 17px}
+ .archiv-insight-person-event{grid-template-columns:90px 1fr}
+ .archiv-insight-person-event>span:last-child{grid-column:2}
+}
