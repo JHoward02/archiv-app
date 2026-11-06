@@ -1,0 +1,9 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.archiv.fieldtest" android:versionCode="1" android:versionName="0.1.0-field-test">
+  <uses-sdk android:minSdkVersion="23" android:targetSdkVersion="36"/>
+  <queries><intent><action android:name="android.intent.action.VIEW"/><category android:name="android.intent.category.BROWSABLE"/><data android:scheme="https"/></intent><intent><action android:name="android.support.customtabs.action.CustomTabsService"/></intent></queries>
+  <application android:label="Archív Test" android:icon="@drawable/icon" android:theme="@style/AppTheme" android:allowBackup="false" android:supportsRtl="true" android:usesCleartextTraffic="false">
+    <activity android:name=".MainActivity" android:exported="true">
+      <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+    </activity>
+  </application>
+</manifest>
