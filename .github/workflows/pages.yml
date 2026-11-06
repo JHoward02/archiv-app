@@ -173,13 +173,20 @@ jobs:
           # Enable profile preferences and self-service deletion for the staging preview.
           # Production is compiled separately using the approved immutable release.
           # CSS-only colored-pencil theme bricks. Keep original theme palettes and photographs.
-          # Stage only the redesigned brick element, never the set photos or approved app code.
-          grep -Fq 'Staging sketch v2: individually drawn pencil strokes' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
-          grep -Fq 'background-color:var(--brick);' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
-          grep -Fq 'background-color:var(--brick-light);' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
-          ! grep -Fq 'repeating-linear-gradient(162deg' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
+          # Six user-provided illustrated bricks replace the faux CSS studs and labels.
+          # Keep their Rebrickable set photographs unchanged.
+          grep -Fq 'Six featured LEGO theme cards use the user' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
+          grep -Fq 'b.append(brick,photo)' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
+          ! grep -Fq 'Staging sketch v2: individually drawn pencil strokes' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
+          for name in city pokemon star-wars technic botanicals icons; do
+            test -s "$RUNNER_TEMP/archiv-lego-preview/public/theme-bricks/theme-$name.webp"
+            echo "Staged user's illustrated brick: $name"
+          done
           VITE_PROFILE_BACKEND_READY=true VITE_PHOTO_BACKEND_READY=true npm --prefix "$RUNNER_TEMP/archiv-lego-preview" run build:web
-          grep -Rql 'data:image/svg+xml' "$RUNNER_TEMP/archiv-lego-preview/dist-web/assets" || { echo "::error::Drawn pencil strokes missing from staging assets"; exit 1; }
+          grep -Rql 'archiv-theme-illustrated' "$RUNNER_TEMP/archiv-lego-preview/dist-web/assets" || { echo "::error::User supplied themed brick components missing from preview"; exit 1; }
+          for name in city pokemon star-wars technic botanicals icons; do
+            cmp "$RUNNER_TEMP/archiv-lego-preview/public/theme-bricks/theme-$name.webp" "$RUNNER_TEMP/archiv-lego-preview/dist-web/theme-bricks/theme-$name.webp"
+          done
           mkdir -p dist-web/lego-preview
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/lego-preview/
           printf '{"source_commit":"%s","branch":"feature/owned-set-photo-review-20261031","photo_backend_ready":true}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
@@ -407,11 +414,27 @@ jobs:
           PY
           STYLE_PATH="$(cat /tmp/archiv-preview-style-path)"
           curl --fail --silent --show-error --location --max-time 20 "$BASE/lego-preview/$STYLE_PATH?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-preview-styles.css
-          grep -Fq 'data:image/svg+xml' /tmp/archiv-live-preview-styles.css
-          grep -Fq '.lego-theme .lego-brick-stud' /tmp/archiv-live-preview-styles.css
+          grep -Fq '.archiv-theme-brick-art' /tmp/archiv-live-preview-styles.css
+          grep -Fq '.archiv-theme-set-photo' /tmp/archiv-live-preview-styles.css
           curl --fail --silent --show-error --location --max-time 20 "$BASE/lego-preview/$SCRIPT_PATH?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-preview-script.js
           grep -Fq 'archiv-orange-sketch-20261106.webp' /tmp/archiv-live-preview-script.js
+          grep -Fq 'theme-city.webp' /tmp/archiv-live-preview-script.js
+          grep -Fq 'theme-icons.webp' /tmp/archiv-live-preview-script.js
           ! grep -Fq 'BASE_URL+"archiv-red-brick-accent-logo.webp"' /tmp/archiv-live-preview-script.js
+          # Verify the exact approved illustrated assets on public GitHub Pages.
+          curl --fail --silent --show-error --location --max-time 20 "$BASE/lego-preview/theme-bricks/theme-city.webp?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-brick-city.webp
+          printf '%s  %s\n' "cc373db24bfb2e8938dbc0f8f561265e6a07b6deef3e7850a98bad6c1f870ec4" "/tmp/archiv-live-brick-city.webp" | sha256sum --check
+          curl --fail --silent --show-error --location --max-time 20 "$BASE/lego-preview/theme-bricks/theme-pokemon.webp?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-brick-pokemon.webp
+          printf '%s  %s\n' "8f92d2d5ccd95bf013b5ba4b65ff250fff35f511f31efe6c5eef99414fcd9676" "/tmp/archiv-live-brick-pokemon.webp" | sha256sum --check
+          curl --fail --silent --show-error --location --max-time 20 "$BASE/lego-preview/theme-bricks/theme-star-wars.webp?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-brick-star-wars.webp
+          printf '%s  %s\n' "3ff29ca62a9c05af99daaa7fa360b3b6f18c9189c04769ca6b336f79b4e0c7bc" "/tmp/archiv-live-brick-star-wars.webp" | sha256sum --check
+          curl --fail --silent --show-error --location --max-time 20 "$BASE/lego-preview/theme-bricks/theme-technic.webp?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-brick-technic.webp
+          printf '%s  %s\n' "7b878c01c73ae3f01e7e812708c8ae9c1dcc915e4d86902c812a9e636c55e387" "/tmp/archiv-live-brick-technic.webp" | sha256sum --check
+          curl --fail --silent --show-error --location --max-time 20 "$BASE/lego-preview/theme-bricks/theme-botanicals.webp?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-brick-botanicals.webp
+          printf '%s  %s\n' "055fd6654dae156365f3565de36f9700b639eeea4d1d4465ea12023373c9c72f" "/tmp/archiv-live-brick-botanicals.webp" | sha256sum --check
+          curl --fail --silent --show-error --location --max-time 20 "$BASE/lego-preview/theme-bricks/theme-icons.webp?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-brick-icons.webp
+          printf '%s  %s\n' "15f5e889e03bdee65a2e6b66f8ac031bf52421bd56506667d39492d8e4cc9131" "/tmp/archiv-live-brick-icons.webp" | sha256sum --check
+          echo 'All six user-supplied illustrated bricks are live and unchanged.'
           # The asset itself must match the corrected user-supplied art byte for byte.
           curl --fail --silent --show-error --location --max-time 20 "$BASE/lego-preview/archiv-orange-sketch-20261106.webp?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-preview-logo.webp
           printf '%s  %s\n' "7ef92907b5f43d5f6ff4f351f3b6a732e48d9e24581a1d3b4c4c714a82cfc368" "/tmp/archiv-live-preview-logo.webp" | sha256sum --check
