@@ -8,12 +8,12 @@ const privacy=readFileSync("public/privacy.html","utf8");
 
 describe("consistent Archív logo and set page navigation",()=>{
  it("uses the red brick accent artwork on every app route and both legal pages",()=>{
-  const logo=readFileSync("public/archiv-red-brick-accent-logo.webp");
+  const logo=readFileSync("public/archiv-orange-sketch-20261106.webp");
   expect(logo.subarray(0,4).toString()).toBe("RIFF");
   expect(logo.subarray(8,12).toString()).toBe("WEBP");
-  expect(app).toContain('art.src=import.meta.env.BASE_URL+"archiv-red-brick-accent-logo.webp"');
-  expect(terms).toContain('<img src="./archiv-red-brick-accent-logo.webp" alt="Archív Collect"');
-  expect(privacy).toContain('<img src="./archiv-red-brick-accent-logo.webp" alt="Archív Collect"');
+  expect(app).toContain('art.src=import.meta.env.BASE_URL+"archiv-orange-sketch-20261106.webp"');
+  expect(terms).toContain('<img src="./archiv-orange-sketch-20261106.webp" alt="Archív Collect"');
+  expect(privacy).toContain('<img src="./archiv-orange-sketch-20261106.webp" alt="Archív Collect"');
   expect(terms).toContain('href="./" aria-label="Archív home"');
   expect(privacy).toContain('href="./" aria-label="Archív home"');
  });
@@ -21,7 +21,7 @@ describe("consistent Archív logo and set page navigation",()=>{
   expect(app).toContain('const header=e("header","lego-header")');
   expect(app).not.toContain('header.classList.add("lego-theme-header")');
   expect(app).not.toContain('header.classList.add("lego-detail-header")');
-  expect(app).toContain('const art=e("img");art.src=import.meta.env.BASE_URL+"archiv-red-brick-accent-logo.webp"');
+  expect(app).toContain('const art=e("img");art.src=import.meta.env.BASE_URL+"archiv-orange-sketch-20261106.webp"');
   expect(styles).toContain(".lego-logo{width:min(560px,100%)}");
  });
  it("blends the alternate logo into the warm background without a white panel",()=>{
