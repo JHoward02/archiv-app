@@ -130,7 +130,7 @@ export async function loadGoogleAnalytics(
     fetchReport(["totalUsers", "newUsers", "sessions", "screenPageViews", "engagedSessions", "engagementRate", "averageSessionDuration"]),
     fetchReport(["totalUsers", "sessions", "screenPageViews", "engagedSessions"], ["date"], {limit:"100", orderBys:[{dimension:{dimensionName:"date"}}]}),
     fetchReport(["sessions"], ["sessionDefaultChannelGroup"], {limit:"12",orderBys:[{metric:{metricName:"sessions"},desc:true}]}),
-    fetchReport(["screenPageViews"], ["pagePath"], {limit:"12",orderBys:[{metric:{metricName:"screenPageViews"},desc:true}]}),
+    fetchReport(["screenPageViews"], ["pageLocation"], {limit:"12",orderBys:[{metric:{metricName:"screenPageViews"},desc:true}]}),
     fetchReport(["totalUsers"], ["deviceCategory"], {limit:"10",orderBys:[{metric:{metricName:"totalUsers"},desc:true}]}),
     fetchReport(["eventCount"], ["eventName"], {limit:"100"}),
     fetchOptional(["totalUsers"], ["customEvent:visitor_status"], "archiv_visitor_status"),
