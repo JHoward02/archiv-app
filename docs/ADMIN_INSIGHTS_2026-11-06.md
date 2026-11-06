@@ -63,3 +63,13 @@ GA4 custom dimensions generally do **not** backfill historical reports. Data lat
 ## Before launch
 
 Verify the staging CI passes, confirm responsive rendering by signing in to the admin account at a preview build, connect GA4 read-only and confirm actual counts and clicks, verify the link does not double-count when clicked from Wishlist, confirm Privacy matches the released telemetry, and obtain explicit owner approval before changing the pinned production SHA.
+
+## Connected Google Cloud configuration (2026-11-06)
+
+- Archív numeric Google Analytics 4 property ID: `562944371` (distinct from the GA4 Measurement ID `G-HY619R4T32`).
+- Google Cloud project: `archiv-3f5df`; Google Analytics Data API enabled.
+- Browser-only OAuth client **Archív Admin Analytics** created with `https://www.archivcollect.com` and `https://jhoward02.github.io` as allowed JavaScript origins; redirect URIs not used by the token-popup flow.
+- `analytics.readonly` sensitive scope added, Google OAuth branding verified and published. Sensitive-scope verification is separate and not yet complete.
+- Staging `.env.production` includes the numeric GA4 property ID and a public OAuth **client ID** only, no client secret. Verify embedded values via the CI bundle smoke tests.
+- GitHub Pages deployment run `42208026232` built successfully but the Pages service remained in `syncing_files` and timed out at the deployment step. Its staging URL cannot be claimed current until a subsequent successful publish and live build-info verification. Approved production source SHA remains `75f2647aaddf77bdef166a14d7e86cb0b3f2db8e`.
+- Do not infer that visitor counts or affiliate clicks are confirmed until the administrator actually completes the browser OAuth flow and Google Analytics API reports load. The live production build does not yet emit the new guest/affiliate events, which will start accumulating after explicit promotion.
