@@ -14,7 +14,6 @@ function ga4Fetch(customDimensions=true){
     const headers=options.headers as Record<string,string>;
     requests.push({url,body,headers});
     const dims=(body.dimensions as {name:string}[]||[]).map(x=>x.name);
-    const metrics=(body.metrics as {name:string}[]).map(x=>x.name);
     if(!customDimensions&&dims.some(x=>x.startsWith("customEvent:")))return {ok:false,status:400,json:async()=>({error:{message:"Custom dimension unavailable"}})} as Response;
     let rows:unknown[]=[];
     if(!dims.length)rows=[row([],["80","50","101","235","70","0.6930693","75.4"])];
@@ -75,7 +74,8 @@ describe("Archív public click and visitor event instrumentation",()=>{
   it("emits one affiliate event with a public set number, placement and visitor state",()=>{
     const gtag=vi.fn();(window as Window&{gtag?:unknown}).gtag=gtag;
     trackAffiliateLink("75313-1","wishlist",false);
-    expect(gtag).toHaveBeenCalledExactlyOnceWith("event","affiliate_click",{
+    expect(gtag).toHaveBeenCalledTimes(1);
+    expect(gtag).toHaveBeenCalledWith("event","affiliate_click",{
       marketplace:"ebay",set_number:"75313-1",link_placement:"wishlist",visitor_status:"guest"
     });
   });
