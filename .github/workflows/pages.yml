@@ -111,11 +111,12 @@ jobs:
           grep -q 'const collectorRoute=collectorViewFromHash()' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
           # Stop preview publication if the LEGO-specific logo asset is missing again.
           test -s "$RUNNER_TEMP/archiv-lego-preview/public/archiv-lego-logo.png"
-          test -s "$RUNNER_TEMP/archiv-lego-preview/public/archiv-red-brick-accent-logo.webp"
-          # The staging site now uses the exact user-approved corrected orange sketch.
-          # Its uploaded art says "Your collection lives here"; production stays pinned.
-          test "$(git -C "$RUNNER_TEMP/archiv-lego-preview" hash-object public/archiv-red-brick-accent-logo.webp)" = "bb2cb8b4e56ddf010028da16609f36a2aab5bb4f"
-          grep -Fq 'archiv-red-brick-accent-logo.webp' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
+          test -s "$RUNNER_TEMP/archiv-lego-preview/public/archiv-orange-sketch-20261106.webp"
+          # Cache-busting unique filename is essential. Reusing the production logo URL
+          # allowed a user's browser to show a cached previous image in staging.
+          test "$(git -C "$RUNNER_TEMP/archiv-lego-preview" hash-object public/archiv-orange-sketch-20261106.webp)" = "bb2cb8b4e56ddf010028da16609f36a2aab5bb4f"
+          grep -Fq 'archiv-orange-sketch-20261106.webp' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
+          ! grep -Fq 'art.src=import.meta.env.BASE_URL+"archiv-red-brick-accent-logo.webp"' "$RUNNER_TEMP/archiv-lego-preview/src/lego-entry.ts"
           # Staging-only: let the alternate logo blend into the cream page and inset the account control.
           grep -q 'mix-blend-mode:multiply' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
           grep -q 'lego-header::before{content:none}' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
@@ -245,11 +246,15 @@ jobs:
           test -s public/attribution.html
           cp public/attribution.html dist-web/attribution.html
           cp public/attribution.html dist-web/lego-preview/attribution.html
-          # Correct intrinsic dimensions only for the staging attribution page.
-          sed -i 's/width="1400" height="466"/width="720" height="360"/g' dist-web/lego-preview/attribution.html
-          # Both public sites have the same asset filename but distinct approved contents.
-          printf '%s  %s\n' "7ef92907b5f43d5f6ff4f351f3b6a732e48d9e24581a1d3b4c4c714a82cfc368" "dist-web/lego-preview/archiv-red-brick-accent-logo.webp" | sha256sum --check
-          ! cmp -s dist-web/archiv-red-brick-accent-logo.webp dist-web/lego-preview/archiv-red-brick-accent-logo.webp
+          # Attribution is copied from main, so fix its staging logo reference too.
+          sed -i 's/archiv-red-brick-accent-logo.webp/archiv-orange-sketch-20261106.webp/g;s/width="1400" height="466"/width="720" height="360"/g' dist-web/lego-preview/attribution.html
+          # The preview must load the unique orange sketch across ALL pages.
+          printf '%s  %s\n' "7ef92907b5f43d5f6ff4f351f3b6a732e48d9e24581a1d3b4c4c714a82cfc368" "dist-web/lego-preview/archiv-orange-sketch-20261106.webp" | sha256sum --check
+          for file in terms.html privacy.html contact.html attribution.html; do
+            grep -Fq 'src="./archiv-orange-sketch-20261106.webp"' "dist-web/lego-preview/$file"
+          done
+          grep -Rql 'archiv-orange-sketch-20261106.webp' dist-web/lego-preview/assets
+          ! cmp -s dist-web/archiv-red-brick-accent-logo.webp dist-web/lego-preview/archiv-orange-sketch-20261106.webp
           cp dist-web/catalog-refresh.json dist-web/lego-preview/catalog-refresh.json
           printf '{"source_commit":"%s","branch":"feature/owned-set-photo-review-20261031","photo_backend_ready":true}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
           # The production release must carry its matching approved photo terms
@@ -363,10 +368,28 @@ jobs:
           grep -Fq 'archiv-red-brick-accent-logo.webp' /tmp/archiv-production-privacy.html
           curl --fail --silent --show-error --location --max-time 20 "$BASE/archiv-red-brick-accent-logo.webp?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-logo.webp
           python3 -c 'from pathlib import Path; b=Path("/tmp/archiv-live-logo.webp").read_bytes(); assert len(b)>10000 and b[:4]==b"RIFF" and b[8:12]==b"WEBP", "Missing red-brick artwork"'
-          # The staging asset must load from the /lego-preview/ subpath, not the production root.
-          curl --fail --silent --show-error --location --max-time 20 "$BASE/lego-preview/archiv-red-brick-accent-logo.webp?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-preview-logo.webp
+          # Confirm the actual STAGING application JS references the new cache-busted asset,
+          # not merely that an unused file exists in the published output.
+          curl --fail --silent --show-error --location --max-time 20 -H 'Cache-Control: no-cache' "$BASE/lego-preview/?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-preview-index.html
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          html=Path("/tmp/archiv-live-preview-index.html").read_text()
+          matches=re.findall(r'<script[^>]+src="([^"]+)"',html)
+          scripts=[x for x in matches if x.startswith("./assets/") and x.endswith(".js")]
+          assert scripts, "Staging index does not reference its own Vite JS bundle"
+          Path("/tmp/archiv-preview-script-path").write_text(scripts[0][2:])
+          PY
+          SCRIPT_PATH="$(cat /tmp/archiv-preview-script-path)"
+          curl --fail --silent --show-error --location --max-time 20 "$BASE/lego-preview/$SCRIPT_PATH?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-preview-script.js
+          grep -Fq 'archiv-orange-sketch-20261106.webp' /tmp/archiv-live-preview-script.js
+          ! grep -Fq 'BASE_URL+"archiv-red-brick-accent-logo.webp"' /tmp/archiv-live-preview-script.js
+          # The asset itself must match the corrected user-supplied art byte for byte.
+          curl --fail --silent --show-error --location --max-time 20 "$BASE/lego-preview/archiv-orange-sketch-20261106.webp?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-preview-logo.webp
           printf '%s  %s\n' "7ef92907b5f43d5f6ff4f351f3b6a732e48d9e24581a1d3b4c4c714a82cfc368" "/tmp/archiv-live-preview-logo.webp" | sha256sum --check
-          echo 'Live staging orange-sketch logo verified; production logo unchanged.'
+          curl --fail --silent --show-error --location --max-time 20 "$BASE/lego-preview/terms.html?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-preview-terms.html
+          grep -Fq 'src="./archiv-orange-sketch-20261106.webp"' /tmp/archiv-live-preview-terms.html
+          echo 'Live staging JS, legal-page reference and orange-sketch asset verified; production unchanged.'
           grep -Fq 'Archív | LEGO Collections' /tmp/archiv-production-index.html
           ! grep -Fq 'utt.impactcdn.com' /tmp/archiv-production-index.html
           ! grep -Fq 'impactStat' /tmp/archiv-production-index.html
