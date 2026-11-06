@@ -29,9 +29,11 @@ describe("Archív eBay shopping placement and attribution safeguards",()=>{
  });
  it("uses one delegated click handler without double-counting Wishlist clicks",()=>{
   expect(app).toContain('document.addEventListener("click",ev=>{');
-  expect(app).toContain('void reportAffiliateClick()');
+  expect(app).toContain('void reportAffiliateClick(setNumber)');
+  expect(app).toContain('link.dataset.affiliateSetNumber=row.number');
+  expect(app).toContain('trackAffiliateLink(setNumber,placement,Boolean(currentUser))');
   expect(app).not.toContain('buy.onclick=()=>{void reportAffiliateClick()}');
-  expect((app.match(/void reportAffiliateClick\(\)/g)||[]).length).toBe(1);
+  expect((app.match(/void reportAffiliateClick\(setNumber\)/g)||[]).length).toBe(1);
  });
  it("provides keyboard-visible focus and mobile tap targets for each design",()=>{
   for(const cls of [".archiv-marketplace-detail",".archiv-marketplace-catalog",".archiv-marketplace-wishlist",".archiv-marketplace-disclosure",".archiv-marketplace-cta:focus-visible"])expect(styles).toContain(cls);
