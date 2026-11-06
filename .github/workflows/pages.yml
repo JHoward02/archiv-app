@@ -184,6 +184,11 @@ jobs:
           grep -Fq 'Staging: closer hand-drawn brick rows' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
           grep -Fq 'nth-child(n+4){margin-top:-24px}' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
           grep -Fq 'nth-child(n+3){margin-top:-9px}' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
+          # Botanicals and Icons set photos sit higher inside the user's drawings.
+          # Confirm no changes to their scale or the other featured images.
+          grep -Fq 'left:19.5%;top:27.5%;width:61%;height:33%;' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
+          grep -Fq 'left:20%;top:27.5%;width:60%;height:33%;' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
+          grep -Fq 'left:20.5%;top:31.7%;width:59%;height:32%;' "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
           for theme in technic botanicals icons; do
             grep -Fq "[data-theme=\"$theme\"] .archiv-theme-set-photo" "$RUNNER_TEMP/archiv-lego-preview/src/lego-styles.css"
           done
@@ -431,6 +436,7 @@ jobs:
           grep -Fq '.archiv-theme-set-photo' /tmp/archiv-live-preview-styles.css
           grep -Fq 'margin-top:-24px' /tmp/archiv-live-preview-styles.css
           grep -Fq 'margin-top:-9px' /tmp/archiv-live-preview-styles.css
+          grep -Fq 'top:27.5%' /tmp/archiv-live-preview-styles.css
           curl --fail --silent --show-error --location --max-time 20 "$BASE/lego-preview/$SCRIPT_PATH?verify=$GITHUB_RUN_ID" -o /tmp/archiv-live-preview-script.js
           grep -Fq 'archiv-orange-sketch-20261106.webp' /tmp/archiv-live-preview-script.js
           grep -Fq 'theme-city.webp' /tmp/archiv-live-preview-script.js
