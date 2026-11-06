@@ -199,6 +199,10 @@ jobs:
             echo "Staged user's illustrated brick: $name"
           done
           VITE_PROFILE_BACKEND_READY=true VITE_PHOTO_BACKEND_READY=true npm --prefix "$RUNNER_TEMP/archiv-lego-preview" run build:web
+          # Stage only: verify OAuth configuration is baked into the independent preview.
+          # Keep the separately compiled, immutable production release unchanged.
+          grep -Rql '562944371' "$RUNNER_TEMP/archiv-lego-preview/dist-web/assets"
+          grep -Rql '226810242425-v9lem1u8p2q5qaenvco1ldbi354rglm5.apps.googleusercontent.com' "$RUNNER_TEMP/archiv-lego-preview/dist-web/assets"
           grep -Rql 'archiv-theme-illustrated' "$RUNNER_TEMP/archiv-lego-preview/dist-web/assets" || { echo "::error::User supplied themed brick components missing from preview"; exit 1; }
           for name in city pokemon star-wars technic botanicals icons; do
             cmp "$RUNNER_TEMP/archiv-lego-preview/public/theme-bricks/theme-$name.webp" "$RUNNER_TEMP/archiv-lego-preview/dist-web/theme-bricks/theme-$name.webp"
