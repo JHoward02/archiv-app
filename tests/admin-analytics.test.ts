@@ -19,7 +19,7 @@ function ga4Fetch(customDimensions=true){
     if(!dims.length)rows=[row([],["80","50","101","235","70","0.6930693","75.4"])];
     else if(dims[0]==="date")rows=[row(["20261105"],["30","40","83","28"])];
     else if(dims[0]==="sessionDefaultChannelGroup")rows=[row(["Organic Search"],["47"])];
-    else if(dims[0]==="pagePath")rows=[row(["/archiv-app/"],["148"])];
+    else if(dims[0]==="pageLocation")rows=[row(["/archiv-app/"],["148"])];
     else if(dims[0]==="deviceCategory")rows=[row(["mobile"],["53"])];
     else if(dims[0]==="eventName")rows=[
       row(["affiliate_click"],["24"]),row(["sign_up"],["4"]),row(["login"],["6"]),
