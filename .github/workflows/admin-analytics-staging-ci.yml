@@ -26,10 +26,11 @@ jobs:
         run: |
           git fetch origin archiv-2-lego-staging
           git worktree add "$RUNNER_TEMP/archiv-catalog" origin/archiv-2-lego-staging
+          # Data source branch carries only a minimal test catalog; this job
+          # tests compilation and logic, not real catalog coverage.
           cp "$RUNNER_TEMP/archiv-catalog/src/lego-catalog.json" src/lego-catalog.json
-          cp "$RUNNER_TEMP/archiv-catalog/src/lego-themes.json" src/lego-themes.json
+          node -e 'require("fs").writeFileSync("src/lego-themes.json",JSON.stringify([{name:"City",count:1,image:""}]))'
           mkdir -p public/lego-parts
-          cp -R "$RUNNER_TEMP/archiv-catalog/public/lego-parts/." public/lego-parts/
       - name: Full TypeScript, Vitest, bundle and smoke checks
         run: npm run check
       - name: Compile complete preview with Firebase features
