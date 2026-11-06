@@ -51,8 +51,8 @@ jobs:
       # Refresh concise photo-sharing consent in isolated LEGO preview; production remains pinned.
       - name: Build isolated LEGO preview
         run: |
-          git fetch origin feature/owned-set-photo-review-20261031
-          git worktree add "$RUNNER_TEMP/archiv-lego-preview" origin/feature/owned-set-photo-review-20261031
+          git fetch origin feature/admin-analytics-redesign-20261106
+          git worktree add "$RUNNER_TEMP/archiv-lego-preview" origin/feature/admin-analytics-redesign-20261106
           PREVIEW_SHA=$(git -C "$RUNNER_TEMP/archiv-lego-preview" rev-parse HEAD)
           echo "Preview source: $PREVIEW_SHA"
           grep -q '/src/lego-entry.ts' "$RUNNER_TEMP/archiv-lego-preview/index.html"
@@ -205,7 +205,7 @@ jobs:
           done
           mkdir -p dist-web/lego-preview
           cp -R "$RUNNER_TEMP/archiv-lego-preview/dist-web/." dist-web/lego-preview/
-          printf '{"source_commit":"%s","branch":"feature/owned-set-photo-review-20261031","photo_backend_ready":true}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
+          printf '{"source_commit":"%s","branch":"feature/admin-analytics-redesign-20261106","photo_backend_ready":true}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
           # Approved release (2026-11-06 Pacific): promote the exact reviewed
           # hand-sketched orange logo and six supplied illustrated theme bricks.
           # Includes the final spacing and set-photo positioning, eBay UI and photo rules.
@@ -303,7 +303,7 @@ jobs:
             cmp "dist-web/theme-bricks/theme-$name.webp" "dist-web/lego-preview/theme-bricks/theme-$name.webp"
           done
           cp dist-web/catalog-refresh.json dist-web/lego-preview/catalog-refresh.json
-          printf '{"source_commit":"%s","branch":"feature/owned-set-photo-review-20261031","photo_backend_ready":true}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
+          printf '{"source_commit":"%s","branch":"feature/admin-analytics-redesign-20261106","photo_backend_ready":true}\n' "$PREVIEW_SHA" > dist-web/lego-preview/build-info.json
           # The production release must carry its matching approved photo terms
           # and privacy notices, not the old legal snapshot.
           test -s dist-web/privacy.html
