@@ -28,6 +28,16 @@ describe("user supplied hand-drawn LEGO theme artwork",()=>{
   expect(illustrated).toContain(".lego-theme.archiv-theme-illustrated:hover{transform:none;filter:none;box-shadow:none}");
   expect(illustrated).toContain(".lego-theme.archiv-theme-illustrated:active{transform:none;filter:none}");
   expect(css).not.toContain("Staging sketch v2");
+  expect(css).toContain("Staging: closer hand-drawn brick rows");
+  expect(css).toContain(".lego-home-themes{row-gap:0}");
+  expect(css).toContain(".lego-home-themes>.lego-theme.archiv-theme-illustrated:nth-child(n+4){margin-top:-24px}");
+  expect(css).toContain(".lego-home-themes>.lego-theme.archiv-theme-illustrated:nth-child(n+3){margin-top:-9px}");
+  for(const [theme,width] of [["technic","59%"],["botanicals","61%"],["icons","60%"]]){
+    const selector='.lego-theme.archiv-theme-illustrated[data-theme="'+theme+'"] .archiv-theme-set-photo';
+    expect(css).toContain(selector);
+    expect(css.slice(css.lastIndexOf(selector),css.lastIndexOf(selector)+110)).toContain("width:"+width);
+  }
+
   expect(css).toContain(".lego-theme-art{border-radius:0");
  });
 });

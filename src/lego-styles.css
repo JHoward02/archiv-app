@@ -822,3 +822,26 @@
 @media(prefers-reduced-motion:reduce){
   .lego-theme.archiv-theme-illustrated{transition:none}
 }
+
+/* Staging: closer hand-drawn brick rows, without resizing the supplied brick art.
+   The source illustrations include a white matte around their drawing; reducing
+   the grid gap and pulling later rows up keeps the visible bricks closer. */
+.lego-home-themes{row-gap:0}
+@media(min-width:641px){
+  .lego-home-themes>.lego-theme.archiv-theme-illustrated:nth-child(n+4){margin-top:-24px}
+}
+@media(max-width:640px){
+  .lego-home-themes{row-gap:0}
+  .lego-home-themes>.lego-theme.archiv-theme-illustrated:nth-child(n+3){margin-top:-9px}
+}
+/* Scale only the set photos within Technic, Botanicals and Icons. The six
+   user-supplied brick drawings and the three other photographs are unchanged. */
+.lego-theme.archiv-theme-illustrated[data-theme="technic"] .archiv-theme-set-photo{
+  left:20.5%;top:31.7%;width:59%;height:32%;
+}
+.lego-theme.archiv-theme-illustrated[data-theme="botanicals"] .archiv-theme-set-photo{
+  left:19.5%;top:31.25%;width:61%;height:33%;
+}
+.lego-theme.archiv-theme-illustrated[data-theme="icons"] .archiv-theme-set-photo{
+  left:20%;top:31.25%;width:60%;height:33%;
+}
