@@ -81,6 +81,7 @@ function link(url:string,label:string):HTMLAnchorElement{
 }
 function info(text:string):HTMLElement{return el("p","archiv-insight-small",text);}
 
+let drilldownOpen=false;
 export function renderAdminInsights(main:HTMLElement,state:AdminDashboardState):void{
   const ga=state.analytics,period=state.days;
   const recent=periodEvents(state.events,period);
@@ -192,7 +193,7 @@ export function renderAdminInsights(main:HTMLElement,state:AdminDashboardState):
   const affiliateGrid=el("div","archiv-insight-grid");
   const placement=el("section","archiv-insight-panel");
   placement.append(el("h3","","Clicks by placement"));
-  placement.append(rankedList(ga?.clickPlacements||[],"After GA4 custom dimensions are registered, see clicks from detail pages, catalog and wishlist.",p=>({"detail":"Set details","catalog":"Catalog cards","wishlist":"Wishlist"}[p]||p)));
+  placement.append(rankedList(ga?.clickPlacements||[],"After GA4 custom dimensions are registered, see clicks from detail pages, catalog and wishlist.",p=>({detail:"Set details",catalog:"Catalog cards",wishlist:"Wishlist"} as Record<string,string>)[p]||p));
   affiliateGrid.append(placement);
   const topSets=el("section","archiv-insight-panel");
   topSets.append(el("h3","","Sets driving clicks"));
@@ -223,6 +224,8 @@ export function renderAdminInsights(main:HTMLElement,state:AdminDashboardState):
   extra.append(devices);main.append(extra);
 
   const drill=el("details","archiv-insight-drilldown");
+  drill.open=drilldownOpen;
+  drill.ontoggle=()=>{drilldownOpen=drill.open};
   drill.append(el("summary","","Individual collector activity (private admin detail)"));
   const contents=el("div","archiv-insight-drilldown-content");
   contents.append(info("Activity events are loaded for the first 50 recorded profiles. Other accounts may have no detailed events in this view."));
